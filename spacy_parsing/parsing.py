@@ -1,6 +1,6 @@
 from spacy_conll import Spacy2ConllParser
 
-spacyconll = Spacy2ConllParser(model='en_core_web_md')
+spacyconll = Spacy2ConllParser(model='en_core_web_lg')
 
 # TODO read from Redis.
 with open('input_utterances.txt') as utt_file:

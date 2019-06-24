@@ -1,0 +1,313 @@
+1	The	the	DET	DT	_	2	det	_	_
+2	MS400	ms400	NOUN	NN	Number=sing	3	nsubj	_	_
+3	isolate	isolate	VERB	VBP	VerbForm=fin|Tense=pres	0	ROOT	_	_
+4	very	very	ADV	RB	Degree=pos	5	advmod	_	_
+5	well	well	ADV	RB	Degree=pos	6	advmod	_	_
+6	considering	consider	VERB	VBG	VerbForm=part|Tense=pres|Aspect=prog	3	xcomp	_	_
+7	the	the	DET	DT	_	8	det	_	_
+8	comfort	comfort	NOUN	NN	Number=sing	6	dobj	_	_
+9	tradeoff.	tradeoff.	PROPN	NNP	NounType=prop|Number=sing	3	punct	_	_
+
+
+1	They	-PRON-	PRON	PRP	PronType=prs	2	nsubj	_	_
+2	won't	won't	VERB	VBP	VerbForm=fin|Tense=pres	0	ROOT	_	_
+
+
+1	quite	quite	ADV	RB	Degree=pos	2	advmod	_	_
+2	keep	keep	VERB	VB	VerbForm=inf	0	ROOT	_	_
+3	up	up	PART	RP	_	2	prt	_	_
+4	with	with	ADP	IN	_	2	prep	_	_
+5	the	the	DET	DT	_	8	det	_	_
+6	(comparatively)	(comparatively)	NOUN	NN	Number=sing	8	punct	_	_
+7	head-crushing	head-crushe	VERB	VBG	VerbForm=part|Tense=pres|Aspect=prog	8	amod	_	_
+8	K181s	K181s	PROPN	NNP	NounType=prop|Number=sing	4	pobj	_	_
+9	or	or	CCONJ	CC	ConjType=coor	8	cc	_	_
+10	the	the	DET	DT	_	12	det	_	_
+11	vast	vast	ADJ	JJ	Degree=pos	12	amod	_	_
+12	majority	majority	NOUN	NN	Number=sing	8	conj	_	_
+13	of	of	ADP	IN	_	12	prep	_	_
+14	IEMs	iem	NOUN	NNS	Number=plur	13	pobj	_	_
+15	but	but	CCONJ	CC	ConjType=coor	2	cc	_	_
+16	the	the	DET	DT	_	17	det	_	_
+17	isolation	isolation	NOUN	NN	Number=sing	18	nsubj	_	_
+18	is	be	VERB	VBZ	VerbForm=fin|Tense=pres|Number=sing|Person=3	2	conj	_	_
+19	more	more	ADJ	JJR	Degree=comp	18	acomp	_	_
+20	than	than	ADP	IN	_	19	prep	_	_
+21	good	good	ADJ	JJ	Degree=pos	19	conj	_	_
+22	enough	enough	ADV	RB	Degree=pos	21	advmod	_	_
+23	for	for	ADP	IN	_	18	prep	_	_
+24	daily	daily	ADJ	JJ	Degree=pos	25	amod	_	_
+25	use.	use.	NOUN	NN	Number=sing	23	pobj	_	_
+
+
+1	I	-PRON-	PRON	PRP	PronType=prs	4	nsubj	_	_
+2	did	do	VERB	VBD	VerbForm=fin|Tense=past	4	aux	_	_
+3	not	not	ADV	RB	Degree=pos	4	neg	_	_
+4	feel	feel	VERB	VB	VerbForm=inf	0	ROOT	_	_
+5	the	the	DET	DT	_	6	det	_	_
+6	need	need	NOUN	NN	Number=sing	4	dobj	_	_
+7	to	to	PART	TO	PartType=inf|VerbForm=inf	8	aux	_	_
+8	raise	raise	VERB	VB	VerbForm=inf	6	acl	_	_
+9	the	the	DET	DT	_	10	det	_	_
+10	volume	volume	NOUN	NN	Number=sing	8	dobj	_	_
+11	during	during	ADP	IN	_	8	prep	_	_
+12	my	-PRON-	DET	PRP$	PronType=prs|Poss=yes	13	poss	_	_
+13	commute,	commute,	NOUN	NNS	Number=plur	11	pobj	_	_
+14	though	though	ADP	IN	_	20	mark	_	_
+15	the	the	DET	DT	_	17	det	_	_
+16	tiniest	tiny	ADJ	JJS	Degree=sup	17	amod	_	_
+17	details	detail	NOUN	NNS	Number=plur	20	nsubjpass	_	_
+18	were	be	VERB	VBD	VerbForm=fin|Tense=past	20	auxpass	_	_
+19	occasionally	occasionally	ADV	RB	Degree=pos	20	advmod	_	_
+20	obscured	obscure	VERB	VBN	VerbForm=part|Tense=past|Aspect=perf	4	advcl	_	_
+21	by	by	ADP	IN	_	20	agent	_	_
+22	intruding	intrude	VERB	VBG	VerbForm=part|Tense=pres|Aspect=prog	21	pcomp	_	_
+23	noise.	noise.	NOUN	NN	Number=sing	22	dobj	_	_
+
+
+1	Leakage	leakage	NOUN	NN	Number=sing	2	nsubj	_	_
+2	is	be	VERB	VBZ	VerbForm=fin|Tense=pres|Number=sing|Person=3	0	ROOT	_	_
+3	non-existent	non-existent	ADJ	JJ	Degree=pos	4	amod	_	_
+4	thanks	thank	NOUN	NNS	Number=plur	2	attr	_	_
+5	to	to	ADP	IN	_	4	prep	_	_
+6	the	the	DET	DT	_	8	det	_	_
+7	soft	soft	ADJ	JJ	Degree=pos	8	amod	_	_
+8	pads	pad	NOUN	NNS	Number=plur	5	pobj	_	_
+9	and	and	CCONJ	CC	ConjType=coor	8	cc	_	_
+10	compliant	compliant	ADJ	JJ	Degree=pos	11	amod	_	_
+11	fit.	fit.	NOUN	NN	Number=sing	8	conj	_	_
+
+
+
+1	The	the	DET	DT	_	3	det	_	_
+2	lambskin	lambskin	NOUN	NN	Number=sing	3	compound	_	_
+3	earpads	earpad	NOUN	NNS	Number=plur	4	nsubj	_	_
+4	provide	provide	VERB	VBP	VerbForm=fin|Tense=pres	0	ROOT	_	_
+5	a	a	DET	DT	_	8	det	_	_
+6	surprisingly	surprisingly	ADV	RB	Degree=pos	7	advmod	_	_
+7	good	good	ADJ	JJ	Degree=pos	8	amod	_	_
+8	coupling	coupling	NOUN	NN	Number=sing	4	dobj	_	_
+9	with	with	ADP	IN	_	8	prep	_	_
+10	the	the	DET	DT	_	11	det	_	_
+11	ear	ear	NOUN	NN	Number=sing	9	pobj	_	_
+12	for	for	ADP	IN	_	4	prep	_	_
+13	a	a	DET	DT	_	15	det	_	_
+14	supraaural	supraaural	ADJ	JJ	Degree=pos	15	amod	_	_
+15	headphone,	headphone,	NOUN	NN	Number=sing	12	pobj	_	_
+16	resulting	result	VERB	VBG	VerbForm=part|Tense=pres|Aspect=prog	15	acl	_	_
+17	in	in	ADP	IN	_	16	prep	_	_
+18	isolation	isolation	NOUN	NN	Number=sing	17	pobj	_	_
+19	that	that	DET	WDT	PronType=int|rel	22	nsubj	_	_
+20	only	only	ADV	RB	Degree=pos	22	advmod	_	_
+21	just	just	ADV	RB	Degree=pos	22	advmod	_	_
+22	yields	yield	VERB	VBZ	VerbForm=fin|Tense=pres|Number=sing|Person=3	18	relcl	_	_
+23	to	to	ADP	IN	_	22	prep	_	_
+24	that	that	DET	DT	_	23	pobj	_	_
+25	of	of	ADP	IN	_	24	prep	_	_
+26	the	the	DET	DT	_	27	det	_	_
+27	Phiaton	Phiaton	PROPN	NNP	NounType=prop|Number=sing	28	compound	_	_
+28	MS400	MS400	PUNCT	.	PunctType=peri	25	pobj	_	_
+
+
+
+1	The	the	DET	DT	_	3	det	_	_
+2	soft	soft	ADJ	JJ	Degree=pos	3	amod	_	_
+3	pads	pad	NOUN	NNS	Number=plur	8	nsubj	_	_
+4	and	and	CCONJ	CC	ConjType=coor	3	cc	_	_
+5	moderate	moderate	ADJ	JJ	Degree=pos	7	amod	_	_
+6	clamping	clamp	VERB	VBG	VerbForm=part|Tense=pres|Aspect=prog	7	compound	_	_
+7	force	force	NOUN	NN	Number=sing	3	conj	_	_
+8	result	result	NOUN	NN	Number=sing	0	ROOT	_	_
+9	in	in	ADP	IN	_	8	prep	_	_
+10	impressive	impressive	ADJ	JJ	Degree=pos	11	amod	_	_
+11	isolation,	isolation,	NOUN	NNS	Number=plur	9	pobj	_	_
+12	up	up	ADV	RB	Degree=pos	13	advmod	_	_
+13	there	there	ADV	RB	Degree=pos	11	advmod	_	_
+14	with	with	ADP	IN	_	8	prep	_	_
+15	the	the	DET	DT	_	16	det	_	_
+16	harder-clamping	harder-clamping	NOUN	NN	Number=sing	17	compound	_	_
+17	HFI-450	HFI-450	PROPN	NNP	NounType=prop|Number=sing	14	pobj	_	_
+18	and	and	CCONJ	CC	ConjType=coor	17	cc	_	_
+19	much	much	ADV	RB	Degree=pos	20	advmod	_	_
+20	larger	large	ADJ	JJR	Degree=comp	8	conj	_	_
+
+
+1	Pro	Pro	PROPN	NNP	NounType=prop|Number=sing	2	subtok	_	_
+2	650.	650.	PROPN	NNP	NounType=prop|Number=sing	0	ROOT	_	_
+
+
+
+1	The	the	DET	DT	_	3	det	_	_
+2	soft	soft	ADJ	JJ	Degree=pos	3	amod	_	_
+3	pads	pad	NOUN	NNS	Number=plur	4	nsubj	_	_
+4	provide	provide	VERB	VBP	VerbForm=fin|Tense=pres	0	ROOT	_	_
+5	a	a	DET	DT	_	7	det	_	_
+6	moderate	moderate	ADJ	JJ	Degree=pos	7	amod	_	_
+7	amount	amount	NOUN	NN	Number=sing	4	dobj	_	_
+8	of	of	ADP	IN	_	7	prep	_	_
+9	isolation	isolation	NOUN	NN	Number=sing	8	pobj	_	_
+10	–	–	PUNCT	:	_	4	punct	_	_
+11	enough	enough	ADJ	JJ	Degree=pos	4	advmod	_	_
+12	to	to	PART	TO	PartType=inf|VerbForm=inf	13	aux	_	_
+13	make	make	VERB	VB	VerbForm=inf	11	xcomp	_	_
+14	music	music	NOUN	NN	Number=sing	15	nsubj	_	_
+15	enjoyable	enjoyable	ADJ	JJ	Degree=pos	13	ccomp	_	_
+16	on	on	ADP	IN	_	15	prep	_	_
+17	the	the	DET	DT	_	18	det	_	_
+18	go	go	NOUN	NN	Number=sing	16	pobj	_	_
+19	but	but	CCONJ	CC	ConjType=coor	15	cc	_	_
+20	definitely	definitely	ADV	RB	Degree=pos	22	advmod	_	_
+21	not	not	ADV	RB	Degree=pos	22	neg	_	_
+22	adequate	adequate	ADJ	JJ	Degree=pos	15	conj	_	_
+23	for	for	ADP	IN	_	22	prep	_	_
+24	the	the	DET	DT	_	25	det	_	_
+25	subway	subway	NOUN	NN	Number=sing	23	pobj	_	_
+26	or	or	CCONJ	CC	ConjType=coor	25	cc	_	_
+27	an	an	DET	DT	_	28	det	_	_
+28	airplane.	airplane.	NOUN	NN	Number=sing	25	conj	_	_
+
+
+1	The	the	DET	DT	_	2	det	_	_
+2	level	level	NOUN	NN	Number=sing	5	nsubj	_	_
+3	of	of	ADP	IN	_	2	prep	_	_
+4	isolation	isolation	NOUN	NN	Number=sing	3	pobj	_	_
+5	is	be	VERB	VBZ	VerbForm=fin|Tense=pres|Number=sing|Person=3	0	ROOT	_	_
+6	not	not	ADV	RB	Degree=pos	5	neg	_	_
+7	at	at	ADV	RB	Degree=pos	8	advmod	_	_
+8	all	all	ADV	RB	Degree=pos	9	advmod	_	_
+9	different	different	ADJ	JJ	Degree=pos	5	acomp	_	_
+10	from	from	ADP	IN	_	9	prep	_	_
+11	what	what	PRON	WP	PronType=int|rel	13	nsubjpass	_	_
+12	is	be	VERB	VBZ	VerbForm=fin|Tense=pres|Number=sing|Person=3	13	auxpass	_	_
+13	provided	provide	VERB	VBN	VerbForm=part|Tense=past|Aspect=perf	10	pcomp	_	_
+14	by	by	ADP	IN	_	13	agent	_	_
+15	similar-size	similar-size	ADJ	JJ	Degree=pos	17	amod	_	_
+16	wired	wired	ADJ	JJ	Degree=pos	17	amod	_	_
+17	sets	set	NOUN	NNS	Number=plur	14	pobj	_	_
+18	such	such	ADJ	JJ	Degree=pos	19	amod	_	_
+19	as	as	ADP	IN	_	17	prep	_	_
+20	the	the	DET	DT	_	22	det	_	_
+21	Sennheiser	Sennheiser	PROPN	NNP	NounType=prop|Number=sing	22	compound	_	_
+22	PX200-II	PX200-II	PROPN	NNP	NounType=prop|Number=sing	19	pobj	_	_
+23	and	and	CCONJ	CC	ConjType=coor	22	cc	_	_
+24	Denon	Denon	PROPN	NNP	NounType=prop|Number=sing	22	conj	_	_
+25	AH-P372.	AH-P372.	PUNCT	.	PunctType=peri	5	punct	_	_
+
+
+
+1	The	the	DET	DT	_	2	det	_	_
+2	isolation	isolation	NOUN	NN	Number=sing	7	nsubj	_	_
+3	of	of	ADP	IN	_	2	prep	_	_
+4	the	the	DET	DT	_	6	det	_	_
+5	Crossfade	Crossfade	PROPN	NNP	NounType=prop|Number=sing	6	compound	_	_
+6	LP	LP	PROPN	NNP	NounType=prop|Number=sing	3	pobj	_	_
+7	is	be	VERB	VBZ	VerbForm=fin|Tense=pres|Number=sing|Person=3	0	ROOT	_	_
+8	on	on	ADP	IN	_	7	prep	_	_
+9	par	par	NOUN	NN	Number=sing	8	pobj	_	_
+10	with	with	ADP	IN	_	9	prep	_	_
+11	other	other	ADJ	JJ	Degree=pos	14	amod	_	_
+12	portable	portable	ADJ	JJ	Degree=pos	14	amod	_	_
+13	circumaural	circumaural	ADJ	JJ	Degree=pos	14	amod	_	_
+14	sets	set	NOUN	NNS	Number=plur	10	pobj	_	_
+15	from	from	ADP	IN	_	14	prep	_	_
+16	companies	company	NOUN	NNS	Number=plur	15	pobj	_	_
+17	such	such	ADJ	JJ	Degree=pos	18	amod	_	_
+18	as	as	ADP	IN	_	16	prep	_	_
+19	JVC	JVC	PROPN	NNP	NounType=prop|Number=sing	18	pobj	_	_
+20	and	and	CCONJ	CC	ConjType=coor	19	cc	_	_
+
+
+1	Panasonic.	Panasonic.	PROPN	NNP	NounType=prop|Number=sing	2	subtok	_	_
+2	Like	like	ADP	IN	_	0	ROOT	_	_
+3	the	the	DET	DT	_	6	det	_	_
+4	similarly-priced	similarly-priced	ADJ	JJ	Degree=pos	6	amod	_	_
+5	Monster	monster	NOUN	NN	Number=sing	6	compound	_	_
+6	Beats	Beats	PROPN	NNPS	NounType=prop|Number=plur	2	pobj	_	_
+7	and	and	CCONJ	CC	ConjType=coor	6	cc	_	_
+8	Phiaton	Phiaton	PROPN	NNP	NounType=prop|Number=sing	9	compound	_	_
+9	MS400s,	MS400s,	PROPN	NNP	NounType=prop|Number=sing	6	conj	_	_
+
+
+1	they	-PRON-	PRON	PRP	PronType=prs	2	nsubj	_	_
+2	don’t	don’t	VERB	VBZ	VerbForm=fin|Tense=pres|Number=sing|Person=3	4	nsubj	_	_
+3	quite	quite	ADV	RB	Degree=pos	4	advmod	_	_
+4	reach	reach	VERB	VBP	VerbForm=fin|Tense=pres	0	ROOT	_	_
+5	the	the	DET	DT	_	8	det	_	_
+6	passive	passive	ADJ	JJ	Degree=pos	8	amod	_	_
+7	attenuation	attenuation	NOUN	NN	Number=sing	8	compound	_	_
+8	level	level	NOUN	NN	Number=sing	4	dobj	_	_
+9	of	of	ADP	IN	_	8	prep	_	_
+10	the	the	DET	DT	_	11	det	_	_
+11	HD25-1	hd25-1	NOUN	NN	Number=sing	9	pobj	_	_
+12	and	and	CCONJ	CC	ConjType=coor	11	cc	_	_
+13	P5	P5	PROPN	NNP	NounType=prop|Number=sing	11	conj	_	_
+14	but	but	CCONJ	CC	ConjType=coor	4	cc	_	_
+15	do	do	VERB	VB	VerbForm=inf	16	aux	_	_
+16	perform	perform	VERB	VB	VerbForm=inf	4	conj	_	_
+17	very	very	ADV	RB	Degree=pos	18	advmod	_	_
+18	well	well	ADV	RB	Degree=pos	16	advmod	_	_
+19	out	out	PART	RP	_	16	advmod	_	_
+20	and	and	CCONJ	CC	ConjType=coor	21	cc	_	_
+21	about.	about.	ADJ	JJ	Degree=pos	19	conj	_	_
+
+
+
+1	While	while	ADP	IN	_	8	mark	_	_
+2	the	the	DET	DT	_	3	det	_	_
+3	fit	fit	NOUN	NN	Number=sing	8	nsubj	_	_
+4	of	of	ADP	IN	_	3	prep	_	_
+5	the	the	DET	DT	_	7	det	_	_
+6	Beats	Beats	PROPN	NNPS	NounType=prop|Number=plur	7	compound	_	_
+7	Solo	Solo	PROPN	NNP	NounType=prop|Number=sing	4	pobj	_	_
+8	is	be	VERB	VBZ	VerbForm=fin|Tense=pres|Number=sing|Person=3	17	advcl	_	_
+9	very	very	ADV	RB	Degree=pos	10	advmod	_	_
+10	similar	similar	ADJ	JJ	Degree=pos	8	acomp	_	_
+11	to	to	ADP	IN	_	10	prep	_	_
+12	that	that	DET	DT	_	11	pobj	_	_
+13	of	of	ADP	IN	_	12	prep	_	_
+14	the	the	DET	DT	_	16	det	_	_
+15	HD25-1,	HD25-1,	PROPN	NNP	NounType=prop|Number=sing	16	compound	_	_
+16	isolation	isolation	NOUN	NN	Number=sing	13	pobj	_	_
+17	suffers	suffer	VERB	VBZ	VerbForm=fin|Tense=pres|Number=sing|Person=3	0	ROOT	_	_
+18	slightly	slightly	ADV	RB	Degree=pos	17	advmod	_	_
+19	as	as	ADP	IN	_	17	prep	_	_
+20	a	a	DET	DT	_	21	det	_	_
+21	result	result	NOUN	NN	Number=sing	19	pobj	_	_
+22	of	of	ADP	IN	_	21	prep	_	_
+23	the	the	DET	DT	_	26	det	_	_
+24	lighter	light	ADJ	JJR	Degree=comp	26	amod	_	_
+25	clamping	clamp	VERB	VBG	VerbForm=part|Tense=pres|Aspect=prog	26	amod	_	_
+26	force.	force.	NOUN	NN	Number=sing	22	pobj	_	_
+
+
+1	The	the	DET	DT	_	2	det	_	_
+2	isolation	isolation	NOUN	NN	Number=sing	6	nsubj	_	_
+3	of	of	ADP	IN	_	2	prep	_	_
+4	the	the	DET	DT	_	5	det	_	_
+5	Solo	Solo	PROPN	NNP	NounType=prop|Number=sing	3	pobj	_	_
+6	is	be	VERB	VBZ	VerbForm=fin|Tense=pres|Number=sing|Person=3	0	ROOT	_	_
+7	somewhere	somewhere	ADV	RB	Degree=pos	6	advmod	_	_
+8	between	between	ADP	IN	_	7	prep	_	_
+9	the	the	DET	DT	_	12	det	_	_
+10	looser-fitting	looser-fitting	ADJ	JJ	Degree=pos	12	amod	_	_
+11	Phiaton	Phiaton	PROPN	NNP	NounType=prop|Number=sing	12	compound	_	_
+12	MS400	MS400	PROPN	NNP	NounType=prop|Number=sing	8	pobj	_	_
+13	larger	large	ADJ	JJR	Degree=comp	12	amod	_	_
+14	V-Moda	V-Moda	PROPN	NNP	NounType=prop|Number=sing	6	punct	_	_
+
+
+1	Crossfade	Crossfade	PROPN	NNP	NounType=prop|Number=sing	2	compound	_	_
+2	LP	LP	PROPN	NNP	NounType=prop|Number=sing	5	nsubj	_	_
+3	–	–	PUNCT	:	_	2	punct	_	_
+4	not	not	ADV	RB	Degree=pos	5	neg	_	_
+5	class-leading	class-leade	VERB	VBG	VerbForm=part|Tense=pres|Aspect=prog	0	ROOT	_	_
+6	but	but	CCONJ	CC	ConjType=coor	5	cc	_	_
+7	plentiful	plentiful	ADJ	JJ	Degree=pos	5	conj	_	_
+8	for	for	ADP	IN	_	7	prep	_	_
+9	use	use	NOUN	NN	Number=sing	8	pobj	_	_
+10	on	on	ADP	IN	_	9	prep	_	_
+11	the	the	DET	DT	_	12	det	_	_
+12	go.	go.	X	XX	_	10	pobj	_	_
+
+
+
