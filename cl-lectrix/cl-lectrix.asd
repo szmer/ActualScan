@@ -4,7 +4,8 @@
   :author "Therminsley"
 
   :depends-on ("cl-conllu")
-  :components ((:module "lectrix" :components ((:file "main")))
+  :components ((:module "lectrix" :components ((:file "main")
+                                               (:file "validation")))
                ))
 
 (defpackage :cl-lectrix
