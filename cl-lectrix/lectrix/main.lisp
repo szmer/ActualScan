@@ -24,8 +24,8 @@
 
 (candies:@define-class-with-accessors@ semantic-node ()
     ((label :type symbol) (origin :type element-origin)
-      (verb? :type boolean :initform nil)
-      ;; important if this is a verb, whether it takes an obj exit:
+      (verbal? :type boolean :initform nil)
+      ;; important if this is a verbal, whether it takes an obj exit:
       (obj-exit? :type boolean :initform nil)))
 
 (candies:@define-class-with-accessors@ semantic-edge ()
@@ -43,18 +43,49 @@
 
 (setf (symbol-function 'graph-nodes) #'first) ; wrap functions semantically
 (setf (symbol-function 'graph-edges) #'second)
+;; TODO TODO probably the root for verbs is their pred??
 (setf (symbol-function 'semantic-root) #'first)
 
-(defun )
+(defun designated-subj (graph-lists)
+  nil)
+
+(defun designated-obj (graph-lists)
+  nil)
+
+(defun designated-pred (graph-lists)
+  nil)
+
+(defun designated-sit (graph-lists)
+  nil)
 
 ;;
 ;; Translation from CoNLL.
 ;;
 
+;; See:
+;; https://universaldependencies.org/u/dep/all.html
+;; https://github.com/clir/clearnlp-guidelines/blob/master/md/specifications/dependency_labels.md
+(defparameter *deprel->graph-places*
+  (alexandria:alist-hash-table
+   (list
+    "advmod" '(#'designated-pred #'semantic-root)
+    "amod" '(#'semantic-root #'semantic-root)
+    "det" '(#'semantic-root #'semantic-root)
+    "dobj" '(#'designated-obj #'semantic-root)
+    "mark" '(#'semantic-root #'semantic-root) ; ??
+    "neg" '(#'semantic-root #'semantic-root)
+    "nsubj" '(#'designated-subj #'semantic-root)
+    "pcomp" '(#'semantic-root #'semantic-root)
+    "pobj" '(#'semantic-root #'semantic-root) ; can also lead to verbals
+    "prep" '(#'semantic-root #'semantic-root)
+    "relcl" '(#'designated-subj #'semantic-root)
+    ))
+   :test #'equal))
+
 (defun unknown-token->semantic-node (input-token)
   (declare (type input-token conllu.rdf::token))
   (let* ((universal-pos (candies:string->symbol (cl-conllu:token-upostag input-token)))))
-  (unless (find proper-label (list 'x 'sym 'punct 'intj))
+  (unless (find universal-pos '(x sym punct intj))
     (make-instance
      'semantic-node
      :label (case universal-pos
@@ -68,7 +99,7 @@
               (otherwise
                (candies:join-strings *prefix-unknown-token*
                                      (cl-conllu:token-lemma input-token))))
-     :verb? (eq universal-pos 'verb)
+     :verbal? (find universal-pos '(verb adj)) ; TODO TODO adj has to be two nodes they_be->??;adj !!!
      :obj-exit? (eq universal-pos 'verb)
      :origin :unknown-token)))
 
@@ -81,7 +112,7 @@
         (list (unknown-token->semantic-node input-token) nil))))
 
 (defun deprel->label (deprel)
-  (error "nnt implemented"))
+  (error "not implemented"))
 
 (defun token-tree->semantic-representation (tree)
   (declare (type tree list))
@@ -89,9 +120,10 @@
         (result-graph (list nil nil))
         ;; We can guarantee that the children will appear later in the tree than their parents.
         (token-order)))
-  (do* ((subtrees (rest tree)) ; start with the root's relation
+  ;; Collecting unit representations.
+  (do* ((subtrees (rest tree)) ; start with the root's relation (we don't use string deprels)
         (current-subtree (pop subtrees) (pop subtrees)))
-       ((null subtrees))
+       ((null subtree))
     (etypecase subtree
       (string nil)
       (list (setf subtrees (append subtrees subtree)))
@@ -99,6 +131,7 @@
        (setf (gethash (cl-conllu:token-id subtree) token-id->representation)
                               (token->semantic-representation subtree))
        (push subtree token-order))))
+  ;; Edges between units.
   (dolist (token token-order)
     (when (not (zerop (cl-conllu:token-head token))) ; skip the root obviously
       (push (make-instance 'semantic-edge
@@ -108,7 +141,8 @@
                            :label (deprel->label (cl-conllu:token-deprel token))
                            :weight *weight-syntactic-connection*)
             (graph-edges result-graph))))
-  (maphash (lambda (id representation) ; collect all representations
+  ;; Collapse all representations.
+  (maphash (lambda (id representation)
              (declare (ignore id))
              (setf (graph-nodes result-graph) ; nodes
                    (cons (graph-nodes representation) (graph-nodes result-graph)))

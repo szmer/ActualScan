@@ -3,7 +3,7 @@
   :version "0.0.0"
   :author "Therminsley"
 
-  :depends-on ("cl-conllu")
+  :depends-on ("alexandria" "candies" "cl-conllu")
   :components ((:module "lectrix" :components ((:file "main")
                                                (:file "validation")))
                ))
