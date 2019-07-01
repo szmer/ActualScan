@@ -29,7 +29,7 @@
       (obj-exit? :type boolean :initform nil)))
 
 (candies:@define-class-with-accessors@ semantic-edge ()
-    ((label :type symbol) (origin :type element-origin)
+    ((label :type string :initform "") (origin :type element-origin)
       (weight :type real)
       (from :type semantic-node) (to :type semantic-node)))
 
@@ -82,26 +82,60 @@
     ))
    :test #'equal))
 
-(defun unknown-token->semantic-node (input-token)
+(defun unknown-token->semantic-graph (input-token)
   (declare (type input-token conllu.rdf::token))
   (let* ((universal-pos (candies:string->symbol (cl-conllu:token-upostag input-token)))))
-  (unless (find universal-pos '(x sym punct intj))
-    (make-instance
-     'semantic-node
-     :label (case universal-pos
-              (verb
-               (candies:join-strings "_they_" *prefix-unknown-token*
-                                     (cl-conllu:token-lemma input-token)
-                                     "_them"))
-              (propn ; "proper noun"
-               (candies:join-strings *prefix-proper-name-token*
-                                     (cl-conllu:token-lemma input-token)))
-              (otherwise
-               (candies:join-strings *prefix-unknown-token*
-                                     (cl-conllu:token-lemma input-token))))
-     :verbal? (find universal-pos '(verb adj)) ; TODO TODO adj has to be two nodes they_be->??;adj !!!
-     :obj-exit? (eq universal-pos 'verb)
-     :origin :unknown-token)))
+  (if (find universal-pos '(x sym punct intj aux part)) ; part is controversial, gotta extract the possessive somehow
+      (case universal-pos
+        (verb (list
+               (list (make-instance
+                      'semantic-node
+                      :label (candies:join-strings "_they_" *prefix-unknown-token*
+                                                    (cl-conllu:token-lemma input-token)
+                                                    "_them")
+                      :verbal? t :obj-exit? t :element-origin :unknown-token))
+               ()))
+        (noun (let ((nodes (list (make-instance 'semantic-node :label "something"
+                                                               :element-origin :unknown-token)
+                                 (make-instance 'semantic-node :label (candies:join-strings
+                                                                       *prefix-unknown-token*
+                                                                       (cl-conllu:token-lemma input-token))
+                                                               :element-origin :unknown-token))))
+                (list nodes
+                      (list (make-instance 'semantic-edge :from (nth 0 nodes) :to (nth 1 nodes)
+                                           :weight *weight-syntactic-connection*
+                                                          :element-origin :unknown-token)))))
+        (propn (let ((nodes (list (make-instance 'semantic-node :label "something"
+                                                               :element-origin :unknown-token)
+                                  ;; A proper noun doesn't have its label marked as unknown semantic
+                                  ;; component, we assume it to be a unique identifier.
+                                 (make-instance 'semantic-node :label (cl-conllu:token-lemma input-token)
+                                                               :element-origin :unknown-token))))
+                (list nodes
+                      (list (make-instance 'semantic-edge :from (nth 0 nodes) :to (nth 1 nodes)
+                                                          :weight *weight-syntactic-connection*
+                                                          :element-origin :unknown-token)))))
+        (adj (let ((nodes (list (make-instance 'semantic-node :label "__they_be_"
+                                                              :verbal? t
+                                                              :element-origin :unknown-token)
+                                (make-instance 'semantic-node :label (candies:join-strings
+                                                                      *prefix-unknown-token*
+                                                                      (cl-conllu:token-lemma input-token))
+                                                              :element-origin :unknown-token))))
+               (list nodes
+                     (list (make-instance 'semantic-edge :from (nth 0 nodes) :to (nth 1 nodes)
+                                                         :weight *weight-syntactic-connection*
+                                                         :element-origin :unknown-token)))))
+        (otherwise
+         (list (list (make-instance 'semantic-node :label (candies:join-strings
+                                                           *prefix-unknown-token*
+                                                           (cl-conllu:token-lemma input-token))
+                                                   :element-origin :unknown-token))
+               (list (make-instance 'semantic-edge :from (nth 0 nodes) :to (nth 1 nodes)
+                                                   :weight *weight-syntactic-connection*
+                                                   :element-origin :unknown-token)))))
+    ;; for a null representation:
+    (list nil nil)))
 
 (defun token->semantic-representation (input-token)
   "You get a list of two: a list of nodes and a list of edges."
@@ -109,7 +143,7 @@
   (let ((explication))
     (or explication
         ;; one node, no edges:
-        (list (unknown-token->semantic-node input-token) nil))))
+         (unknown-token->semantic-graph input-token))))
 
 (defun deprel->label (deprel)
   (error "not implemented"))
@@ -137,7 +171,7 @@
       (push (make-instance 'semantic-edge
                            :from (semantic-root (gethash (cl-conllu:token-head token) token-id->representation))
                            :to (semantic-root (gethash (cl-conllu:token-id token) token-id->representation))
-                           :origin :syntax
+                           :element-origin :syntax
                            :label (deprel->label (cl-conllu:token-deprel token))
                            :weight *weight-syntactic-connection*)
             (graph-edges result-graph))))
