@@ -11,6 +11,12 @@
 ;;;(cl-conllu:sentence-tokens (fifth *sents*))
 ;;;(cl-conllu:sentence-binary-tree (fifth *sents*))
 ;;;(conllu.draw:tree-sentence (fourth *sents*))
+;;;
+;;;(remove-duplicates (reduce #'append (mapcar (lambda (s) (mapcar (lambda (tk) (cl-conllu:token-deprel tk)) (cl-conllu:sentence-tokens s))) *sents*)) :test #'equalp)
+;;; -> ("prt" "acl" "poss" "attr" "relcl" "xcomp" "ccomp" "nsubjpass" "auxpass"
+;;; "pcomp" "agent" "subtok" "appos" "aux" "mark" "advcl" "acomp" "dobj" "nsubj"
+;;; "advmod" "amod" "compound" "npadvmod" "punct" "neg" "ROOT" "cc" "conj" "prep"
+;;; "det" "pobj")
 
 (deftype element-origin () '(member :explication :unknown-token :syntax))
 
@@ -43,7 +49,7 @@
 
 (setf (symbol-function 'graph-nodes) #'first) ; wrap functions semantically
 (setf (symbol-function 'graph-edges) #'second)
-;; TODO TODO probably the root for verbs is their pred??
+;; TODO TODO probably the root for verbs is their pred?? (maybe sit)
 (setf (symbol-function 'semantic-root) #'first)
 
 (defun designated-subj (graph-lists)
@@ -65,20 +71,44 @@
 ;; See:
 ;; https://universaldependencies.org/u/dep/all.html
 ;; https://github.com/clir/clearnlp-guidelines/blob/master/md/specifications/dependency_labels.md
+;; TODO TODO add the optional third element - proxy semantic node
 (defparameter *deprel->graph-places*
   (alexandria:alist-hash-table
    (list
+    "acl" '(#'semantic-root #'designated-obj) ; clausal modifier tends to be an obj, but we need to consult surroundings
+    "advcl" '(#'designated-sit #'semantic-root) ; at least judging by UD's examples
     "advmod" '(#'designated-pred #'semantic-root)
+    "agent" '(#'semantic-root #'semantic-root) ; most often "by"?
+    "acomp" '(#'semantic-root #'semantic-root)
     "amod" '(#'semantic-root #'semantic-root)
+    ;; NOTE probably should be proxied by a they_be_them
+    "appos" '(#'semantic-root #'semantic-root)
+    "attr" '(#'semantic-root #'semantic-root)
+    "aux" '(#'designated-pred #'semantic-root)
+    "auxpass" '(#'designated-pred #'semantic-root)
+    ;; NOTE coordinating conjunction, should proxy the conj relation in question
+    "cc" '(#'semantic-root #'semantic-root)
+    "conj" '(#'semantic-root #'semantic-root)
+    "ccomp" '(#'designated-obj #'semantic-root)
+    "compound" '(#'semantic-root #'semantic-root)
     "det" '(#'semantic-root #'semantic-root)
     "dobj" '(#'designated-obj #'semantic-root)
     "mark" '(#'semantic-root #'semantic-root) ; ??
     "neg" '(#'semantic-root #'semantic-root)
+    "npadvmod" '(#'semantic-root #'semantic-root) ; no legitimate case seen
+    "npmod" '(#'semantic-root #'semantic-root) ; no legitimate case seen
     "nsubj" '(#'designated-subj #'semantic-root)
+    "nsubj" '(#'designated-subj #'semantic-root) ; semantically passive, dubious
     "pcomp" '(#'semantic-root #'semantic-root)
     "pobj" '(#'semantic-root #'semantic-root) ; can also lead to verbals
+    "poss" '(#'semantic-root #'semantic-root)
+    "prt" '(#'semantic-root #'semantic-root) ; particle verbs, dubious
     "prep" '(#'semantic-root #'semantic-root)
+    "punct" '(#'semantic-root #'semantic-root) ; dead in practice
     "relcl" '(#'designated-subj #'semantic-root)
+    "subtok" '(#'designated-subj #'semantic-root)
+    ;; it's possible that we want to plug into sit in verbals? NOTE also through __quote?
+    "xcomp" '(#'designated-obj #'semantic-root)
     ))
    :test #'equal))
 
