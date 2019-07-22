@@ -71,7 +71,7 @@
 ;; See:
 ;; https://universaldependencies.org/u/dep/all.html
 ;; https://github.com/clir/clearnlp-guidelines/blob/master/md/specifications/dependency_labels.md
-;; TODO TODO add the optional third element - proxy semantic node
+;; TODO TODO add the label, and? the optional third element - proxy semantic node
 (defparameter *deprel->graph-places*
   (alexandria:alist-hash-table
    (list
