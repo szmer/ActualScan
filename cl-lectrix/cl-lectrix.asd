@@ -4,8 +4,7 @@
   :author "Therminsley"
 
   :depends-on ("alexandria" "candies" "cl-conllu")
-  :components ((:module "lectrix" :components ((:file "main")
-                                               (:file "validation")))
+  :components ((:module "lectrix" :components ((:file "main")))
                ))
 
 (defpackage :cl-lectrix
