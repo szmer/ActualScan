@@ -1,9 +1,6 @@
 (declaim (optimize (debug 3)))
 (in-package :cl-lectrix)
 
-;; needed candies:
-;; collecting/returning maphash
-
 (defparameter *conll-file* #p"/home/szymon/lingwy/therminsley/lectrix/spacy_parsing/test_conlls.conll")
 (defparameter *conll-file-lg* #p"/home/szymon/lingwy/therminsley/lectrix/spacy_parsing/test_conlls.conll")
 (defparameter *conll-file-clear* #p"/home/szymon/lingwy/therminsley/lectrix/spacy_parsing/input_utterances.txt.nlp")
@@ -18,15 +15,16 @@
 ;;; "advmod" "amod" "compound" "npadvmod" "punct" "neg" "ROOT" "cc" "conj" "prep"
 ;;; "det" "pobj")
 
-(deftype element-origin () '(member :explication :unknown-token :syntax))
-
-(defun weight->purpose (weight)
-  (declare (type (weight real)))
-  (ecase weight
-    (1.0 "explication - definition")
-    (0.8 "explication - prototype")
-    (0.5 "syntactic connection")))
-(defparameter *weight-syntactic-connection* 0.5)
+(deftype element-origin () '(member
+                             :explication-definition
+                             :explication-prototype
+                             :unknown-token
+                             :syntax))
+(defparameter *origin->edge-weight*
+  (list '(:explication-definition 1.0)
+        '(:explication-prototype 0.8)
+        '(:unknown-token 0.55)
+        '(:syntax 0.5))
 
 (candies:@define-class-with-accessors@ semantic-node ()
     ((label :type symbol) (origin :type element-origin)
@@ -97,7 +95,7 @@ assuming that we have no definition for that term."
                                                                :element-origin :unknown-token))))
                 (list nodes
                       (list (make-instance 'semantic-edge :from (nth 0 nodes) :to (nth 1 nodes)
-                                           :weight *weight-syntactic-connection*
+                                           :weight (cdr (assoc :syntax *origin->edge-weight*))
                                                           :element-origin :unknown-token)))))
         (propn (let ((nodes (list (make-instance 'semantic-node :label "something"
                                                                :element-origin :unknown-token)
@@ -107,7 +105,7 @@ assuming that we have no definition for that term."
                                                                :element-origin :unknown-token))))
                 (list nodes
                       (list (make-instance 'semantic-edge :from (nth 0 nodes) :to (nth 1 nodes)
-                                                          :weight *weight-syntactic-connection*
+                                                          :weight (cdr (assoc :syntax *origin->edge-weight*))
                                                           :element-origin :unknown-token)))))
         (adj (let ((nodes (list (make-instance 'semantic-node :label "__they_be_"
                                                               :verbal? t
@@ -118,7 +116,7 @@ assuming that we have no definition for that term."
                                                               :element-origin :unknown-token))))
                (list nodes
                      (list (make-instance 'semantic-edge :from (nth 0 nodes) :to (nth 1 nodes)
-                                                         :weight *weight-syntactic-connection*
+                                                         :weight (cdr (assoc :syntax *origin->edge-weight*))
                                                          :element-origin :unknown-token)))))
         (otherwise
          (list (list (make-instance 'semantic-node :label (candies:join-strings
@@ -126,7 +124,7 @@ assuming that we have no definition for that term."
                                                            (cl-conllu:token-lemma input-token))
                                                    :element-origin :unknown-token))
                (list (make-instance 'semantic-edge :from (nth 0 nodes) :to (nth 1 nodes)
-                                                   :weight *weight-syntactic-connection*
+                                                   :weight (cdr (assoc :syntax *origin->edge-weight*))
                                                    :element-origin :unknown-token)))))
     ;; for a null representation:
     (list nil nil)))
