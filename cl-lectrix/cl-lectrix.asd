@@ -3,11 +3,6 @@
   :version "0.0.0"
   :author "Therminsley"
 
-  :depends-on ("alexandria" "candies" "cl-conllu")
+  :depends-on ("alexandria" "candies" "cl-conllu" "trivial-types")
   :components ((:module "lectrix" :components ((:file "main")))
                ))
-
-(defpackage :cl-lectrix
-  (:use :cl)
-  ;(:export)
-  )
