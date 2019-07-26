@@ -17,16 +17,29 @@
 ;;; "advmod" "amod" "compound" "npadvmod" "punct" "neg" "ROOT" "cc" "conj" "prep"
 ;;; "det" "pobj")
 
+;;;
+;;; Auxillary types.
+;;;
 (deftype element-creator () '(member
                              :explication-definition
                              :explication-prototype
                              :unknown-token
                              :syntax))
 (defparameter *creator->stalk-weight*
-  (list '(:explication-definition 1.0)
-        '(:explication-prototype 0.8)
-        '(:unknown-token 0.55)
-        '(:syntax 0.5)))
+  (alexandria:alist-hash-table
+   (list '(:explication-definition 1.0)
+         '(:explication-prototype 0.8)
+         '(:unknown-token 0.55)
+         '(:syntax 0.5))))
+
+(deftype direction () '(member :from :to))
+(defun opposite (direction)
+  (declare (type direction direction))
+  (ecase direction (:from :to) (:to :from)))
+
+;;;
+;;; Graph components.
+;;;
 
 (defclass seme ()
   ((label :reader seme-label :initarg :label :type symbol)
@@ -42,6 +55,11 @@
      (from :accessor stalk-from :initarg :from :type berry)
      (to :accessor stalk-to :initarg :to :type berry)))
 
+(defun stalk-connect (direction stalk target-berry)
+  (case direction
+    (:from (setf (stalk-from stalk) target-berry) stalk)
+    (:to (setf (stalk-to stalk) target-berry) stalk)))
+
 ;;
 ;; We represent a graph as a list of two lists: of berries and of stalks.
 ;; By convention, the first berry in the berry list is the root.
@@ -51,32 +69,65 @@
 (defparameter *prefix-proper-name-token* "==;")
 
 (defclass graph ()
-  ((berries :reader graph-berries :initarg :berries :type (proper-list berry))
-   (stalks :reader graph-stalks :initarg :stalks :type (proper-list stalks))))
+  ((berries :accessor graph-berries :initarg :berries :initform nil
+            :type (proper-list berry))
+   (stalks :accessor graph-stalks :initarg :stalks :initform nil
+           :type (proper-list stalks))))
 
-(defgeneric root (graph))
-(defmethod root ((graph graph)) (first (graph-berries graph)))
+(defun create-graph (creator berry-specs stalk-specs)
+  "Intended for new graphs. The creator applies for all created semes, and also
+for determining edge weights. Berries are defined by labels (optionally in a
+list with verbalp and obj-exit-p) and stalks by berry indices."
+  (let ((berries (mapcar
+                  (lambda (berry-spec)
+                    (let ((berry-spec (if (listp berry-spec) berry-spec
+                                          (list berry-spec))))
+                      (make-instance 'berry
+                                     :label (first berry-spec)
+                                     :creator creator
+                                     :verbalp (second berry-spec)
+                                     :obj-exit-p (third berry-spec))))
+                  berry-specs)))
+    (make-instance 'graph
+                   :berries berries
+                   :stalks (mapcar
+                            (lambda (stalk-spec)
+                              (make-instance 'stalk
+                                             :from (elt berries (first stalk-spec))
+                                             :to (elt berries (second stalk-spec))
+                                             :creator creator
+                                             :weight (gethash creator *creator->stalk-weight*)))
+                            stalk-specs))))
+
+(defun join-graphs (&rest graphs)
+  (make-instance 'graph
+                 :berries (reduce #'append (mapcar #'graph-berries graphs))
+                 :stalks (reduce #'append (mapcar #'graph-stalks graphs))))
+
+(defun graph-root (graph) (first (graph-berries graph)))
 
 ;;
 ;; Main semantic "exits" of the structures.
 ;;
-
-;; NOTE The root from a verbal berry defaults to pred.
-
-(defun subj-stalk (graph direction)
-  "Returns a stalk that can be used to plug into the semantic
-structure's sub (indicated in the :to property)."
-  (declare (type (graph direction graph direction)))
-  nil)
-
-(defun obj-stalk (graph direction)
-  nil)
-
-(defun pred-stalk (graph direction)
-  nil)
-
-(defun sit-stalk (graph direction)
-  nil)
+;;;===
+;;;===;; NOTE The root from a verbal berry defaults to pred.
+;;;===(defun graph-root-stalk (creator direction graph)
+;;;===  )
+;;;===
+;;;===(defun graph-subj-stalk (creator direction graph)
+;;;===  "Returns a stalk that can be used to plug into the semantic structure's sub
+;;;===(indicated in the :to property)."
+;;;===  (declare (type (creator direction graph creator direction graph)))
+;;;===  nil)
+;;;===
+;;;===(defun graph-obj-stalk (creator direction graph)
+;;;===  nil)
+;;;===
+;;;===(defun graph-pred-stalk (creator direction graph)
+;;;===  nil)
+;;;===
+;;;===(defun graph-sit-stalk (creator direction graph)
+;;;===  nil)
 
 ;;
 ;; Translation from CoNLL.
@@ -85,63 +136,49 @@ structure's sub (indicated in the :to property)."
 (defun unknown-token->graph (input-token)
   "Get a semantic graph that represents the input-token from a CoNNLU tree,
 assuming that we have no definition for that term."
-  (declare (type input-token conllu.rdf::token))
-  (let* ((universal-pos (candies:string->symbol (cl-conllu:token-upostag input-token)))))
-  (if (find universal-pos '(x sym punct intj aux part)) ; part is controversial, gotta extract the possessive somehow
-      (case universal-pos
-        (verb (list
-               (list (make-instance
-                      'berry
-                      :label (candies:join-strings "_they_" *prefix-unknown-token*
-                                                   (cl-conllu:token-lemma input-token)
-                                                   "_them")
-                      :verbalp t :obj-exit-p t :element-creator :unknown-token))
-               ()))
-        (noun (let ((berries (list (make-instance 'berry :label "something"
-                                                         :element-creator :unknown-token)
-                                   (make-instance 'berry :label (candies:join-strings
-                                                                 *prefix-unknown-token*
-                                                                 (cl-conllu:token-lemma input-token))
-                                                         :element-creator :unknown-token))))
-                (list berries
-                      (list (make-instance 'stalk :from (nth 0 berries) :to (nth 1 berries)
-                                                  :weight (cdr (assoc :syntax *creator->stalk-weight*))
-                                                  :element-creator :unknown-token)))))
-        (propn (let ((berries (list (make-instance 'berry :label "something"
-                                                          :element-creator :unknown-token)
-                                    ;; A proper noun doesn't have its label marked as unknown semantic
-                                    ;; component, we assume it to be a unique identifier.
-                                    (make-instance 'berry :label (cl-conllu:token-lemma input-token)
-                                                          :element-creator :unknown-token))))
-                 (list berries
-                       (list (make-instance 'stalk :from (nth 0 berries) :to (nth 1 berries)
-                                                   :weight (cdr (assoc :syntax *creator->stalk-weight*))
-                                                   :element-creator :unknown-token)))))
-        (adj (let ((berries (list (make-instance 'berry :label "__they_be_"
-                                                        :verbalp t
-                                                        :element-creator :unknown-token)
-                                  (make-instance 'berry :label (candies:join-strings
-                                                                *prefix-unknown-token*
-                                                                (cl-conllu:token-lemma input-token))
-                                                        :element-creator :unknown-token))))
-               (list berries
-                     (list (make-instance 'stalk :from (nth 0 berries) :to (nth 1 berries)
-                                                 :weight (cdr (assoc :syntax *creator->stalk-weight*))
-                                                 :element-creator :unknown-token)))))
-        (otherwise
-         (list (list (make-instance 'berry :label (candies:join-strings
-                                                   *prefix-unknown-token*
-                                                   (cl-conllu:token-lemma input-token))
-                                           :element-creator :unknown-token))
-               (list (make-instance 'stalk :from (nth 0 berries) :to (nth 1 berries)
-                                           :weight (cdr (assoc :syntax *creator->stalk-weight*))
-                                           :element-creator :unknown-token)))))
-      ;; for a null representation:
-      (list nil nil)))
+  (declare (type conllu.rdf::token input-token))
+  (let ((universal-pos (cl-conllu:token-upostag input-token)))
+    (apply
+     (alexandria:curry #'create-graph :unknown-token)
+     ;; part is controversial here, gotta extract the possessive somehow
+     (if (find universal-pos '("x" "sym" "punct" "intj" "aux" "part") :test #'equalp)
+         ;; for a null representation:
+         '(() ())
+         ;; otherwise build a proper graph:
+         (case universal-pos
+           (verb (list
+                  (list (cl-strings:join
+                         (list "_they_" *prefix-unknown-token*
+                               (cl-conllu:token-lemma input-token)
+                               "_them"))
+                        :verbalp :obj-exit-p)
+                  ()))
+           (noun (list
+                  (list "something"
+                        (cl-strings:join (list
+                                          *prefix-unknown-token*
+                                          (cl-conllu:token-lemma input-token))))
+                  '((0 1))))
+           (propn (list
+                   (list "something"
+                         ;; A proper noun doesn't have its label marked as unknown semantic
+                         ;; component, we assume it to be a unique identifier.
+                         (cl-conllu:token-lemma input-token))
+                   '((0 1))))
+           (adj (list
+                 (list "__they_be_"
+                       (cl-strings:join (list *prefix-unknown-token*
+                                              (cl-conllu:token-lemma input-token))))
+                 '((0 1))))
+           (otherwise (list
+                       (list (cl-strings:join
+                              (list *prefix-unknown-token*
+                                    (cl-conllu:token-lemma input-token))))
+                       '((0 1)))))))))
 
 (defun token->representation (input-token)
   "You get a list of two: a list of berries and a list of stalks."
-  (declare (type input-token conllu.rdf::token))
+  (declare (type conllu.rdf::token input-token))
   (let ((explication))
     (or explication
         ;; one berry, no stalks:
@@ -156,41 +193,40 @@ assuming that we have no definition for that term."
 ;; https://github.com/clir/clearnlp-guidelines/blob/master/md/specifications/dependency_labels.md
 ;;
 ;; This hashtable needs to show the (semantic) direction of the stalk and with which function to
-;; create it. If the stalk is between two verbal berries, we need to ensure the proper semantic direction
-;; with a proper intermediate `something' berry. Otherwise, we ignore the issue ???? (for now).
+;; create it.
 (defparameter *deprel->stalk-spec*
   (alexandria:alist-hash-table
    (list
     '("acl" '(:forward #'designated-obj)) ; clausal modifier tends to be an obj, but we need to consult surroundings in postpro
     '("advcl" '(:backward #'designated-sit)) ; at least judging by UD's examples
     '("advmod" '(:backward #'designated-pred))
-    '("agent" '(:forward #'root)) ; most often "by"?
-    '("acomp" '(:forward #'root))
-    '("amod" '(:forward #'root))
+    '("agent" '(:forward #'graph-root)) ; most often "by"?
+    '("acomp" '(:forward #'graph-root))
+    '("amod" '(:forward #'graph-root))
     ;; NOTE probably should be proxied by a they_be_them
-    '("appos" '(:forward #'root))
-    '("attr" '(:forward #'root))
+    '("appos" '(:forward #'graph-root))
+    '("attr" '(:forward #'graph-root))
     '("aux" '(:backward #'designated-pred))
     '("auxpass" '(:backward #'designated-pred))
     ;; NOTE coordinating conjunction, should proxy the conj relation in question (postprocessing))
-    '("cc" '(:forward #'root))
-    '("conj" '(:forward #'root))
+    '("cc" '(:forward #'graph-root))
+    '("conj" '(:forward #'graph-root))
     '("ccomp" '(:backward #'designated-obj))
-    '("compound" '(:forward #'root))
-    '("det" '(:forward #'root))
+    '("compound" '(:forward #'graph-root))
+    '("det" '(:forward #'graph-root))
     '("dobj" '(:backward #'designated-obj))
-    '("mark" '(:forward #'root)) ; ??
-    '("neg" '(:forward #'root))
-    '("npadvmod" '(:forward #'root)) ; no legitimate case seen
-    '("npmod" '(:forward #'root)) ; no legitimate case seen
+    '("mark" '(:forward #'graph-root)) ; ??
+    '("neg" '(:forward #'graph-root))
+    '("npadvmod" '(:forward #'graph-root)) ; no legitimate case seen
+    '("npmod" '(:forward #'graph-root)) ; no legitimate case seen
     '("nsubj" '(:backward #'designated-subj))
     '("nsubj" '(:backward #'designated-subj)) ; semantically passive, dubious
-    '("pcomp" '(:forward #'root))
-    '("pobj" '(:forward #'root)) ; can also lead to verbals
-    '("poss" '(:forward #'root))
-    '("prt" '(:forward #'root)) ; particle verbs, dubious
-    '("prep" '(:forward #'root))
-    '("punct" '(:forward #'root)) ; dead in practice
+    '("pcomp" '(:forward #'graph-root))
+    '("pobj" '(:forward #'graph-root)) ; can also lead to verbals
+    '("poss" '(:forward #'graph-root))
+    '("prt" '(:forward #'graph-root)) ; particle verbs, dubious
+    '("prep" '(:forward #'graph-root))
+    '("punct" '(:forward #'graph-root)) ; dead in practice
     '("relcl" '(:backward #'designated-subj))
     '("subtok" '(:backward #'designated-subj))
     ;; it's possible that we want to plug into sit in verbals? NOTE also through __quote?
@@ -198,63 +234,70 @@ assuming that we have no definition for that term."
     )
    :test #'equal))
 
-;; See the comment above on *deprel->stalk-spec*.
-(defun directed-connection (direction stalk-fun graph1 graph2)
-  "Returns semantic graph lists necessary to connect the two graphs."
-  (declare (type keyword direction) (type (function stalk-fun)))
-  (when (and (berry-verbalp (root graph1)) (berry-verbalp (root graph2)))
-    (let* ((proxy-berry (make-instance 'berry :label "something" :creator :syntax))
-           (empty-stalk (make-instance 'stalk :to proxy-berry :label "pred"))
-           (main-stalk (funcall stalk-fun (ccase direction (:forward graph2)
-                                                 (:backward graph1)))))
-      (setf (stalk-from main-stalk) proxy-berry)
-      (setf (stalk-from empty-stalk)
-            (root (ccase direction
-                    (:forward graph1)
-                    (:backward graph2))))
-      (list (list proxy-berry)
-            (list empty-stalk main-stalk)))
-    ;; The simple case, no verbals.
-    (list '() (list stalk))))
+;; If the stalk is between two verbal berries, we need to ensure the proper semantic direction
+;; with a proper intermediate `something` berry. Otherwise, we ignore the issue ???? (for now).
+(defun connection-graph (stalk-fun direction from-graph to-graph)
+  "Returns a graph necessary to connect the two graphs."
+  (declare (type keyword direction) (type function stalk-fun)
+           (type graph from-graph to-graph))
+  (let ((main-stalk (funcall stalk-fun :syntax direction to-graph)))
+    (if (and (berry-verbalp (graph-root from-graph))
+             (berry-verbalp (graph-root to-graph)))
+        (let ((proxy-berry (make-instance 'berry :label "something" :creator :syntax))
+              (proxy-stalk (graph-pred-stalk :syntax (opposite direction) from-graph)))
+          (make-instance 'graph
+                         :berries (list proxy-berry)
+                         ;; Connect the proxy berry to the main graphs.
+                         :stalks (list (stalk-connect direction proxy-stalk proxy-berry)
+                                       (stalk-connect (opposite direction) main-stalk
+                                                      proxy-berry))))
+        ;; The simple case, no verbals.
+        (make-instance 'graph
+                       :berries ()
+                       :stalks (list
+                                (stalk-connect
+                                 (opposite direction)
+                                 main-stalk
+                                 (graph-root from-graph)))))))
 
 (defun token-tree->representation (tree)
-  (declare (type tree list))
+  (declare (type list tree))
   (let ((token-id->representation (make-hash-table))
         (result-graph (list nil nil))
         ;; We can guarantee that the children will appear later in the tree than their parents.
-        (token-order)))
-  ;; Collecting unit representations.
-  (do* ((subtrees (rest tree)) ; start with the root's relation (we don't use string deprels)
-        (current-subtree (pop subtrees) (pop subtrees)))
-       ((null subtree))
-    (etypecase subtree
-      (string nil)
-      (list (setf subtrees (append subtrees subtree)))
-      (cl-conllu::token
-       (setf (gethash (cl-conllu:token-id subtree) token-id->representation)
-             (token->representation subtree))
-       (push subtree token-order))))
-  ;; Stalks between units.
-  (dolist (token token-order)
-    (when (not (zerop (cl-conllu:token-head token))) ; skip the root, obviously
-      (let ((connection-graph
-              (apply #'directed-connection
-                     (append
-                      ;; The direction and stalk-producing function.
-                      (gethash (cl-conllu:token-deprel token) *deprel->stalk-spec*)
-                      ;; From the head to this token.
-                      (list (gethash (cl-conllu:token-head token) token-id->representation)
-                            (gethash (cl-conllu:token-id token) token-id->representation)))))))
-      (rplacd (graph-berries result-graph) (cons (graph-berries connection-graph)
-                                                 (cdr (graph-berries result-graph))))
-      (setf (graph-stalks result-graph) (cons (graph-stalks connection-graph)
-                                              (graph-stalks result-graph)))))
-  ;; Collapse all representations.
-  (maphash (lambda (id representation)
-             (declare (ignore id))
-             (setf (graph-berries result-graph) ; berries
-                   (cons (graph-berries representation) (graph-berries result-graph)))
-             (setf (graph-stalks result-graph) ; stalks
-                   (cons (graph-stalks representation) (graph-stalks result-graph))))
-           token-id->representation)
-  result-graph)
+        (token-order))
+    ;; Collecting unit representations.
+    (do* ((subtrees (rest tree)) ; start with the root's relation (we don't use string deprels)
+          (current-subtree (pop subtrees) (pop subtrees)))
+         ((null current-subtree))
+      (etypecase current-subtree
+        (string nil)
+        (list (setf subtrees (append subtrees current-subtree)))
+        (cl-conllu::token
+         (setf (gethash (cl-conllu:token-id current-subtree) token-id->representation)
+               (token->representation current-subtree))
+         (push current-subtree token-order))))
+    ;; Stalks between units.
+    (dolist (token token-order)
+      (when (not (zerop (cl-conllu:token-head token))) ; skip the root, obviously
+        (let* ((from-graph (gethash (cl-conllu:token-head token) token-id->representation))
+               (to-graph (gethash (cl-conllu:token-id token) token-id->representation))
+               (connected-graph
+                 (join-graphs from-graph to-graph
+                              (apply #'connection-graph
+                                     (append
+                                      ;; the direction and stalk relation function are defined
+                                      ;; globally
+                                      (gethash (cl-conllu:token-deprel token)
+                                               *deprel->stalk-spec*)
+                                      (list from-graph to-graph))))))
+          (setf from-graph connected-graph to-graph connected-graph))))
+    ;; Collapse all representations.
+    (maphash (lambda (id representation)
+               (declare (ignore id))
+               (setf (graph-berries result-graph) ; berries
+                     (cons (graph-berries representation) (graph-berries result-graph)))
+               (setf (graph-stalks result-graph) ; stalks
+                     (cons (graph-stalks representation) (graph-stalks result-graph))))
+             token-id->representation)
+    result-graph))

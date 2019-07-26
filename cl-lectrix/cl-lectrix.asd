@@ -3,6 +3,6 @@
   :version "0.0.0"
   :author "Therminsley"
 
-  :depends-on ("alexandria" "candies" "cl-conllu" "trivial-types")
+  :depends-on ("alexandria" "candies" "cl-conllu" "cl-strings" "trivial-types")
   :components ((:module "lectrix" :components ((:file "main")))
                ))
