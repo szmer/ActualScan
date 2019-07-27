@@ -179,9 +179,8 @@ assuming that we have no definition for that term."
 (defun token->representation (input-token)
   "You get a list of two: a list of berries and a list of stalks."
   (declare (type conllu.rdf::token input-token))
-  (let ((explication))
-    (or explication
-        ;; one berry, no stalks:
+  (let ((official-form))
+    (or official-form ; don't expand to the explanation on default
         (unknown-token->graph input-token))))
 
 ;;
@@ -261,25 +260,26 @@ assuming that we have no definition for that term."
                                  (graph-root from-graph)))))))
 
 (defun token-tree->representation (tree)
+  "The function expects the output from cl-conllu:sentence-binary-tree."
   (declare (type list tree))
   (let ((token-id->representation (make-hash-table))
-        (result-graph (list nil nil))
-        ;; We can guarantee that the children will appear later in the tree than their parents.
+        ;; The properly ordered list of token objects (guarantee that the children will appear
+        ;; later in the tree than their parents). The first item will be the root.
         (token-order))
-    ;; Collecting unit representations.
+    ;; Collect unit representations, descending down the tree in depth-first fashion.
     (do* ((subtrees (rest tree)) ; start with the root's relation (we don't use string deprels)
           (current-subtree (pop subtrees) (pop subtrees)))
          ((null current-subtree))
       (etypecase current-subtree
-        (string nil)
-        (list (setf subtrees (append subtrees current-subtree)))
-        (cl-conllu::token
+        (string nil) ; the in-tree deprel annotations, ignore them
+        (list (setf subtrees (append subtrees current-subtree))) ; intermediate nodes
+        (cl-conllu::token ; leaves - retrieve the representation, place in the node order
          (setf (gethash (cl-conllu:token-id current-subtree) token-id->representation)
                (token->representation current-subtree))
          (push current-subtree token-order))))
     ;; Stalks between units.
     (dolist (token token-order)
-      (when (not (zerop (cl-conllu:token-head token))) ; skip the root, obviously
+      (when (not (zerop (cl-conllu:token-head token))) ; skip the root in merging up
         (let* ((from-graph (gethash (cl-conllu:token-head token) token-id->representation))
                (to-graph (gethash (cl-conllu:token-id token) token-id->representation))
                (connected-graph
@@ -292,12 +292,5 @@ assuming that we have no definition for that term."
                                                *deprel->stalk-spec*)
                                       (list from-graph to-graph))))))
           (setf from-graph connected-graph to-graph connected-graph))))
-    ;; Collapse all representations.
-    (maphash (lambda (id representation)
-               (declare (ignore id))
-               (setf (graph-berries result-graph) ; berries
-                     (cons (graph-berries representation) (graph-berries result-graph)))
-               (setf (graph-stalks result-graph) ; stalks
-                     (cons (graph-stalks representation) (graph-stalks result-graph))))
-             token-id->representation)
-    result-graph))
+    ;; At the end, the root should contain the whole representation
+    (gethash (first token-order) token-id->representation)))
