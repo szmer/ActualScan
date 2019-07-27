@@ -49,6 +49,9 @@
   ((verbalp :reader berry-verbalp :initarg verbalp :initform nil :type boolean)
    ;; important if this is a verbal, whether it takes an obj exit:
    (obj-exit-p :reader berry-obj-exit-p :initarg obj-exit-p :initform nil :type boolean)
+   (stalks :accessor berry-stalks :initform nil :type list)
+   ;;
+   ;; Valence correction slots.
    (valence-instructions :reader berry-valence-instructions :initarg valence-instructions
                          :initform nil :type list)
    ;; this is set to t after valence correcting is ran, which should execute all instructions
@@ -60,10 +63,40 @@
      (from :accessor stalk-from :initarg :from :type berry)
      (to :accessor stalk-to :initarg :to :type berry)))
 
+(defun stalk-not-registered-p (prospective-stalk)
+  "Check that the berry led to has no existing stalk from the origin berry, and vice versa."
+  ;; We have to check both stalk lists to prevent pushing the stalk if it appears on one
+  ;; of them.
+  (and (not (find-if (lambda (stalk) (eq (stalk-from prospective-stalk)
+                                         (stalk-from stalk)))
+                     (berry-stalks (stalk-to prospective-stalk))))
+       (not (find-if (lambda (stalk) (eq (stalk-to prospective-stalk)
+                                         (stalk-to stalk)))
+                     (berry-stalks (stalk-from prospective-stalk))))))
+
+(defun register-stalk (prospective-stalk)
+  "Ensure that the stalk is added to the adjacency lists of its berries. We raise a recoverable
+error if a stalk between the berries already exists. Returns the stalk."
+  (if (stalk-not-registered-p prospective-stalk)
+      (progn
+        (push prospective-stalk (berry-stalks (stalk-from prospective-stalk)))
+        (push prospective-stalk (berry-stalks (stalk-to prospective-stalk)))
+        prospective-stalk)
+      (cerror "a stalk already exists between berries" prospective-stalk)))
+
+(defun connect-with-stalk (berry1 berry2 creator &key (label ""))
+  "Connects both nodes with a fresh stalk and adjoins it to their adjacency lists. The stalk is
+  returned. We raise a recoverable error if a stalk between the berries already exists."
+  (let ((stalk (make-instance 'stalk :from berry1 :to berry2 :label label
+                                     :creator creator
+                                     :weight (gethash creator *creator->stalk-weight*))))
+    (register-stalk stalk)))
+
 (defun stalk-connect (direction stalk target-berry)
   (case direction
     (:from (setf (stalk-from stalk) target-berry) stalk)
-    (:to (setf (stalk-to stalk) target-berry) stalk)))
+    (:to (setf (stalk-to stalk) target-berry) stalk))
+  (register-stalk stalk))
 
 ;;
 ;; We represent a graph as a list of two lists: of berries and of stalks.
@@ -97,42 +130,48 @@ by berry indices."
                    :berries berries
                    :stalks (mapcar
                             (lambda (stalk-spec)
-                              (make-instance 'stalk
-                                             :from (elt berries (first stalk-spec))
-                                             :to (elt berries (second stalk-spec))
-                                             :creator creator
-                                             :weight (gethash creator *creator->stalk-weight*)))
+                              (connect-with-stalk (nth (first stalk-spec) berries)
+                                                  (nth (second stalk-spec) berries)
+                                                  creator
+                                                  :label (or (third stalk-spec) "")))
                             stalk-specs))))
 
-(defun join-graphs (&rest graphs)
+(defun concatenate-graphs (&rest graphs)
+  "Return a graph object concatenating graphs' berry and stalk lists. No actual connection check is
+performed. The first graph's root becomes the root of the result."
   (make-instance 'graph
                  :berries (reduce #'append (mapcar #'graph-berries graphs))
                  :stalks (reduce #'append (mapcar #'graph-stalks graphs))))
 
-;; NOTE the extensive use of nth here (bad complexity!)
-(defun nearest-from (graph berry-index test-function)
-  "Return the nearest berry that satisties the test-function and its index as the second value.
-  Return nil nil if no such berry can be find. The exact berry returned is undefined if there are
-  multiple nearest ones that satisfy the test-function."
-  (do* ((paths (mapcar #'list ; wrap to make it a path of (later) many connections
-                      (remove-if-not (lambda (berry-pair) (= (first berry-pair) berry-index))
-                                     (graph-stalks graph))))
+(defun nearest-from (start-berry test-function &key (backwards-to-root-p nil))
+  "Return the nearest berry that satisties the test-function. Unless backwards-to-root-p, we move
+ only with stalks away from the root (or towards it otherwise). Return nil if no such berry can be
+ find. The exact berry returned is undefined if there are multiple nearest ones that satisfy the
+ test-function."
+  (do* ((stalk-forward-function (if backwards-to-root-p #'stalk-to #'stalk-from))
+        ;; Paths = individual stalks leading us "forward". We don't need to store trails, since we
+        ;; move in one direction in a graph guaranteed to accomodate for that.
+        (paths
+         ;; remove stalks that would move us backwards.
+         (remove-if (lambda (stalk) (eq (funcall stalk-forward-function stalk)
+                                        start-berry))
+                    (berry-stalks start-berry)))
         (current-path (pop paths) (pop paths)))
-      ((not current-path) (values nil nil)) ; the not found case
+       ((not current-path) (values nil nil)) ; the not found case
     ;; If we are sure that a current-path exists, we can extract the next berry it leads to.
-    (let* ((next-berry-index (cadr current-path))
-           (next-berry (nth next-berry-index current-path)))
+    (let* ((next-berry (funcall stalk-forward-function current-path)))
       (if (funcall test-function next-berry)
           ;; The success return:
-          (return-from nearest-from (values next-berry next-berry-index))
+          (return-from nearest-from next-berry)
           (setf paths
                 ;; Append new paths leading from the next-berry at the end, to ensure a
                 ;; breadth-first search.
                 (append paths
-                        (mapcar (lambda (berry-pair) (cons berry-pair current-path))
-                                (remove-if-not (lambda (berry-pair) (= (first berry-pair)
-                                                                       berry-index))
-                                               (graph-stalks graph)))))))))
+                        ;; remove stalks that would move us backwards.
+                        (remove-if (lambda (stalk) (eq (funcall stalk-forward-function
+                                                                stalk)
+                                                       next-berry))
+                                   (berry-stalks next-berry))))))))
 
 ;;
 ;; Main semantic "exits" of the structures.
@@ -142,16 +181,19 @@ by berry indices."
 ;;
 
 (defmacro define-graph-stalk-function (exit-name &key stalk-label)
-  "Provided that the graph-(exit-name) function exists, define a function graph-(exit-name)-stalk
-returning a stalk with (creator direction graph) arguments, which, in case the important berry is a
-verbal, is properly labeled - with the exit-name by default."
+  "Provided that the graph-(exit-name) function exists, define a function
+graph-(exit-name)-dangling-stalk returning a dangling stalk to/from the exit in question with
+(creator direction graph) arguments, which, in case the important berry is a verbal, is properly
+labeled - with the exit-name by default."
   (let ((exit-function-symbol
           (read-from-string (concatenate 'string "graph-" exit-name "-berry"))))
     `(defun
          ;; assemble the function name
-         ,(read-from-string (concatenate 'string "graph-" exit-name "-stalk"))
+         ,(read-from-string (concatenate 'string "graph-" exit-name "-dangling-stalk"))
          ;; the arguments:
          (creator direction graph)
+       "Return a dangling stalk from/to the graph's exit. It should be completed with the
+connect-stalk function."
        (let ((important-berry (,exit-function-symbol graph)))
          (if (berry-verbalp important-berry)
              ;; (note that we use the direction as source of the appropriate keyword argument)
@@ -174,21 +216,22 @@ verbal, is properly labeled - with the exit-name by default."
       (graph-root-berry graph)
       ;; Technically it can be a *something* plugged into some verbal, but the verbal must be
       ;; equivalent to it per our graph representation semantics.
-      (or (nearest-from graph 0 #'berry-verbalp)
+      ;; TODO alternatively search for this something with a good test predicate?
+      (or (nearest-from (graph-root-berry graph) #'berry-verbalp)
           (error "don't know how to extract obj from the graph"))))
 (define-graph-stalk-function "obj")
 
 (defun graph-pred-berry (graph)
   (if (berry-verbalp (graph-root-berry graph))
       (graph-root-berry graph)
-      (or (nearest-from graph 0 #'berry-verbalp)
+      (or (nearest-from (graph-root-berry graph) #'berry-verbalp)
           (error "don't know how to extract pred from the graph"))))
 (define-graph-stalk-function "pred")
 
 (defun graph-sit-berry (graph)
   (if (berry-verbalp (graph-root-berry graph))
       (graph-root-berry graph)
-      (or (nearest-from graph 0 #'berry-verbalp)
+      (or (nearest-from (graph-root-berry graph) #'berry-verbalp)
           (error "don't know how to extract sit from the graph"))))
 (define-graph-stalk-function "sit")
 
@@ -346,7 +389,7 @@ assuming that we have no definition for that term."
         (let* ((from-graph (gethash (cl-conllu:token-head token) token-id->representation))
                (to-graph (gethash (cl-conllu:token-id token) token-id->representation))
                (connected-graph
-                 (join-graphs from-graph to-graph
+                 (concatenate-graphs from-graph to-graph
                               (apply #'connection-graph
                                      (append
                                       ;; the direction and stalk relation function are defined
