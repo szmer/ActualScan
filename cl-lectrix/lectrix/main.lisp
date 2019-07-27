@@ -48,7 +48,12 @@
 (defclass berry (seme)
   ((verbalp :reader berry-verbalp :initarg verbalp :initform nil :type boolean)
    ;; important if this is a verbal, whether it takes an obj exit:
-   (obj-exit-p :reader berry-obj-exit-p :initarg obj-exit-p :initform nil :type boolean)))
+   (obj-exit-p :reader berry-obj-exit-p :initarg obj-exit-p :initform nil :type boolean)
+   (valence-instructions :reader berry-valence-instructions :initarg valence-instructions
+                         :initform nil :type list)
+   ;; this is set to t after valence correcting is ran, which should execute all instructions
+   ;; from the appropriate slot
+   (valence-corrected :accessor berry-valence-corrected :initform nil :type boolean)))
 
 (defclass stalk (seme)
     ((weight :reader stalk-weight :initarg :weight :type real)
@@ -75,9 +80,9 @@
            :type (proper-list stalks))))
 
 (defun create-graph (creator berry-specs stalk-specs)
-  "Intended for new graphs. The creator applies for all created semes, and also
-for determining edge weights. Berries are defined by labels (optionally in a
-list with verbalp and obj-exit-p) and stalks by berry indices."
+  "Intended for new graphs. The creator applies for all created semes, and also for determining edge
+weights. Berries are defined by labels (optionally in a list with verbalp and obj-exit-p) and stalks
+by berry indices."
   (let ((berries (mapcar
                   (lambda (berry-spec)
                     (let ((berry-spec (if (listp berry-spec) berry-spec
@@ -104,30 +109,88 @@ list with verbalp and obj-exit-p) and stalks by berry indices."
                  :berries (reduce #'append (mapcar #'graph-berries graphs))
                  :stalks (reduce #'append (mapcar #'graph-stalks graphs))))
 
-(defun graph-root (graph) (first (graph-berries graph)))
+;; NOTE the extensive use of nth here (bad complexity!)
+(defun nearest-from (graph berry-index test-function)
+  "Return the nearest berry that satisties the test-function and its index as the second value.
+  Return nil nil if no such berry can be find. The exact berry returned is undefined if there are
+  multiple nearest ones that satisfy the test-function."
+  (do* ((paths (mapcar #'list ; wrap to make it a path of (later) many connections
+                      (remove-if-not (lambda (berry-pair) (= (first berry-pair) berry-index))
+                                     (graph-stalks graph))))
+        (current-path (pop paths) (pop paths)))
+      ((not current-path) (values nil nil)) ; the not found case
+    ;; If we are sure that a current-path exists, we can extract the next berry it leads to.
+    (let* ((next-berry-index (cadr current-path))
+           (next-berry (nth next-berry-index current-path)))
+      (if (funcall test-function next-berry)
+          ;; The success return:
+          (return-from nearest-from (values next-berry next-berry-index))
+          (setf paths
+                ;; Append new paths leading from the next-berry at the end, to ensure a
+                ;; breadth-first search.
+                (append paths
+                        (mapcar (lambda (berry-pair) (cons berry-pair current-path))
+                                (remove-if-not (lambda (berry-pair) (= (first berry-pair)
+                                                                       berry-index))
+                                               (graph-stalks graph)))))))))
 
 ;;
 ;; Main semantic "exits" of the structures.
 ;;
-;;;===
-;;;===;; NOTE The root from a verbal berry defaults to pred.
-;;;===(defun graph-root-stalk (creator direction graph)
-;;;===  )
-;;;===
-;;;===(defun graph-subj-stalk (creator direction graph)
-;;;===  "Returns a stalk that can be used to plug into the semantic structure's sub
-;;;===(indicated in the :to property)."
-;;;===  (declare (type (creator direction graph creator direction graph)))
-;;;===  nil)
-;;;===
-;;;===(defun graph-obj-stalk (creator direction graph)
-;;;===  nil)
-;;;===
-;;;===(defun graph-pred-stalk (creator direction graph)
-;;;===  nil)
-;;;===
-;;;===(defun graph-sit-stalk (creator direction graph)
-;;;===  nil)
+;; NOTE all these follow a simple-minded approach, that can be then corrected with valence
+;; instructions.
+;;
+
+(defmacro define-graph-stalk-function (exit-name &key stalk-label)
+  "Provided that the graph-(exit-name) function exists, define a function graph-(exit-name)-stalk
+returning a stalk with (creator direction graph) arguments, which, in case the important berry is a
+verbal, is properly labeled - with the exit-name by default."
+  (let ((exit-function-symbol
+          (read-from-string (concatenate 'string "graph-" exit-name "-berry"))))
+    `(defun
+         ;; assemble the function name
+         ,(read-from-string (concatenate 'string "graph-" exit-name "-stalk"))
+         ;; the arguments:
+         (creator direction graph)
+       (let ((important-berry (,exit-function-symbol graph)))
+         (if (berry-verbalp important-berry)
+             ;; (note that we use the direction as source of the appropriate keyword argument)
+             (make-instance 'stalk :creator creator (the keyword direction) important-berry)
+             (make-instance 'stalk :creator creator (the keyword direction) important-berry
+                            :label ,(or stalk-label exit-name)))))))
+
+(defun graph-root-berry (graph) (first (graph-berries graph)))
+(define-graph-stalk-function "root" :stalk-label "pred")
+
+(defun graph-subj-berry (graph)
+  (if (or (berry-verbalp (graph-root-berry graph))
+          (equalp "something" (seme-label (graph-root-berry graph))))
+      (graph-root-berry graph)
+      (error "don't know how to extract subj from the graph")))
+(define-graph-stalk-function "subj")
+
+(defun graph-obj-berry (graph)
+  (if (berry-verbalp (graph-root-berry graph))
+      (graph-root-berry graph)
+      ;; Technically it can be a *something* plugged into some verbal, but the verbal must be
+      ;; equivalent to it per our graph representation semantics.
+      (or (nearest-from graph 0 #'berry-verbalp)
+          (error "don't know how to extract obj from the graph"))))
+(define-graph-stalk-function "obj")
+
+(defun graph-pred-berry (graph)
+  (if (berry-verbalp (graph-root-berry graph))
+      (graph-root-berry graph)
+      (or (nearest-from graph 0 #'berry-verbalp)
+          (error "don't know how to extract pred from the graph"))))
+(define-graph-stalk-function "pred")
+
+(defun graph-sit-berry (graph)
+  (if (berry-verbalp (graph-root-berry graph))
+      (graph-root-berry graph)
+      (or (nearest-from graph 0 #'berry-verbalp)
+          (error "don't know how to extract sit from the graph"))))
+(define-graph-stalk-function "sit")
 
 ;;
 ;; Translation from CoNLL.
@@ -199,33 +262,33 @@ assuming that we have no definition for that term."
     '("acl" '(:forward #'designated-obj)) ; clausal modifier tends to be an obj, but we need to consult surroundings in postpro
     '("advcl" '(:backward #'designated-sit)) ; at least judging by UD's examples
     '("advmod" '(:backward #'designated-pred))
-    '("agent" '(:forward #'graph-root)) ; most often "by"?
-    '("acomp" '(:forward #'graph-root))
-    '("amod" '(:forward #'graph-root))
+    '("agent" '(:forward #'graph-root-berry)) ; most often "by"?
+    '("acomp" '(:forward #'graph-root-berry))
+    '("amod" '(:forward #'graph-root-berry))
     ;; NOTE probably should be proxied by a they_be_them
-    '("appos" '(:forward #'graph-root))
-    '("attr" '(:forward #'graph-root))
+    '("appos" '(:forward #'graph-root-berry))
+    '("attr" '(:forward #'graph-root-berry))
     '("aux" '(:backward #'designated-pred))
     '("auxpass" '(:backward #'designated-pred))
     ;; NOTE coordinating conjunction, should proxy the conj relation in question (postprocessing))
-    '("cc" '(:forward #'graph-root))
-    '("conj" '(:forward #'graph-root))
+    '("cc" '(:forward #'graph-root-berry))
+    '("conj" '(:forward #'graph-root-berry))
     '("ccomp" '(:backward #'designated-obj))
-    '("compound" '(:forward #'graph-root))
-    '("det" '(:forward #'graph-root))
+    '("compound" '(:forward #'graph-root-berry))
+    '("det" '(:forward #'graph-root-berry))
     '("dobj" '(:backward #'designated-obj))
-    '("mark" '(:forward #'graph-root)) ; ??
-    '("neg" '(:forward #'graph-root))
-    '("npadvmod" '(:forward #'graph-root)) ; no legitimate case seen
-    '("npmod" '(:forward #'graph-root)) ; no legitimate case seen
+    '("mark" '(:forward #'graph-root-berry)) ; ??
+    '("neg" '(:forward #'graph-root-berry))
+    '("npadvmod" '(:forward #'graph-root-berry)) ; no legitimate case seen
+    '("npmod" '(:forward #'graph-root-berry)) ; no legitimate case seen
     '("nsubj" '(:backward #'designated-subj))
     '("nsubj" '(:backward #'designated-subj)) ; semantically passive, dubious
-    '("pcomp" '(:forward #'graph-root))
-    '("pobj" '(:forward #'graph-root)) ; can also lead to verbals
-    '("poss" '(:forward #'graph-root))
-    '("prt" '(:forward #'graph-root)) ; particle verbs, dubious
-    '("prep" '(:forward #'graph-root))
-    '("punct" '(:forward #'graph-root)) ; dead in practice
+    '("pcomp" '(:forward #'graph-root-berry))
+    '("pobj" '(:forward #'graph-root-berry)) ; can also lead to verbals
+    '("poss" '(:forward #'graph-root-berry))
+    '("prt" '(:forward #'graph-root-berry)) ; particle verbs, dubious
+    '("prep" '(:forward #'graph-root-berry))
+    '("punct" '(:forward #'graph-root-berry)) ; dead in practice
     '("relcl" '(:backward #'designated-subj))
     '("subtok" '(:backward #'designated-subj))
     ;; it's possible that we want to plug into sit in verbals? NOTE also through __quote?
@@ -240,8 +303,8 @@ assuming that we have no definition for that term."
   (declare (type keyword direction) (type function stalk-fun)
            (type graph from-graph to-graph))
   (let ((main-stalk (funcall stalk-fun :syntax direction to-graph)))
-    (if (and (berry-verbalp (graph-root from-graph))
-             (berry-verbalp (graph-root to-graph)))
+    (if (and (berry-verbalp (graph-root-berry from-graph))
+             (berry-verbalp (graph-root-berry to-graph)))
         (let ((proxy-berry (make-instance 'berry :label "something" :creator :syntax))
               (proxy-stalk (graph-pred-stalk :syntax (opposite direction) from-graph)))
           (make-instance 'graph
@@ -257,7 +320,7 @@ assuming that we have no definition for that term."
                                 (stalk-connect
                                  (opposite direction)
                                  main-stalk
-                                 (graph-root from-graph)))))))
+                                 (graph-root-berry from-graph)))))))
 
 (defun token-tree->representation (tree)
   "The function expects the output from cl-conllu:sentence-binary-tree."
