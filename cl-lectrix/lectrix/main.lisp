@@ -397,26 +397,79 @@ assuming that we have no definition for that term."
                                  main-stalk
                                  (graph-root-berry from-graph)))))))
 
-(defun token-tree->representation (tree)
+(defun sentence-semantic-token-order (sentence)
+  (let* ((tokens (cl-conllu:sentence-tokens sentence))
+         (head->token-ids (make-hash-table))
+         (root) (token-order))
+    ;; Go through the tokens to find the root and make a mapping of tokens to children.
+    (dolist (token tokens)
+      (push (cl-conllu:token-id token)
+            (gethash (cl-conllu:token-head token) head->token-ids))
+      (when (equalp (cl-conllu:token-deprel token) "ROOT")
+        (setf root token) (push root token-order)))
+    ;; Order the tokens going downward from the root.
+    (do ((level-token-ids (gethash (cl-conllu:token-id root) head->token-ids)
+                          (reduce #'append
+                                  (mapcar (lambda (token-id) (gethash token-id head->token-ids))
+                                          level-token-ids))))
+        ((null level-token-ids) token-order)
+      ;; Always push the new (lower) tokens to the end.
+      (setf token-order (append token-order (mapcar (lambda (token-id)
+                                                      ;; these token ids are one-based
+                                                      (nth (1- token-id) tokens))
+                                                    level-token-ids))))))
+;;(mapcar #'cl-conllu:token-id (sentence-semantic-token-order (fifth *sents*)))
+;;(4 8 3 22 9 7 5 2 1 23 21 20 19 11 6 24 12 10 25 16 28 17 15 27 18 14 13 26)
+
+
+;;;===(defun sentence-semantic-token-order2 (sentence)
+;;;===  ;; (wrong)
+;;;===  (let* ((tokens (cl-conllu:sentence-tokens sentence))
+;;;===         (token-id->head (make-hash-table))
+;;;===         (head->token-ids (make-hash-table)) ; for determining which ones are not heads
+;;;===         (leaves) (token-order))
+;;;===    (dolist (token tokens)
+;;;===      (setf (gethash (cl-conllu:token-id token) token-id->head)
+;;;===            (cl-conllu:token-head token))
+;;;===      (push (cl-conllu:token-id token)
+;;;===            (gethash (cl-conllu:token-head token) head->token-ids)))
+;;;===    (do ((level-tokens (remove-if (lambda (token) (gethash (token-id token) head->token-ids))
+;;;===                                     tokens)
+;;;===                       (mapcar (lambda (token) (gethash (token-id token) token-id->head))
+;;;===                               level-tokens)))
+;;;===        ((null level-tokens)
+;;;===         ;; This should leave only the earliest mentions (going from the longest trails)
+;;;===         (remove-duplicates token-order))
+;;;===      ;; Always push the new (higher tokens) to the front.
+;;;===      (setf token-order (append level-tokens token-order)))))
+
+(defun binary-tree-token-sequence (tree)
+  "Return the tokens from the binary tree in their tree 'seniority' sequence, ie. breadth-first
+  search. -> is tree seniority equivalent to being close to the root?"
+  (do* ((ordered-tokens)
+        (subtrees (rest tree)) ; start with the root's relation (we don't use string deprels)
+        (current-subtree (pop subtrees) (pop subtrees)))
+       ((null current-subtree) ordered-tokens)
+    (etypecase current-subtree
+      (string nil) ; the in-tree deprel annotations, ignore them
+      ;; We can safely append the subtree that is already a list?
+      (list (setf subtrees (append subtrees (reverse current-subtree)))) ; intermediate nodes
+      (cl-conllu::token ; leaves - retrieve the representation, place in the node order
+       (push current-subtree ordered-tokens)))))
+
+(defun sentence->representation (sentence)
   "The function expects the output from cl-conllu:sentence-binary-tree."
-  (declare (type list tree))
   (let ((token-id->representation (make-hash-table))
         ;; The properly ordered list of token objects (guarantee that the children will appear
         ;; later in the tree than their parents). The first item will be the root.
-        (token-order))
-    ;; Collect unit representations, descending down the tree in depth-first fashion.
-    (do* ((subtrees (rest tree)) ; start with the root's relation (we don't use string deprels)
-          (current-subtree (pop subtrees) (pop subtrees)))
-         ((null current-subtree))
-      (etypecase current-subtree
-        (string nil) ; the in-tree deprel annotations, ignore them
-        (list (setf subtrees (append subtrees current-subtree))) ; intermediate nodes
-        (cl-conllu::token ; leaves - retrieve the representation, place in the node order
-         (setf (gethash (cl-conllu:token-id current-subtree) token-id->representation)
-               (token->representation current-subtree))
-         (push current-subtree token-order))))
+        (ordered-tokens (sentence-semantic-token-order sentence)))
+    ;; Set individual unit representations.
+    (dolist (token ordered-tokens)
+      (format t "~a " (cl-conllu:token-form token))
+      (setf (gethash (cl-conllu:token-id token) token-id->representation)
+            (token->representation token)))
     ;; Stalks between units.
-    (dolist (token token-order)
+    (dolist (token ordered-tokens)
       (when (not (zerop (cl-conllu:token-head token))) ; skip the root in merging up
         (let* ((from-graph (gethash (cl-conllu:token-head token) token-id->representation))
                (to-graph (gethash (cl-conllu:token-id token) token-id->representation))
@@ -431,4 +484,5 @@ assuming that we have no definition for that term."
                           (list from-graph to-graph))))))
           (setf from-graph connected-graph to-graph connected-graph))))
     ;; At the end, the root should contain the whole representation
-    (gethash (cl-conllu:token-id (first token-order)) token-id->representation)))
+    (gethash (cl-conllu:token-id (first ordered-tokens))
+             token-id->representation)))
