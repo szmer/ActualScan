@@ -19,6 +19,9 @@
 ;;; "advmod" "amod" "compound" "npadvmod" "punct" "neg" "ROOT" "cc" "conj" "prep"
 ;;; "det" "pobj")
 
+;;;(defparameter *a* (create-graph :syntax (list "something" "nothing") (list '(1 0))))
+;;;(defparameter *b* (token-tree->representation (cl-conllu:sentence-binary-tree (fifth *sents*))))
+
 ;;;
 ;;; Auxillary types.
 ;;;
@@ -121,6 +124,7 @@ error if a stalk between the berries already exists. Returns the stalk."
             :type (proper-list berry))
    (stalks :accessor graph-stalks :initarg :stalks :initform nil
            :type (proper-list stalks))))
+;; TODO handle the case where there are many
 (defmethod print-object ((obj graph) stream)
   (print-unreadable-object (obj stream :type t :identity t)
     (format stream "~%berries:~a~%stalks:~a~%" (graph-berries obj) (graph-stalks obj))))
@@ -320,7 +324,8 @@ assuming that we have no definition for that term."
   (alexandria:alist-hash-table
    (list
     ;; NOTE we currently ignore the direction here when constructing the graph, to preserve always
-    ;; stalking from the root outward.
+    ;; stalking from the root outward. (All backwards relations connect to root to avoid exits
+    ;; unavailable in graph children)
     ;;
     ;; NOTE that cdrs are the values in alists, so we get lists here by default (somewhat
     ;; confusingly) also we need to unquote functions to make them functions, not (function ...)
@@ -366,10 +371,12 @@ assuming that we have no definition for that term."
 ;; with a proper intermediate `something` berry. Otherwise, we ignore the issue ???? (for now).
 (defun connection-graph (semantic-direction stalk-fun from-graph to-graph)
   "Returns a graph necessary to connect the two graphs."
-  (declare (type keyword semantic-direction) (type graph from-graph to-graph)
-           (ignore semantic-direction))
+  (declare (type keyword semantic-direction) (type graph from-graph to-graph))
   (let* ((direction :to) ; possibly KLUDGE, see comment to *deprel->stalk-spec*
-         (main-stalk (funcall stalk-fun :syntax direction to-graph)))
+         (main-stalk (funcall (if (eq semantic-direction :backward)
+                                  #'graph-root-dangling-stalk
+                                  stalk-fun)
+                              :syntax direction to-graph)))
     (if (and (berry-verbalp (graph-root-berry from-graph))
              (berry-verbalp (graph-root-berry to-graph)))
         (let ((proxy-berry (make-instance 'berry :label "something" :creator :syntax))
@@ -424,4 +431,4 @@ assuming that we have no definition for that term."
                           (list from-graph to-graph))))))
           (setf from-graph connected-graph to-graph connected-graph))))
     ;; At the end, the root should contain the whole representation
-    (gethash (first token-order) token-id->representation)))
+    (gethash (cl-conllu:token-id (first token-order)) token-id->representation)))
