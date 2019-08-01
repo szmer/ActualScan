@@ -1,6 +1,7 @@
 ;;;;
 ;;;; Building semantic representations from preprocessed text (syntactic trees).
 ;;;;
+(declaim (optimize (debug 3)))
 (in-package :omnivore)
 
 ;;;
@@ -43,6 +44,7 @@
     `("npmod" :forward ,#'graph-root-dangling-stalk) ; no legitimate case seen
     `("nsubj" :backward ,#'graph-subj-dangling-stalk)
     `("nsubj" :backward ,#'graph-subj-dangling-stalk) ; semantically passive, dubious
+    `("nsubjpass" :backward ,#'graph-obj-dangling-stalk)
     `("pcomp" :forward ,#'graph-root-dangling-stalk)
     `("pobj" :forward ,#'graph-root-dangling-stalk) ; can also lead to verbals
     `("poss" :forward ,#'graph-root-dangling-stalk)
@@ -75,45 +77,47 @@ assuming that we have no definition for that term."
   (let ((universal-pos (cl-conllu:token-upostag input-token)))
     (apply
      (alexandria:curry #'create-graph :unknown-token)
+     ;;
      ;; part is controversial here, gotta extract the possessive somehow
-     (if (find universal-pos '("x" "sym" "punct" "intj" "aux" "part") :test #'equalp)
-         ;; for a null representation:
-         '(() ())
-         ;; otherwise build a proper graph:
-         (cond
-           ((equalp "verb" universal-pos)
-            (list
-             (list
-              (list (cl-strings:join
-                     (list "_they_" *prefix-unknown-token* (cl-conllu:token-lemma input-token)
-                           "_them"))
-                    :verbalp :obj-exit-p))
-             ()))
-           ((equalp "noun" universal-pos)
-            (list
-             (list "something"
-                   (cl-strings:join (list
-                                     *prefix-unknown-token*
-                                     (cl-conllu:token-lemma input-token))))
-             '((0 1))))
-           ((equalp "propn" universal-pos)
-            (list
-             (list "something"
-                   ;; A proper noun doesn't have its label marked as unknown semantic
-                   ;; component, we assume it to be a unique identifier.
-                   (cl-conllu:token-lemma input-token))
-             '((0 1))))
-           ((equalp "adj" universal-pos)
-            (list
-             (list "__they_be_"
-                   (cl-strings:join (list *prefix-unknown-token*
-                                          (cl-conllu:token-lemma input-token))))
-             '((0 1))))
-           (t (list
-               (list (cl-strings:join
-                      (list *prefix-unknown-token*
-                            (cl-conllu:token-lemma input-token))))
-               ())))))))
+     ;;(if (find universal-pos '("x" "sym" "punct" "intj" "aux" "part") :test #'equalp)
+     ;;
+     ;; (we were previously just leaving an empty graph here, but then the parser marks random words
+     ;; as eg. interjections)
+     ;;
+     (cond
+       ((equalp "verb" universal-pos)
+        (list
+         (list
+          (list (cl-strings:join
+                 (list "_they_" *prefix-unknown-token* (cl-conllu:token-lemma input-token)
+                       "_them"))
+                :verbalp :obj-exit-p))
+         ()))
+       ((equalp "noun" universal-pos)
+        (list
+         (list "something"
+               (cl-strings:join (list
+                                 *prefix-unknown-token*
+                                 (cl-conllu:token-lemma input-token))))
+         '((0 1))))
+       ((equalp "propn" universal-pos)
+        (list
+         (list "something"
+               ;; A proper noun doesn't have its label marked as unknown semantic
+               ;; component, we assume it to be a unique identifier.
+               (cl-conllu:token-lemma input-token))
+         '((0 1))))
+       ((equalp "adj" universal-pos)
+        (list
+         (list "__they_be_"
+               (cl-strings:join (list *prefix-unknown-token*
+                                      (cl-conllu:token-lemma input-token))))
+         '((0 1))))
+       (t (list
+           (list (cl-strings:join
+                  (list *prefix-unknown-token*
+                        (cl-conllu:token-lemma input-token))))
+           ()))))))
 
 (defun sentence-semantic-token-order (sentence)
   (let* ((tokens (cl-conllu:sentence-tokens sentence))
@@ -130,7 +134,9 @@ assuming that we have no definition for that term."
                           (reduce #'append
                                   (mapcar (lambda (token-id) (gethash token-id head->token-ids))
                                           level-token-ids))))
-        ((null level-token-ids) token-order)
+        ((null level-token-ids) (progn
+                                 (assert (= (length token-order) (length tokens)))
+                                 token-order))
       ;; Always push the new (lower) tokens to the end.
       (setf token-order (append token-order (mapcar (lambda (token-id)
                                                       ;; these token ids are one-based
@@ -160,7 +166,9 @@ assuming that we have no definition for that term."
                          (append
                           ;; the direction and stalk relation function are defined
                           ;; globally
-                          (gethash (cl-conllu:token-deprel token) *deprel->stalk-spec*)
+                          (or (gethash (cl-conllu:token-deprel token) *deprel->stalk-spec*)
+                              (error (format nil "no semantic info for relation ~A"
+                                             (cl-conllu:token-deprel token))))
                           (list from-graph to-graph))))))
           ;; here we have to target gethashes intead of lexical let bindings
           (setf (gethash (cl-conllu:token-head token) token-id->representation) connected-graph

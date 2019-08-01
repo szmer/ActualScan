@@ -2,6 +2,7 @@
 ;;;; This file implements logic for using the berry-stalk-graph representation for our semantic
 ;;;; metalanguage.
 ;;;;
+(declaim (optimize (debug 3)))
 (in-package :omnivore)
 
 (defparameter *prefix-unknown-token* "??;")
@@ -72,6 +73,8 @@ connect-stalk function."
 ;;; NOTE we currently ignore the direction here when constructing the graph, to preserve always
 ;;; stalking from the root outward. (All backwards relations connect to root to avoid exits
 ;;; unavailable in graph children)
+;;;
+;;; Incidentally, almost all :forward relations are stricly to root.
 (defun connection-graph (semantic-direction stalk-fun from-graph to-graph)
   "Returns a graph necessary to connect the two graphs. The semantic-direction is either :forward or
 :backward, looking from the root (currently partially ignored, only used for avoiding errors - see
