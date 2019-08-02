@@ -54,9 +54,12 @@
      (to :accessor stalk-to :initarg :to :type berry)))
 (defmethod print-object ((obj stalk) stream)
   (print-unreadable-object (obj stream :type t :identity t)
-    (format stream "~a->~a"
-            (seme-label (stalk-from obj))
-            (seme-label (stalk-to obj)))))
+    (format stream "~A-~A->~A"
+            (ignore-errors (seme-label (stalk-from obj))) ; show NIL if invalid
+            (if (slot-boundp obj 'label)
+                (concatenate 'string "[" (seme-label obj) "]")
+                "")
+            (ignore-errors (seme-label (stalk-to obj))))))
 
 (defun stalk-not-registered-p (prospective-stalk)
   "Check that the berry led to has no existing stalk from the origin berry, and vice versa."

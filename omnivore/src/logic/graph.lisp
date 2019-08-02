@@ -15,7 +15,13 @@
 ;; TODO handle the case where there are many
 (defmethod print-object ((obj graph) stream)
   (print-unreadable-object (obj stream :type t :identity t)
-    (format stream "~%berries:~a~%stalks:~a~%" (graph-berries obj) (graph-stalks obj))))
+    (format stream "~%berries:~A~%stalks:~A~%"
+            (if (list-longer-p (graph-berries obj) 10)
+                (subseq (graph-berries obj) 0 10)
+                (graph-berries obj))
+            (if (list-longer-p (graph-stalks obj) 10)
+                (subseq (graph-stalks obj) 0 10)
+                (graph-stalks obj))))))
 
 (defun create-graph (creator berry-specs stalk-specs)
   "Intended for new graphs. The creator applies for all created semes, and also for determining edge
