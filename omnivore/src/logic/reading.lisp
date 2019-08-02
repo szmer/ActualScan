@@ -114,10 +114,10 @@ assuming that we have no definition for that term."
          '((0 1))))
        ((equalp "adj" universal-pos)
         (list
-         (list "__they_be_"
+         (list '("__they_be_" :verbalp :obj-exit-p)
                (cl-strings:join (list *prefix-unknown-token*
                                       (cl-conllu:token-lemma input-token))))
-         '((0 1))))
+         '((0 1 "pred")))) ; TODO failure to label to-verbal stalk should be catched by validation
        (t (list
            (list (cl-strings:join
                   (list *prefix-unknown-token*

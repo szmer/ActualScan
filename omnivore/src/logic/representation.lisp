@@ -17,8 +17,8 @@
 
 (defmacro define-graph-stalk-function (exit-name &key stalk-label)
   "Provided that the graph-(exit-name) function exists, define a function
-graph-(exit-name)-dangling-stalk returning a dangling stalk to/from the exit in question with
-(creator direction graph) arguments, which, in case the important berry is a verbal, is properly
+graph-(exit-name)-dangling-stalk returning a dangling stalk to/from the exit in question with (
+creator direction graph) arguments, which, in case the important berry is a verbal, is properly
 labeled - with the exit-name by default."
   (let ((exit-function-symbol
           (read-from-string (concatenate 'string "graph-" exit-name "-berry"))))
@@ -32,11 +32,12 @@ connect-stalk function."
        (let ((important-berry (,exit-function-symbol graph)))
          (if (berry-verbalp important-berry)
              ;; (note that we use the direction as source of the appropriate keyword argument)
-             (make-instance 'stalk :creator creator (the keyword direction) important-berry)
              (make-instance 'stalk :creator creator (the keyword direction) important-berry
-                            :label ,(or stalk-label exit-name)))))))
+                                   :label ,(or stalk-label exit-name))
+             (make-instance 'stalk :creator creator (the keyword direction) important-berry))))))
 
 (defun graph-root-berry (graph) (first (graph-berries graph)))
+;; TODO make it always run when the macro is redefined!
 (define-graph-stalk-function "root" :stalk-label "pred")
 
 (defun graph-subj-berry (graph)
@@ -91,6 +92,9 @@ connect-stalk function."
                               :syntax main-stalk-direction main-stalk-to-graph)))
     ;; If the stalk is between two verbal berries, we need to ensure the proper semantic direction
     ;; with a proper intermediate `something` berry. Otherwise, we ignore the issue ???? (for now).
+    ;;;---(when (or (equalp (seme-label (graph-root-berry to-graph)) "??;the")
+    ;;;---          (equalp (seme-label (graph-root-berry from-graph)) "??;the"))
+    ;;;---  (break))
     (if (and (berry-verbalp (graph-root-berry from-graph))
              (berry-verbalp (graph-root-berry to-graph)))
         (let ((proxy-berry (make-instance 'berry :label "something" :creator :syntax))

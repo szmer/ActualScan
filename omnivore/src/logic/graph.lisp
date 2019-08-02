@@ -21,7 +21,7 @@
                 (graph-berries obj))
             (if (list-longer-p (graph-stalks obj) 10)
                 (subseq (graph-stalks obj) 0 10)
-                (graph-stalks obj))))))
+                (graph-stalks obj)))))
 
 (defun create-graph (creator berry-specs stalk-specs)
   "Intended for new graphs. The creator applies for all created semes, and also for determining edge
