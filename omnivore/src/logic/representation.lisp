@@ -77,32 +77,37 @@ connect-stalk function."
 ;;; Incidentally, almost all :forward relations are stricly to root.
 (defun connection-graph (semantic-direction stalk-fun from-graph to-graph)
   "Returns a graph necessary to connect the two graphs. The semantic-direction is either :forward or
-:backward, looking from the root (currently partially ignored, only used for avoiding errors - see
-the comment)."
+:backward, looking from the root."
   (declare (type keyword semantic-direction) (type graph from-graph to-graph))
-  (let* ((direction :to) ; possibly KLUDGE, see comment to *deprel->stalk-spec*
-         (main-stalk (funcall (if (eq semantic-direction :backward)
-                                  #'graph-root-dangling-stalk
-                                  stalk-fun)
-                              :syntax direction to-graph)))
+  (let* ((main-stalk-direction (ecase semantic-direction
+                                 (:forward :to) (:backward :from)))
+         (main-stalk-from-graph (ecase semantic-direction
+                                  (:forward from-graph) (:backward to-graph)))
+         (main-stalk-to-graph (ecase semantic-direction
+                                (:forward to-graph) (:backward from-graph)))
+         ;; This may be the only one, or the one leading from the proxy berry. NOTE it may be
+         ;; principally *from* the from-graph, if the semantic-direction is :backward.
+         (main-stalk (funcall stalk-fun
+                              :syntax main-stalk-direction main-stalk-to-graph)))
     ;; If the stalk is between two verbal berries, we need to ensure the proper semantic direction
     ;; with a proper intermediate `something` berry. Otherwise, we ignore the issue ???? (for now).
     (if (and (berry-verbalp (graph-root-berry from-graph))
              (berry-verbalp (graph-root-berry to-graph)))
         (let ((proxy-berry (make-instance 'berry :label "something" :creator :syntax))
-              ;; KLUDGE maybe this should be an unlabeled stalk.
-              (proxy-stalk (graph-pred-dangling-stalk :syntax (opposite direction) from-graph)))
+              (proxy-stalk (graph-root-dangling-stalk :syntax
+                                                      (opposite main-stalk-direction)
+                                                      main-stalk-from-graph)))
           (make-instance 'graph
                          :berries (list proxy-berry)
                          ;; Connect the proxy berry to the main graphs.
-                         :stalks (list (stalk-connect direction proxy-stalk proxy-berry)
-                                       (stalk-connect (opposite direction) main-stalk
+                         :stalks (list (stalk-connect main-stalk-direction proxy-stalk proxy-berry)
+                                       (stalk-connect (opposite main-stalk-direction) main-stalk
                                                       proxy-berry))))
         ;; The simple case, no verbals.
         (make-instance 'graph
                        :berries ()
                        :stalks (list
                                 (stalk-connect
-                                 (opposite direction)
+                                 (opposite main-stalk-direction)
                                  main-stalk
-                                 (graph-root-berry from-graph)))))))
+                                 (graph-root-berry main-stalk-from-graph)))))))

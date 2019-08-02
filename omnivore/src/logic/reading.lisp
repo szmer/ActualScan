@@ -20,8 +20,13 @@
     ;; NOTE that cdrs are the values in alists, so we get lists here by default (somewhat
     ;; confusingly) also we need to unquote functions to make them functions, not (function ...)
     ;; lists rejected by the compiler (!)
-    `("acl" :forward ,#'graph-obj-dangling-stalk) ; clausal modifier tends to be an obj, but we need to consult surroundings in postpro
+    ;;
+    ;; ACL Clausal modifier of noun: sites -> offering (... booking facilities)
+    `("acl" :forward ,#'graph-obj-dangling-stalk) ; clausal modifier tends to be an obj, but we need
+                                                  ; to consult surroundings in postpro
+    ;; ADVCL Adverbial clause modifier: (he was) upset -> (when I) talked (to him)
     `("advcl" :backward ,#'graph-sit-dangling-stalk) ; at least judging by UD's examples
+    ;; ADVMOD Adverbial modifier: less <- often
     `("advmod" :backward ,#'graph-pred-dangling-stalk)
     `("agent" :forward ,#'graph-root-dangling-stalk) ; most often "by"?
     `("acomp" :forward ,#'graph-root-dangling-stalk)
