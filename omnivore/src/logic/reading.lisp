@@ -229,7 +229,7 @@ assuming that we have no definition for that term."
 ;;(mapcar #'cl-conllu:token-id (sentence-semantic-token-order (fifth *sents*)))
 ;;(4 8 3 22 9 7 5 2 1 23 21 20 19 11 6 24 12 10 25 16 28 17 15 27 18 14 13 26)
 
-(defun sentence->representation (sentence)
+(defun sentence->representation (sentence &key debug-info)
   (let ((token-id->representation (make-hash-table))
         ;; The properly ordered list of token objects (guarantee that the children will appear
         ;; later in the tree than their parents). The first item will be the root.
@@ -253,7 +253,9 @@ assuming that we have no definition for that term."
                           (or (gethash (cl-conllu:token-deprel token) *deprel->stalk-spec*)
                               (error (format nil "no semantic info for relation ~A"
                                              (cl-conllu:token-deprel token))))
-                          (list from-graph to-graph))))))
+                          (list from-graph to-graph)
+                          (when debug-info (list :dependency-label
+                                                 (cl-conllu:token-deprel token))))))))
           ;; here we have to target gethashes intead of lexical let bindings
           (setf (gethash (cl-conllu:token-head token) token-id->representation) connected-graph
                 (gethash (cl-conllu:token-id token) token-id->representation) connected-graph))))

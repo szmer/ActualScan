@@ -76,7 +76,8 @@ connect-stalk function."
 ;;; unavailable in graph children)
 ;;;
 ;;; Incidentally, almost all :forward relations are stricly to root.
-(defun connection-graph (semantic-direction stalk-fun from-graph to-graph)
+(defun connection-graph (semantic-direction stalk-fun from-graph to-graph
+                         &key dependency-label)
   "Returns a graph necessary to connect the two graphs. The semantic-direction is either :forward or
 :backward, looking from the root."
   (declare (type keyword semantic-direction) (type graph from-graph to-graph))
@@ -90,6 +91,9 @@ connect-stalk function."
          ;; principally *from* the from-graph, if the semantic-direction is :backward.
          (main-stalk (funcall stalk-fun
                               :syntax main-stalk-direction main-stalk-to-graph)))
+    (when dependency-label
+      (setf (slot-value main-stalk 'label)
+            (concatenate 'string (seme-label main-stalk) ":::" dependency-label)))
     ;; If the stalk is between two verbal berries, we need to ensure the proper semantic direction
     ;; with a proper intermediate `something` berry. Otherwise, we ignore the issue ???? (for now).
     ;;;---(when (or (equalp (seme-label (graph-root-berry to-graph)) "??;the")
