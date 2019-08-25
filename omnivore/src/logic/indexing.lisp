@@ -47,3 +47,19 @@ represented in the same manner."
 ;;;        ("-" "??;a") ("-" "??;coupling"))
 ;;; ("subj" "something" ("-" "something" ("-" "??;lambskin")) ("-" "??;the")
 ;;;         ("-" "??;earpad")))
+
+(defun conll-file-index (conll-path)
+  (let* ((sentences (cl-conllu:read-conllu conll-path))
+         (graphs (mapcar #'sentence->representation sentences))
+         (sentence-index (make-hash-table :test #'equalp)))
+    (mapc (lambda (sentence graph)
+            (dolist (berry (graph-berries graph))
+              (when (berry-verbalp berry)
+                (push (cl-conllu:sentence->text sentence)
+                      (gethash
+                       (format nil "~A"
+                               (graph->list-tree (subgraph-from berry #'berry-verbalp)))
+                       sentence-index)))))
+          sentences
+          graphs)
+    sentence-index))
