@@ -10,6 +10,7 @@
                              (:module "logic"
                               :components ((:file "seme")
                                            (:file "graph" :depends-on ("seme"))
+                                           (:file "indexing" :depends-on ("graph"))
                                            (:file "representation" :depends-on ("graph"))
                                            (:file "reading" :depends-on ("representation")))
                               :depends-on ("omnivore" "utils"))

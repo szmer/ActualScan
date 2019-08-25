@@ -8,11 +8,11 @@
 (in-package :omnivore)
 
 (defclass graph ()
+  ;; The first berry should be the graph root, from which all connections originate.
   ((berries :accessor graph-berries :initarg :berries :initform nil
             :type (proper-list berry))
    (stalks :accessor graph-stalks :initarg :stalks :initform nil
            :type (proper-list stalks))))
-;; TODO handle the case where there are many
 (defmethod print-object ((obj graph) stream)
   (print-unreadable-object (obj stream :type t :identity t)
     (format stream "~%berries:~A~%stalks:~A~%"
@@ -44,7 +44,7 @@ stalks by berry indices."
                               (connect-with-stalk (nth (first stalk-spec) berries)
                                                   (nth (second stalk-spec) berries)
                                                   creator
-                                                  :label (or (third stalk-spec) "")))
+                                                  :label (or (third stalk-spec) "-")))
                             stalk-specs))))
 
 (defun concatenate-graphs (&rest graphs)
@@ -62,6 +62,7 @@ performed. The first graph's root becomes the root of the result."
   (do* ((stalk-forward-function (if backwards-to-root-p #'stalk-to #'stalk-from))
         ;; Paths = *individual stalks* leading us "forward". We don't need to store trails, since we
         ;; move in one direction in a graph guaranteed to accomodate for that.
+        ;; (note that remove-if creates a new list, so we don't ruin the original with popping)
         (paths
          ;; remove stalks that would move us backwards from the start-berry.
          (remove-if (lambda (stalk) (eq (funcall stalk-forward-function stalk)
@@ -89,6 +90,10 @@ performed. The first graph's root becomes the root of the result."
 including) berries are encountered that satisfy the test-function. All the berries and stalks in the
 result graph are references to the original ones, except for the first berry and the boundary ones,
 which are replaced with copies with out-of-subgraph stalks removed."
+  (when backwards-to-root-p
+    (cerror "Currently there is a problem with going backwards where root may not originate all
+            connections. Maybe there should be code for reversing all stalks in that case."
+            nil))
   (labels ((%copy-pruned (berry pruned-function)
              "Return a copy of the berry where all the stalks pointing in the direction given by
              pruned-function are removed."
@@ -106,7 +111,7 @@ which are replaced with copies with out-of-subgraph stalks removed."
           ;; berry).
           (center-berry (%copy-pruned start-berry stalk-backward-function))
           ;; We can access the previous berry to have its stalk cut (if we end on it) from the stalk.
-          (paths (berry-stalks center-berry))
+          (paths (copy-list (berry-stalks center-berry)))
           (current-path (pop paths) (pop paths))
           ;;
           ;; Construing the returned subgraph.

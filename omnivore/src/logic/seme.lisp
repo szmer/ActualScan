@@ -29,7 +29,7 @@
 ;;; Main types.
 ;;;
 (defclass seme ()
-  ((label :reader seme-label :initarg :label :initform "" :type string)
+  ((label :reader seme-label :initarg :label :initform "-" :type string)
    (creator :reader seme-creator :initarg :creator :type element-creator)))
 
 (defclass berry (seme)
