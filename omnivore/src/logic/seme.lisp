@@ -48,6 +48,27 @@
   (print-unreadable-object (obj stream :type t :identity t)
     (format stream "~a/~a" (seme-label obj) (seme-creator obj))))
 
+(defun copy-berry (original-berry)
+  (let ((new-berry
+          (make-instance 'berry
+                         :label (seme-label original-berry) :creator (seme-creator original-berry)
+                         :verbalp (berry-verbalp original-berry)
+                         :obj-exit-p (berry-obj-exit-p original-berry)
+                         :valence-instructions (copy-list
+                                                (berry-valence-instructions original-berry)))))
+    (setf (slot-value new-berry 'valence-corrected)
+          (berry-valence-corrected original-berry))
+    ;; Replace the stalk with copied ones with the new berry substited for the original one.
+    (setf (berry-stalks new-berry)
+          (mapcar (lambda (stalk)
+                    (let ((new-stalk (copy-stalk stalk)))
+                      (if (eq (stalk-from new-stalk) original-berry)
+                          (setf (stalk-from new-stalk) new-berry)
+                          (setf (stalk-to new-stalk) new-berry))
+                      new-stalk))
+                  (berry-stalks original-berry)))
+    new-berry))
+
 (defclass stalk (seme)
     ((weight :reader stalk-weight :initarg :weight :type real)
      (from :accessor stalk-from :initarg :from :type berry)
@@ -60,6 +81,12 @@
                 (concatenate 'string "[" (seme-label obj) "]")
                 "")
             (ignore-errors (seme-label (stalk-to obj))))))
+
+(defun copy-stalk (original-stalk)
+  (make-instance 'stalk
+                 :label (seme-label original-stalk) :creator (seme-creator original-stalk)
+                 :from (stalk-from original-stalk) :to (stalk-to original-stalk)
+                 :weight (stalk-weight original-stalk)))
 
 (defun stalk-not-registered-p (prospective-stalk)
   "Check that the berry led to has no existing stalk from the origin berry, and vice versa."

@@ -60,17 +60,17 @@ performed. The first graph's root becomes the root of the result."
  find. The exact berry returned is undefined if there are multiple nearest ones that satisfy the
  test-function."
   (do* ((stalk-forward-function (if backwards-to-root-p #'stalk-to #'stalk-from))
-        ;; Paths = individual stalks leading us "forward". We don't need to store trails, since we
+        ;; Paths = *individual stalks* leading us "forward". We don't need to store trails, since we
         ;; move in one direction in a graph guaranteed to accomodate for that.
         (paths
-         ;; remove stalks that would move us backwards.
+         ;; remove stalks that would move us backwards from the start-berry.
          (remove-if (lambda (stalk) (eq (funcall stalk-forward-function stalk)
                                         start-berry))
                     (berry-stalks start-berry)))
         (current-path (pop paths) (pop paths)))
-       ((not current-path) (values nil nil)) ; the not found case
+       ((not current-path) nil) ; the not found case
     ;; If we are sure that a current-path exists, we can extract the next berry it leads to.
-    (let* ((next-berry (funcall stalk-forward-function current-path)))
+    (let ((next-berry (funcall stalk-forward-function current-path)))
       (if (funcall test-function next-berry)
           ;; The success return:
           (return-from nearest-from next-berry)
@@ -83,3 +83,104 @@ performed. The first graph's root becomes the root of the result."
                                                                 stalk)
                                                        next-berry))
                                    (berry-stalks next-berry))))))))
+
+(defun subgraph-from (start-berry test-function &key (backwards-to-root-p nil))
+  "Return the subgraph containing berries and stalks originating from the start-berry, until (not
+including) berries are encountered that satisfy the test-function. All the berries and stalks in the
+result graph are references to the original ones, except for the first berry and the boundary ones,
+which are replaced with copies with out-of-subgraph stalks removed."
+  (labels ((%copy-pruned (berry pruned-function)
+             "Return a copy of the berry where all the stalks pointing in the direction given by
+             pruned-function are removed."
+             (let ((copied-berry (copy-berry berry)))
+               (setf (berry-stalks copied-berry)
+                     (remove-if (lambda (stalk)
+                                  ; remove if pruned-function points to something else.
+                                  (not (eq (funcall pruned-function stalk) copied-berry)))
+                                (berry-stalks copied-berry)))
+               copied-berry)))
+    (do* ((stalk-forward-function (if backwards-to-root-p #'stalk-from #'stalk-to))
+          ;; (note that the flag is not default!)
+          (stalk-backward-function (if backwards-to-root-p #'stalk-to #'stalk-from))
+          ;; Make a copy of the start berry (without stalks that would move us backwards from the
+          ;; berry).
+          (center-berry (%copy-pruned start-berry stalk-backward-function))
+          ;; We can access the previous berry to have its stalk cut (if we end on it) from the stalk.
+          (paths (berry-stalks center-berry))
+          (current-path (pop paths) (pop paths))
+          ;;
+          ;; Construing the returned subgraph.
+          (subgraph-berries (list center-berry))
+          (subgraph-stalks))
+         ((not current-path)
+          (make-instance 'graph :berries subgraph-berries :stalks subgraph-stalks))
+      ;; If we are sure that a current-path exists, we can extract the next berry it leads to.
+      (let ((next-berry (funcall stalk-forward-function current-path)))
+        (if (funcall test-function next-berry)
+            ;; Cut off if the test function succeeded.
+            (setf subgraph-berries
+                  (n-replace-once subgraph-berries
+                                  (funcall stalk-backward-function current-path)
+                                  ;; Remove everything that would lead us farther.
+                                  (%copy-pruned (funcall stalk-backward-function current-path)
+                                                stalk-forward-function)))
+            ;; Continue if the test function failed.
+            (progn
+              (push next-berry subgraph-berries)
+              (push current-path subgraph-stalks)
+              (setf paths
+                    ;; Append new paths leading from the next-berry at the end, to ensure a
+                    ;; breadth-first search.
+                    (append paths
+                            ;; remove stalks that would move us backwards.
+                            (remove-if (lambda (stalk) (eq (funcall stalk-forward-function
+                                                                    stalk)
+                                                           next-berry))
+                                       (berry-stalks next-berry))))))))))
+
+(let* ((test-graph
+         (create-graph :syntax
+                       (list "aaa" "bbb" "ccc" (list "ddd" :verbalp :graph-exit-p) "eee")
+                       (list '(0 1) '(1 2 "pred") '(2 3) '(3 4))))
+       (subgraph (subgraph-from (find-if (lambda (berry) (equalp (seme-label berry) "bbb"))
+                                         (graph-berries test-graph))
+                                #'berry-verbalp)))
+  (labels ((%good-stalk-p-fun (from-label to-label)
+             (lambda (stalk)
+               (and (equalp (seme-label (stalk-from stalk)) from-label)
+                    (equalp (seme-label (stalk-to stalk)) to-label)))))
+    (format t "The subgraph representation: ~A~%"
+            subgraph)
+    (format t "The subgraph should contain two berries. ~A~%"
+            (= (length (graph-berries subgraph)) 2))
+    (format t "The subgraph should contain bbb and ccc. ~A ~A~%"
+            (truep (find-if (lambda (berry) (equalp (seme-label berry) "bbb"))
+                            (graph-berries subgraph)))
+            (truep (find-if (lambda (berry) (equalp (seme-label berry) "ccc"))
+                            (graph-berries subgraph))))
+    (format t "The subgraph should contain only one stalk, between bbb and ccc ~A ~A~%"
+            (= (length (graph-stalks subgraph)) 1)
+            (truep (find-if (%good-stalk-p-fun "bbb" "ccc")
+                            (graph-stalks subgraph))))
+    (format t "The bbb should have only one stalk, between bbb and ccc ~A ~A~%"
+            (ignore-errors
+             (= (length (berry-stalks
+                         (find-if (lambda (berry) (equalp (seme-label berry) "bbb"))
+                                  (graph-berries subgraph))))
+                1))
+            (ignore-errors
+             (truep (find-if (%good-stalk-p-fun "bbb" "ccc")
+                             (berry-stalks
+                              (find-if (lambda (berry) (equalp (seme-label berry) "bbb"))
+                                       (graph-berries subgraph)))))))
+    (format t "The ccc should have only one stalk, between bbb and ccc ~A ~A~%"
+            (ignore-errors
+             (= (length (berry-stalks
+                         (find-if (lambda (berry) (equalp (seme-label berry) "ccc"))
+                                  (graph-berries subgraph))))
+                1))
+            (ignore-errors
+             (truep (find-if (%good-stalk-p-fun "bbb" "ccc")
+                             (berry-stalks
+                              (find-if (lambda (berry) (equalp (seme-label berry) "ccc"))
+                                       (graph-berries subgraph)))))))))
