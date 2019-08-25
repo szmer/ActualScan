@@ -33,8 +33,10 @@ connect-stalk function."
          (if (berry-verbalp important-berry)
              ;; (note that we use the direction as source of the appropriate keyword argument)
              (make-instance 'stalk :creator creator (the keyword direction) important-berry
-                                   :label ,(or stalk-label exit-name))
-             (make-instance 'stalk :creator creator (the keyword direction) important-berry))))))
+                                   :label ,(or stalk-label exit-name)
+                                   :weight (gethash creator *creator->stalk-weight*))
+             (make-instance 'stalk :creator creator (the keyword direction) important-berry
+                                   :weight (gethash creator *creator->stalk-weight*)))))))
 
 (defun graph-root-berry (graph) (first (graph-berries graph)))
 ;; TODO make it always run when the macro is redefined!
@@ -77,7 +79,7 @@ connect-stalk function."
 ;;;
 ;;; Incidentally, almost all :forward relations are stricly to root.
 (defun connection-graph (semantic-direction stalk-fun from-graph to-graph
-                         &key dependency-label)
+                         &key debug-dependency-label)
   "Returns a graph necessary to connect the two graphs. The semantic-direction is either :forward or
 :backward, looking from the root."
   (declare (type keyword semantic-direction) (type graph from-graph to-graph))
@@ -91,9 +93,9 @@ connect-stalk function."
          ;; principally *from* the from-graph, if the semantic-direction is :backward.
          (main-stalk (funcall stalk-fun
                               :syntax main-stalk-direction main-stalk-to-graph)))
-    (when dependency-label
+    (when debug-dependency-label
       (setf (slot-value main-stalk 'label)
-            (concatenate 'string (seme-label main-stalk) ":::" dependency-label)))
+            (concatenate 'string (seme-label main-stalk) ":::" debug-dependency-label)))
     ;; If the stalk is between two verbal berries, we need to ensure the proper semantic direction
     ;; with a proper intermediate `something` berry. Otherwise, we ignore the issue ???? (for now).
     ;;;---(when (or (equalp (seme-label (graph-root-berry to-graph)) "??;the")

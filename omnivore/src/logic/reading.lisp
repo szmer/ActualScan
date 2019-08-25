@@ -27,7 +27,7 @@
     ;; ADVCL Adverbial clause modifier: (he was) upset -> (when I) talked (to him)
     `("advcl" :backward ,#'graph-sit-dangling-stalk) ; at least judging by UD's examples
     ;; ADVMOD Adverbial modifier: less <- often
-    `("advmod" :backward ,#'graph-pred-dangling-stalk)
+    `("advmod" :backward ,#'graph-root-dangling-stalk)
     `("agent" :forward ,#'graph-root-dangling-stalk) ; most often "by"?
     `("acomp" :forward ,#'graph-root-dangling-stalk)
     `("amod" :forward ,#'graph-root-dangling-stalk)
@@ -59,7 +59,7 @@
     `("possessive" :forward ,#'graph-root-dangling-stalk) ; probably the kind of word should be caught on token level
     `("punct" :forward ,#'graph-root-dangling-stalk) ; dead in practice
     `("relcl" :backward ,#'graph-subj-dangling-stalk)
-    `("subtok" :backward ,#'graph-subj-dangling-stalk) ; NOT in glossary!
+    `("subtok" :backward ,#'graph-root-dangling-stalk) ; NOT in glossary!
     `("vocative" :backward ,#'graph-root-dangling-stalk) ; NOT in glossary!
     ;; it`s possible that we want to plug into sit in verbals? NOTE also through __quote?
     `("xcomp" :backward ,#'graph-obj-dangling-stalk)
@@ -254,7 +254,7 @@ assuming that we have no definition for that term."
                               (error (format nil "no semantic info for relation ~A"
                                              (cl-conllu:token-deprel token))))
                           (list from-graph to-graph)
-                          (when debug-info (list :dependency-label
+                          (when debug-info (list :debug-dependency-label
                                                  (cl-conllu:token-deprel token))))))))
           ;; here we have to target gethashes intead of lexical let bindings
           (setf (gethash (cl-conllu:token-head token) token-id->representation) connected-graph

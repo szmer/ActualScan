@@ -50,16 +50,17 @@ represented in the same manner."
 
 (defun conll-file-index (conll-path)
   (let* ((sentences (cl-conllu:read-conllu conll-path))
-         (graphs (mapcar #'sentence->representation sentences))
+         (graphs (mapcar (lambda (sent) (sentence->representation sent :debug-info nil)) sentences))
          (sentence-index (make-hash-table :test #'equalp)))
     (mapc (lambda (sentence graph)
             (dolist (berry (graph-berries graph))
               (when (berry-verbalp berry)
-                (push (cl-conllu:sentence->text sentence)
-                      (gethash
-                       (format nil "~A"
-                               (graph->list-tree (subgraph-from berry #'berry-verbalp)))
-                       sentence-index)))))
+                (let ((subgraph (subgraph-from berry #'berry-verbalp)))
+                  (push (cl-conllu:sentence->text sentence)
+                        (gethash
+                         (format nil "~A"
+                                 (graph->list-tree subgraph))
+                         sentence-index))))))
           sentences
           graphs)
     sentence-index))

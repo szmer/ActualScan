@@ -118,7 +118,8 @@ which are replaced with copies with out-of-subgraph stalks removed."
           (subgraph-berries (list center-berry))
           (subgraph-stalks))
          ((not current-path)
-          (make-instance 'graph :berries subgraph-berries :stalks subgraph-stalks))
+          (make-instance 'graph :berries (reverse subgraph-berries) ; root has to be first
+                                :stalks subgraph-stalks))
       ;; If we are sure that a current-path exists, we can extract the next berry it leads to.
       (let ((next-berry (funcall stalk-forward-function current-path)))
         (if (funcall test-function next-berry)
@@ -163,6 +164,9 @@ which are replaced with copies with out-of-subgraph stalks removed."
                             (graph-berries subgraph)))
             (truep (find-if (lambda (berry) (equalp (seme-label berry) "ccc"))
                             (graph-berries subgraph))))
+    (format t "bbb (the root) should be first. ~A~%"
+            (eq 0 (position "bbb" (graph-berries subgraph)
+                            :test #'equalp :key #'seme-label)))
     (format t "The subgraph should contain only one stalk, between bbb and ccc ~A ~A~%"
             (= (length (graph-stalks subgraph)) 1)
             (truep (find-if (%good-stalk-p-fun "bbb" "ccc")
