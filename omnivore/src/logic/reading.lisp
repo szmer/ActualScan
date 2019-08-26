@@ -46,6 +46,7 @@
     `("dobj" :backward ,#'graph-obj-dangling-stalk)
     `("intj" :backward ,#'graph-root-dangling-stalk)
     `("mark" :forward ,#'graph-root-dangling-stalk) ; ??
+    `("meta" :backward ,#'graph-root-dangling-stalk)
     `("neg" :forward ,#'graph-root-dangling-stalk)
     `("npadvmod" :forward ,#'graph-root-dangling-stalk) ; no legitimate case seen
     `("npmod" :forward ,#'graph-root-dangling-stalk) ; no legitimate case seen
@@ -62,7 +63,7 @@
     `("punct" :forward ,#'graph-root-dangling-stalk) ; dead in practice
     `("relcl" :backward ,#'graph-subj-dangling-stalk)
     `("subtok" :backward ,#'graph-root-dangling-stalk) ; NOT in glossary!
-    `("vocative" :backward ,#'graph-root-dangling-stalk) ; NOT in glossary!
+    `("vocative" :backward ,#'graph-root-dangling-stalk)
     ;; it`s possible that we want to plug into sit in verbals? NOTE also through __quote?
     `("xcomp" :backward ,#'graph-obj-dangling-stalk)
     )

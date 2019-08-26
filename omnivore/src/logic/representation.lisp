@@ -15,6 +15,10 @@
 ;;; instructions.
 ;;;
 
+(define-condition exit-not-found-error (error)
+  ((exit :initarg :exit :accessor exit-not-found-exit)
+   (graph :initarg :graph :accessor exit-not-found-graph)))
+
 (defmacro define-graph-stalk-function (exit-name &key stalk-label)
   "Provided that the graph-(exit-name) function exists, define a function
 graph-(exit-name)-dangling-stalk returning a dangling stalk to/from the exit in question with (
@@ -46,7 +50,7 @@ connect-stalk function."
   (if (or (berry-verbalp (graph-root-berry graph))
           (equalp "something" (seme-label (graph-root-berry graph))))
       (graph-root-berry graph)
-      (error "don't know how to extract subj from the graph")))
+      (error 'exit-not-found-error :exit "subj" :graph graph)))
 (define-graph-stalk-function "subj")
 
 (defun graph-obj-berry (graph)
@@ -56,21 +60,21 @@ connect-stalk function."
       ;; equivalent to it per our graph representation semantics.
       ;; TODO alternatively search for this something with a good test predicate?
       (or (nearest-from (graph-root-berry graph) #'berry-verbalp)
-          (error "don't know how to extract obj from the graph"))))
+          (error 'exit-not-found-error :exit "obj" :graph graph))))
 (define-graph-stalk-function "obj")
 
 (defun graph-pred-berry (graph)
   (if (berry-verbalp (graph-root-berry graph))
       (graph-root-berry graph)
       (or (nearest-from (graph-root-berry graph) #'berry-verbalp)
-          (error "don't know how to extract pred from the graph"))))
+          (error 'exit-not-found-error :exit "pred" :graph graph))))
 (define-graph-stalk-function "pred")
 
 (defun graph-sit-berry (graph)
   (if (berry-verbalp (graph-root-berry graph))
       (graph-root-berry graph)
       (or (nearest-from (graph-root-berry graph) #'berry-verbalp)
-          (error "don't know how to extract sit from the graph"))))
+          (error 'exit-not-found-error :exit "sit" :graph graph))))
 (define-graph-stalk-function "sit")
 
 ;;; NOTE we currently ignore the actual node direction here when constructing the graph, to preserve
@@ -95,8 +99,13 @@ connect-stalk function."
          (main-stalk-to-graph (ecase semantic-direction
                                 (:forward to-graph) (:backward from-graph)))
          ;; This may be the only one, or the one leading from the proxy berry.
-         (main-stalk (funcall stalk-fun
-                              :syntax main-stalk-direction main-stalk-to-graph)))
+         (main-stalk (handler-case
+                         (funcall stalk-fun
+                                  :syntax main-stalk-direction main-stalk-to-graph)
+                       (exit-not-found-error ()
+                         ;; fall back on a root stalk.
+                         (graph-root-dangling-stalk
+                          :syntax main-stalk-direction main-stalk-to-graph)))))
     (when debug-dependency-label
       (setf (slot-value main-stalk 'label)
             (concatenate 'string (seme-label main-stalk) ":::" debug-dependency-label)))
