@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<gexf xmlns="http://www.gexf.net/1.3" version="1.3" xmlns:viz="http://www.gexf.net/1.3/viz" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.gexf.net/1.3 http://www.gexf.net/1.3/gexf.xsd">
+    <meta>
+        <creator>Therminsley Omnivore early version</creator>
+        <description></description>
+    </meta>
+    <graph defaultedgetype="directed" mode="static">
+        <nodes>
+            <node id="0" label="_they_??;isolate_them">
+                <viz:size value="10"/>                <viz:color r="255" g="0" b="0"/>
+            </node>
+            <node id="1" label="something">
+                <viz:size value="10"/>                <viz:color r="255" g="0" b="0"/>
+            </node>
+            <node id="2" label="??;ms400">
+                <viz:size value="10"/>                <viz:color r="255" g="0" b="0"/>
+            </node>
+            <node id="3" label="??;the">
+                <viz:size value="10"/>                <viz:color r="255" g="0" b="0"/>
+            </node>
+            <node id="4" label="??;well">
+                <viz:size value="10"/>                <viz:color r="255" g="0" b="0"/>
+            </node>
+            <node id="5" label="??;very">
+                <viz:size value="10"/>                <viz:color r="255" g="0" b="0"/>
+            </node>
+            <node id="6" label="_they_??;consider_them">
+                <viz:size value="10"/>                <viz:color r="255" g="0" b="0"/>
+            </node>
+            <node id="7" label="something">
+                <viz:size value="10"/>                <viz:color r="255" g="0" b="0"/>
+            </node>
+            <node id="8" label="??;comfort">
+                <viz:size value="10"/>                <viz:color r="255" g="0" b="0"/>
+            </node>
+            <node id="9" label="??;the">
+                <viz:size value="10"/>                <viz:color r="255" g="0" b="0"/>
+            </node>
+            <node id="10" label="something">
+                <viz:size value="10"/>                <viz:color r="255" g="0" b="0"/>
+            </node>
+        </nodes>
+        <edges>
+            <edge id="0" label="-" source="1" target="2"/>            <edge id="1" label="-:::det" source="1" target="3"/>            <edge id="2" label="subj:::nsubj" source="0" target="1"/>            <edge id="3" label="-:::advmod" source="4" target="5"/>            <edge id="4" label="pred:::advmod" source="0" target="4"/>            <edge id="5" label="-" source="7" target="8"/>            <edge id="6" label="-:::det" source="7" target="9"/>            <edge id="7" label="obj:::dobj" source="6" target="7"/>            <edge id="8" label="pred" source="10" target="6"/>            <edge id="9" label="sit:::advcl" source="0" target="10"/>
+        </edges>
+    </graph>
+</gexf>

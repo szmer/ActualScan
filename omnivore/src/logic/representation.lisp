@@ -77,7 +77,7 @@ connect-stalk function."
 ;;; stalking from the root outward. (All backwards relations connect to root to avoid exits
 ;;; unavailable in graph children)
 ;;;
-;;; Incidentally, almost all :forward relations are stricly to root.
+;;; Incidentally, almost all :forward relations are stricly to the target root.
 (defun connection-graph (semantic-direction stalk-fun from-graph to-graph
                          &key debug-dependency-label)
   "Returns a graph necessary to connect the two graphs. The semantic-direction is either :forward or
