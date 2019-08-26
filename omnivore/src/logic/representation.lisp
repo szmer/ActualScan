@@ -73,9 +73,14 @@ connect-stalk function."
           (error "don't know how to extract sit from the graph"))))
 (define-graph-stalk-function "sit")
 
-;;; NOTE we currently ignore the direction here when constructing the graph, to preserve always
-;;; stalking from the root outward. (All backwards relations connect to root to avoid exits
-;;; unavailable in graph children)
+;;; NOTE we currently ignore the actual node direction here when constructing the graph, to preserve
+;;; always stalking from the root outward. (All backwards relations connect to root to avoid exits
+;;; unavailable in graph children).
+;;;
+;;; HOWEVER, in the code there is some gymnastics around the order in which we construct the main
+;;; connecting stalk -- treating either the "from" end (backward) or the "to" end (forward) as the
+;;; more important one. If both connected graphs are verbal, only the more important end gets the
+;;; verbal exit annotation, using a "something" berry proxy.
 ;;;
 ;;; Incidentally, almost all :forward relations are stricly to the target root.
 (defun connection-graph (semantic-direction stalk-fun from-graph to-graph
@@ -89,8 +94,7 @@ connect-stalk function."
                                   (:forward from-graph) (:backward to-graph)))
          (main-stalk-to-graph (ecase semantic-direction
                                 (:forward to-graph) (:backward from-graph)))
-         ;; This may be the only one, or the one leading from the proxy berry. NOTE it may be
-         ;; principally *from* the from-graph, if the semantic-direction is :backward.
+         ;; This may be the only one, or the one leading from the proxy berry.
          (main-stalk (funcall stalk-fun
                               :syntax main-stalk-direction main-stalk-to-graph)))
     (when debug-dependency-label
@@ -98,12 +102,11 @@ connect-stalk function."
             (concatenate 'string (seme-label main-stalk) ":::" debug-dependency-label)))
     ;; If the stalk is between two verbal berries, we need to ensure the proper semantic direction
     ;; with a proper intermediate `something` berry. Otherwise, we ignore the issue ???? (for now).
-    ;;;---(when (or (equalp (seme-label (graph-root-berry to-graph)) "??;the")
-    ;;;---          (equalp (seme-label (graph-root-berry from-graph)) "??;the"))
-    ;;;---  (break))
     (if (and (berry-verbalp (graph-root-berry from-graph))
              (berry-verbalp (graph-root-berry to-graph)))
         (let ((proxy-berry (make-instance 'berry :label "something" :creator :syntax))
+              ;; the proxy stalk will connect the proxy berry with the "less important" end of the
+              ;; connection
               (proxy-stalk (graph-root-dangling-stalk :syntax
                                                       (opposite main-stalk-direction)
                                                       main-stalk-from-graph)))
@@ -111,6 +114,7 @@ connect-stalk function."
                          :berries (list proxy-berry)
                          ;; Connect the proxy berry to the main graphs.
                          :stalks (list (stalk-connect main-stalk-direction proxy-stalk proxy-berry)
+                                       ;; plug the proxy berry in the second end of the main stalk.
                                        (stalk-connect (opposite main-stalk-direction) main-stalk
                                                       proxy-berry))))
         ;; The simple case, no verbals.
