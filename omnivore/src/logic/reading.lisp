@@ -36,14 +36,21 @@
     `("attr" :forward ,#'graph-root-dangling-stalk)
     `("aux" :backward ,#'graph-pred-dangling-stalk)
     `("auxpass" :backward ,#'graph-pred-dangling-stalk)
+    ;; a case marking, its role should be grammatical and so should modify verbal connections?
+    `("case" :backward ,#'graph-root-dangling-stalk)
     ;; NOTE coordinating conjunction, should proxy the conj relation in question (postprocessing)
     `("cc" :forward ,#'graph-root-dangling-stalk)
     `("conj" :forward ,#'graph-root-dangling-stalk)
     `("ccomp" :backward ,#'graph-obj-dangling-stalk)
     `("compound" :forward ,#'graph-root-dangling-stalk)
-    `("csubj" :backward ,#'graph-sit-dangling-stalk)
+    ;; these are clauses residing in the subject position of either an active or passive verb.
+    `("csubj" :backward ,#'graph-subj-dangling-stalk)
+    `("csubjpass" :backward ,#'graph-subj-dangling-stalk)
+    `("dative" :backward ,#'graph-pred-dangling-stalk) ; "cost->me $5"
     `("det" :forward ,#'graph-root-dangling-stalk)
+    `("dep" :backward ,#'graph-sit-dangling-stalk) ; an "unclassified dependent", great
     `("dobj" :backward ,#'graph-obj-dangling-stalk)
+    `("expl" :backward ,#'graph-root-dangling-stalk) ; expletive, should be purely grammatical
     `("intj" :backward ,#'graph-root-dangling-stalk)
     `("mark" :forward ,#'graph-root-dangling-stalk) ; ??
     `("meta" :backward ,#'graph-root-dangling-stalk)
@@ -54,13 +61,23 @@
     `("nsubj" :backward ,#'graph-subj-dangling-stalk) ; semantically passive, dubious
     `("nsubjpass" :backward ,#'graph-obj-dangling-stalk)
     `("nummod" :backward ,#'graph-root-dangling-stalk)
+    `("oprd" :backward ,#'graph-pred-dangling-stalk) ; object predicate, as in "considered->portable"
+    ;; this is supposed to give side parenthetical information on the head, but can be "are" in
+    ;; "they are laid back" (laid being the root of the tree according to the parser)
+    `("parataxis" :backward ,#'graph-root-dangling-stalk)
     `("pcomp" :forward ,#'graph-root-dangling-stalk)
     `("pobj" :forward ,#'graph-root-dangling-stalk) ; can also lead to verbals
     `("poss" :forward ,#'graph-root-dangling-stalk)
+    ;; this seems to be something that appears before a determiner, like in "all <-[the<-]- ones"
+    `("predet" :backward ,#'graph-root-dangling-stalk) ; NOT in glossary!
     `("prt" :forward ,#'graph-root-dangling-stalk) ; particle verbs, dubious
     `("prep" :forward ,#'graph-root-dangling-stalk)
     `("possessive" :forward ,#'graph-root-dangling-stalk) ; probably the kind of word should be caught on token level
+    ;; first part of conjunction ("both", "neither"), dependent on the first conjunct, probably
+    ;; should be shifted to the conjuncting word in postprocessing
+    `("preconj" :backward ,#'graph-root-dangling-stalk)
     `("punct" :forward ,#'graph-root-dangling-stalk) ; dead in practice
+    `("quantmod" :backward ,#'graph-root-dangling-stalk)
     `("relcl" :backward ,#'graph-subj-dangling-stalk)
     `("subtok" :backward ,#'graph-root-dangling-stalk) ; NOT in glossary!
     `("vocative" :backward ,#'graph-root-dangling-stalk)

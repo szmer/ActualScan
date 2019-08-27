@@ -86,7 +86,8 @@ connect-stalk function."
 ;;; more important one. If both connected graphs are verbal, only the more important end gets the
 ;;; verbal exit annotation, using a "something" berry proxy.
 ;;;
-;;; Incidentally, almost all :forward relations are stricly to the target root.
+;;; Incidentally, almost all :forward relations are stricly to the target root, suggesting that they
+;;; shouldn't need labeling other than pred (if it's the root for verbals).
 (defun connection-graph (semantic-direction stalk-fun from-graph to-graph
                          &key debug-dependency-label)
   "Returns a graph necessary to connect the two graphs. The semantic-direction is either :forward or
@@ -103,7 +104,7 @@ connect-stalk function."
                          (funcall stalk-fun
                                   :syntax main-stalk-direction main-stalk-to-graph)
                        (exit-not-found-error ()
-                         ;; fall back on a root stalk.
+                         ;; fall back on a root stalk. TODO check if it's verbal maybe?
                          (graph-root-dangling-stalk
                           :syntax main-stalk-direction main-stalk-to-graph)))))
     (when debug-dependency-label
