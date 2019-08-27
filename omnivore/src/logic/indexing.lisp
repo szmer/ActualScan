@@ -77,12 +77,35 @@ represented in the same manner."
                                                    :test #'equalp)))
                                     conll-sentences)))
 
-(defun index-summarize-cliques (index-list &optional (minimum-size 3))
+(defun index-summarize-cliques (index-list &key (minimum-size 3))
   (maphash (lambda (clique-subgraph clique-sentences)
-             (when (< minimum-size (length clique-sentences))
+             (when (<= minimum-size (length clique-sentences))
                (format t "~A ~A ~A~%"
                        clique-subgraph
                        ;; the shortest utterance.
                        (first (sort (copy-list clique-sentences) #'< :key #'length))
                        (length clique-sentences))))
            (car index-list)))
+
+(defun index-strong-cliques (index-list &key (strength 2) (minimum-size 3))
+  (let ((included-indices) ; the ones of required length
+        (strong-clique-index (make-hash-table :test #'equalp)))
+    (maphash (lambda (clique-subgraph clique-sentences)
+               (when (<= minimum-size (length clique-sentences))
+                 (push clique-subgraph included-indices)))
+             (car index-list))
+    (alexandria:map-combinations (lambda (clique-indices)
+                                   (let ((clique-elements ; intersection of clique indices
+                                           (reduce (lambda (sents-1 sents-2)
+                                                     (intersection sents-1 sents-2 :test #'equalp))
+                                                   (mapcar (lambda (index)
+                                                             (gethash index (car index-list)))
+                                                           clique-indices))))
+                                     (when (<= 2 (length clique-elements))
+                                       (setf (gethash (cl-strings:join clique-indices
+                                                                       :separator ",")
+                                                      strong-clique-index)
+                                             clique-elements))))
+                                 included-indices
+                                 :length strength)
+    strong-clique-index))
