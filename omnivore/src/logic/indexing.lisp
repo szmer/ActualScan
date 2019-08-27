@@ -48,19 +48,41 @@ represented in the same manner."
 ;;; ("subj" "something" ("-" "something" ("-" "??;lambskin")) ("-" "??;the")
 ;;;         ("-" "??;earpad")))
 
-(defun conll-file-index (conll-path)
-  (let* ((sentences (cl-conllu:read-conllu conll-path))
-         (graphs (mapcar (lambda (sent) (sentence->representation sent :debug-info nil)) sentences))
+(defun conll-sentences-index (conll-sentences)
+  (let* ((sentence-graphs
+           (alexandria:alist-hash-table
+            (mapcar (lambda (sent) (cons (cl-conllu:sentence->text sent) ; convert the obj to string
+                                         (sentence->representation sent :debug-info nil)))
+                    conll-sentences)
+            :test #'equalp))
          (sentence-index (make-hash-table :test #'equalp)))
-    (mapc (lambda (sentence graph)
-            (dolist (berry (graph-berries graph))
-              (when (berry-verbalp berry)
-                (let ((subgraph (subgraph-from berry #'berry-verbalp)))
-                  (push (cl-conllu:sentence->text sentence)
-                        (gethash
-                         (format nil "~A"
-                                 (graph->list-tree subgraph))
-                         sentence-index))))))
-          sentences
-          graphs)
-    sentence-index))
+    (maphash
+     (lambda (sentence graph)
+       (dolist (berry (graph-berries graph))
+         (when (berry-verbalp berry)
+           (let ((subgraph (subgraph-from berry #'berry-verbalp)))
+             (push sentence (gethash
+                             (format nil "~A" (graph->list-tree subgraph))
+                             sentence-index))))))
+     sentence-graphs)
+    (list sentence-index sentence-graphs)))
+
+(defun conll-file-index (conll-path)
+  (conll-sentences-index (cl-conllu:read-conllu conll-path)))
+
+(defun conll-sentences-query-index (conll-sentences query-string)
+  (conll-sentences-index (remove-if (lambda (conll-sentence)
+                                      (not (search query-string
+                                                   (cl-conllu:sentence->text conll-sentence)
+                                                   :test #'equalp)))
+                                    conll-sentences)))
+
+(defun index-summarize-cliques (index-list &optional (minimum-size 3))
+  (maphash (lambda (clique-subgraph clique-sentences)
+             (when (< minimum-size (length clique-sentences))
+               (format t "~A ~A ~A~%"
+                       clique-subgraph
+                       ;; the shortest utterance.
+                       (first (sort (copy-list clique-sentences) #'< :key #'length))
+                       (length clique-sentences))))
+           (car index-list)))
