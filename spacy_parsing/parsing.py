@@ -8,6 +8,7 @@ spacyconll = Spacy2ConllParser(model='en_core_web_lg')
 with open('/home/szymon/lingwy/therminsley/sitesdb/1970/raw_utterances.json') as utt_json_file:
     utterances = json.load(utt_json_file)
     for utterance in utterances:
+        print('#####')
         # this changes nothing in practice
         ##if utterance.strip() == '' or not ('solation' in utterance):
         ##    continue

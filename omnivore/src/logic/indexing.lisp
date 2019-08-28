@@ -48,6 +48,12 @@ represented in the same manner."
 ;;; ("subj" "something" ("-" "something" ("-" "??;lambskin")) ("-" "??;the")
 ;;;         ("-" "??;earpad")))
 
+(defun graph-indices (graph)
+  "Return a list of string indices indentifying the graph."
+  (mapcar (lambda (berry)
+            (graph->list-tree (format nil "~A" (subgraph-from berry #'berry-verbalp))))
+          (remove-if-not #'berry-verbalp (graph-berries graph))))
+
 (defun conll-sentences-index (conll-sentences)
   (let* ((sentence-graphs
            (alexandria:alist-hash-table
@@ -58,12 +64,8 @@ represented in the same manner."
          (sentence-index (make-hash-table :test #'equalp)))
     (maphash
      (lambda (sentence graph)
-       (dolist (berry (graph-berries graph))
-         (when (berry-verbalp berry)
-           (let ((subgraph (subgraph-from berry #'berry-verbalp)))
-             (push sentence (gethash
-                             (format nil "~A" (graph->list-tree subgraph))
-                             sentence-index))))))
+       (dolist (index (graph-indices graph))
+         (push sentence (gethash index sentence-index))))
      sentence-graphs)
     (list sentence-index sentence-graphs)))
 
@@ -109,3 +111,32 @@ represented in the same manner."
                                  included-indices
                                  :length strength)
     strong-clique-index))
+
+(defun conll-paragraph-index (conll-strings)
+  "Index a list of paragraphs given as strings of ConLL-formatted sentences."
+  (let ((paragraph-sentence-lists (mapcar (lambda (string)
+                                            (let ((string-stream (make-string-input-stream string)))
+                                              ;; read sentences from the string.
+                                              (cl-conllu:read-stream string-stream)))
+                                          conll-strings)))
+    (mapcar (lambda (paragraph)
+              ;; Make lists of sentence text + its representation indices.
+              (mapcar (lambda (sentence-obj)
+                        (cons (cl-conllu:sentence->text sentence-obj)
+                              (graph-indices (sentence->representation sentence-obj))))
+                      paragraph))
+            paragraph-sentence-lists)))
+
+(defun conll-file-paragraphs-index (conll-path)
+  (conll-paragraph-index
+   (do* ((conll-file (open conll-path :if-does-not-exist nil))
+         (line (when conll-file (read-line conll-file))
+               (read-line conll-file))
+         (paragraph-strings))
+        ((not line)
+         (mapcar (lambda (lines) (cl-strings:join lines
+                                                  :separator (coerce '(#\Newline) 'string)))
+                 paragraph-strings))
+     (if (equalp line "#####")
+         (push nil paragraph-strings)
+         (push line (first paragraph-strings))))))
