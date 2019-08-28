@@ -1,3 +1,4 @@
+(declaim (optimize (debug 3)))
 (in-package :omnivore)
 
 (defun graph->list-tree (graph)
@@ -51,7 +52,7 @@ represented in the same manner."
 (defun graph-indices (graph)
   "Return a list of string indices indentifying the graph."
   (mapcar (lambda (berry)
-            (graph->list-tree (format nil "~A" (subgraph-from berry #'berry-verbalp))))
+            (format nil "~A" (graph->list-tree (subgraph-from berry #'berry-verbalp))))
           (remove-if-not #'berry-verbalp (graph-berries graph))))
 
 (defun conll-sentences-index (conll-sentences)
@@ -130,11 +131,11 @@ represented in the same manner."
 (defun conll-file-paragraphs-index (conll-path)
   (conll-paragraph-index
    (do* ((conll-file (open conll-path :if-does-not-exist nil))
-         (line (when conll-file (read-line conll-file))
-               (read-line conll-file))
+         (line (when conll-file (read-line conll-file nil))
+               (read-line conll-file nil))
          (paragraph-strings))
         ((not line)
-         (mapcar (lambda (lines) (cl-strings:join lines
+         (mapcar (lambda (lines) (cl-strings:join (reverse lines)
                                                   :separator (coerce '(#\Newline) 'string)))
                  paragraph-strings))
      (if (equalp line "#####")
