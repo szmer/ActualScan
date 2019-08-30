@@ -49,38 +49,17 @@ represented in the same manner."
 ;;; ("subj" "something" ("-" "something" ("-" "??;lambskin")) ("-" "??;the")
 ;;;         ("-" "??;earpad")))
 
-(defun graph-indices (graph)
+(defun graph-indices (graph &key (minimum-complexity 2))
   "Return a list of string indices indentifying the graph."
-  (mapcar (lambda (berry)
-            (format nil "~A" (graph->list-tree (subgraph-from berry #'berry-verbalp))))
-          (remove-if-not #'berry-verbalp (graph-berries graph))))
+  (remove nil
+          (mapcar (lambda (berry)
+                    (let ((subgraph (subgraph-from berry #'berry-verbalp)))
+                      (when (>= (length (graph-berries subgraph))
+                                minimum-complexity)
+                        (format nil "~A" (graph->list-tree subgraph)))))
+                  (remove-if-not #'berry-verbalp (graph-berries graph)))))
 
-(defun conll-sentences-index (conll-sentences)
-  (let* ((sentence-graphs
-           (alexandria:alist-hash-table
-            (mapcar (lambda (sent) (cons (cl-conllu:sentence->text sent) ; convert the obj to string
-                                         (sentence->representation sent :debug-info nil)))
-                    conll-sentences)
-            :test #'equalp))
-         (sentence-index (make-hash-table :test #'equalp)))
-    (maphash
-     (lambda (sentence graph)
-       (dolist (index (graph-indices graph))
-         (push sentence (gethash index sentence-index))))
-     sentence-graphs)
-    (list sentence-index sentence-graphs)))
-
-(defun conll-file-index (conll-path)
-  (conll-sentences-index (cl-conllu:read-conllu conll-path)))
-
-(defun conll-sentences-query-index (conll-sentences query-string)
-  (conll-sentences-index (remove-if (lambda (conll-sentence)
-                                      (not (search query-string
-                                                   (cl-conllu:sentence->text conll-sentence)
-                                                   :test #'equalp)))
-                                    conll-sentences)))
-
-(defun index-summarize-cliques (index-list &key (minimum-size 3))
+(defun index-summarize-cliques (index-table &key (minimum-size 3))
   (maphash (lambda (clique-subgraph clique-sentences)
              (when (<= minimum-size (length clique-sentences))
                (format t "~A ~A ~A~%"
@@ -88,21 +67,21 @@ represented in the same manner."
                        ;; the shortest utterance.
                        (first (sort (copy-list clique-sentences) #'< :key #'length))
                        (length clique-sentences))))
-           (car index-list)))
+           index-table))
 
-(defun index-strong-cliques (index-list &key (strength 2) (minimum-size 3))
+(defun index-strong-cliques (index-table &key (strength 2) (minimum-size 3))
   (let ((included-indices) ; the ones of required length
         (strong-clique-index (make-hash-table :test #'equalp)))
     (maphash (lambda (clique-subgraph clique-sentences)
                (when (<= minimum-size (length clique-sentences))
                  (push clique-subgraph included-indices)))
-             (car index-list))
+             index-table)
     (alexandria:map-combinations (lambda (clique-indices)
                                    (let ((clique-elements ; intersection of clique indices
                                            (reduce (lambda (sents-1 sents-2)
                                                      (intersection sents-1 sents-2 :test #'equalp))
                                                    (mapcar (lambda (index)
-                                                             (gethash index (car index-list)))
+                                                             (gethash index index-table))
                                                            clique-indices))))
                                      (when (<= 2 (length clique-elements))
                                        (setf (gethash (cl-strings:join clique-indices
@@ -153,3 +132,10 @@ represented in the same manner."
             (push (first sentence-entry)
                   (gethash index query-index))))))
     query-index))
+
+(defun write-index-sizes-csv (index-table path)
+  (with-open-file (lengths-file path :direction :output :if-does-not-exist :create
+                                     :if-exists :supersede)
+    (maphash (lambda (index sents)
+               (format lengths-file "\"~A\" ~A~%" (csv-sanitized-string index) (length sents)))
+             index-table)))

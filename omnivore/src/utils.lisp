@@ -23,3 +23,6 @@
       (return-from n-replace-once list))))
 ;;; (n-replace-once (list 25 24 26 45) 24 30)
 ;;; -> (25 30 26 45)
+
+(defun csv-sanitized-string (string)
+  (remove #\' (remove #\" string)))

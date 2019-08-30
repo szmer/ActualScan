@@ -21,6 +21,8 @@
     ;; confusingly) also we need to unquote functions to make them functions, not (function ...)
     ;; lists rejected by the compiler (!)
     ;;
+    ;; observed on spaces (_/SPACE), should be removed from semantics probably
+    `("" :backward ,#'graph-root-dangling-stalk)
     ;; ACL Clausal modifier of noun: sites -> offering (... booking facilities)
     `("acl" :forward ,#'graph-obj-dangling-stalk) ; clausal modifier tends to be an obj, but we need
                                         ; to consult surroundings in postpro
