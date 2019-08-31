@@ -123,9 +123,10 @@ entirely of newly copied berries and stalks."
                                    tracing-stalk)))
                              (berry-stalks old-berry))))
            (%fix-backstalk (backstalk new-berry direction)
-             "Replace the target berry of the backstalk (the back being in direction) with new-berry
-             and replace the old stalk on the both ends of backstalk. Return the backstalk. The
-             backstalk should probably be a tracing stalk obtained from another local function."
+             "Replace the target berry of the backstalk (the back being the given direction) with
+             new-berry and replace the old stalk on the both ends of backstalk. Return the
+             backstalk. The backstalk should probably be a tracing stalk obtained from another local
+             function."
              (let ((other-berry
                      (if (eq direction :from)
                          (stalk-from backstalk) (stalk-to backstalk)))
@@ -176,23 +177,25 @@ entirely of newly copied berries and stalks."
               ;; subgraph-stalks, since they're only backwards and already accounted for)
               (%prune-berry end-berry stalk-forward-function))
             ;; Continue if the test function failed.
-              (let ((copied-berry (copy-berry next-berry :keep-old-stalks t)))
-                ;; The current-path is already a tracing stalk that needs to have its target changed
-                ;; to our copy and be registered on its ends. The other direction should be safe to
-                ;; replace their stalks, as it should be only our new copies this way.
-                (push (%fix-backstalk current-path copied-berry (if backwards-to-root-p :to :from))
-                      subgraph-stalks)
-                (push copied-berry subgraph-berries)
-                (setf paths
-                      ;; Append new paths leading from the next-berry at the end, to ensure a
-                      ;; breadth-first search.
-                      (append paths
-                              (%tracing-stalks-from copied-berry next-berry stalk-forward-function)))))))))
+            (let ((copied-berry (copy-berry next-berry :keep-old-stalks t)))
+              ;; The current-path is already a tracing stalk that needs to have its target changed
+              ;; to our copy and be registered on its ends. The other direction should be safe to
+              ;; replace their stalks, as it should be only our new copies this way.
+              (push (%fix-backstalk current-path copied-berry (if backwards-to-root-p :to :from))
+                    subgraph-stalks)
+              (push copied-berry subgraph-berries)
+              (setf paths
+                    ;; Append new paths leading from the next-berry at the end, to ensure a
+                    ;; breadth-first search.
+                    (append paths
+                            (%tracing-stalks-from copied-berry next-berry stalk-forward-function)))))))))
 
 (let* ((test-graph
          (create-graph :syntax
-                       (list "aaa" "bbb" "ccc" (list "ddd" :verbalp :graph-exit-p) "eee")
-                       (list '(0 1) '(1 2 "pred") '(2 3) '(3 4))))
+                       (list "aaa" "bbb" "ccc" (list "ddd" :verbalp :graph-exit-p) "eee"
+                             (list "fff" :verbalp))
+                       ;; Two berries connected to ccc, ddd and fff, are verbals.
+                       (list '(0 1) '(1 2 "pred") '(2 3) '(3 4) '(2 5))))
        (subgraph (subgraph-from (find-if (lambda (berry) (equalp (seme-label berry) "bbb"))
                                          (graph-berries test-graph))
                                 #'berry-verbalp)))
