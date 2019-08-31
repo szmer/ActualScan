@@ -48,7 +48,7 @@
   (print-unreadable-object (obj stream :type t :identity t)
     (format stream "~a/~a" (seme-label obj) (seme-creator obj))))
 
-(defun copy-berry (original-berry)
+(defun copy-berry (original-berry &key (keep-old-stalks nil))
   (let ((new-berry
           (make-instance 'berry
                          :label (seme-label original-berry) :creator (seme-creator original-berry)
@@ -58,15 +58,18 @@
                                                 (berry-valence-instructions original-berry)))))
     (setf (slot-value new-berry 'valence-corrected)
           (berry-valence-corrected original-berry))
-    ;; Replace the stalk with copied ones with the new berry substited for the original one.
-    (setf (berry-stalks new-berry)
-          (mapcar (lambda (stalk)
-                    (let ((new-stalk (copy-stalk stalk)))
-                      (if (eq (stalk-from new-stalk) original-berry)
-                          (setf (stalk-from new-stalk) new-berry)
-                          (setf (stalk-to new-stalk) new-berry))
-                      new-stalk))
-                  (berry-stalks original-berry)))
+    ;; Replace the stalk with copied ones with the new berry substituted for the original one.
+    (if keep-old-stalks
+        (setf (berry-stalks new-berry)
+              (copy-list (berry-stalks original-berry)))
+        (setf (berry-stalks new-berry)
+              (mapcar (lambda (stalk)
+                        (let ((new-stalk (copy-stalk stalk)))
+                          (if (eq (stalk-from new-stalk) original-berry)
+                              (setf (stalk-from new-stalk) new-berry)
+                              (setf (stalk-to new-stalk) new-berry))
+                          new-stalk))
+                      (berry-stalks original-berry))))
     new-berry))
 
 (defclass stalk (seme)
@@ -107,7 +110,7 @@ error if a stalk between the berries already exists. Returns the stalk."
         (push prospective-stalk (berry-stalks (stalk-from prospective-stalk)))
         (push prospective-stalk (berry-stalks (stalk-to prospective-stalk)))
         prospective-stalk)
-      (cerror "a stalk already exists between berries" prospective-stalk)))
+      (cerror "a stalk already exists between berries" 'simple-error)))
 
 (defun connect-with-stalk (berry1 berry2 creator &key (label ""))
   "Connects both nodes with a fresh stalk and adjoins it to their adjacency lists. The stalk is

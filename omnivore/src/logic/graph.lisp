@@ -5,6 +5,7 @@
 ;;;; (berries) unfolded, eventually to be constructed only from semantic primes and unknown token
 ;;;; marks.
 ;;;;
+(declaim (optimize (debug 3)))
 (in-package :omnivore)
 
 (defclass graph ()
@@ -17,10 +18,10 @@
   (print-unreadable-object (obj stream :type t :identity t)
     (format stream "~%berries:~A~%stalks:~A~%"
             (if (list-longer-p (graph-berries obj) 10)
-                (subseq (graph-berries obj) 0 10)
+                (append (subseq (graph-berries obj) 0 10) '(and more))
                 (graph-berries obj))
             (if (list-longer-p (graph-stalks obj) 10)
-                (subseq (graph-stalks obj) 0 10)
+                (append (subseq (graph-stalks obj) 0 10) '(and more))
                 (graph-stalks obj)))))
 
 (defun create-graph (creator berry-specs stalk-specs)
@@ -87,23 +88,67 @@ performed. The first graph's root becomes the root of the result."
 
 (defun subgraph-from (start-berry test-function &key (backwards-to-root-p nil))
   "Return the subgraph containing berries and stalks originating from the start-berry, until (not
-including) berries are encountered that satisfy the test-function. All the berries and stalks in the
-result graph are references to the original ones, except for the first berry and the boundary ones,
-which are replaced with copies with out-of-subgraph stalks removed."
+including) berries are encountered that satisfy the test-function. The returned subgraph consists
+entirely of newly copied berries and stalks."
   (when backwards-to-root-p
     (cerror "Currently there is a problem with going backwards where root may not originate all
             connections. Maybe there should be code for reversing all stalks in that case."
             nil))
-  (labels ((%copy-pruned (berry pruned-function)
+  (labels ((%prune-berry (berry pruned-function)
+             "Remove all the stalks pointing in the direction given by pruned-function."
+             (setf (berry-stalks berry)
+                   (remove-if (lambda (stalk)
+                                ;; remove if pruned-function points to something else.
+                                (not (eq (funcall pruned-function stalk) berry)))
+                              (berry-stalks berry))))
+           (%copy-pruned (berry pruned-function)
              "Return a copy of the berry where all the stalks pointing in the direction given by
              pruned-function are removed."
              (let ((copied-berry (copy-berry berry)))
-               (setf (berry-stalks copied-berry)
-                     (remove-if (lambda (stalk)
-                                  ; remove if pruned-function points to something else.
-                                  (not (eq (funcall pruned-function stalk) copied-berry)))
-                                (berry-stalks copied-berry)))
-               copied-berry)))
+               (%prune-berry copied-berry pruned-function)
+               copied-berry))
+           (%tracing-stalks-from (new-berry old-berry stalk-forward-function)
+             "Return new stalks leading from new-berry, being copies of that originating from
+             old-berry."
+             (remove nil
+                     (mapcar (lambda (stalk)
+                               ;; remove stalks that would move us backwards.
+                               (unless (eq (funcall stalk-forward-function stalk)
+                                           old-berry)
+                                 ;; point the path stalks backwards to the new berry.
+                                 (let ((tracing-stalk (copy-stalk stalk)))
+                                   (if backwards-to-root-p
+                                       (setf (stalk-to tracing-stalk) new-berry)
+                                       (setf (stalk-from tracing-stalk) new-berry))
+                                   tracing-stalk)))
+                             (berry-stalks old-berry))))
+           (%fix-backstalk (backstalk new-berry direction)
+             "Replace the target berry of the backstalk (the back being in direction) with new-berry
+             and replace the old stalk on the both ends of backstalk. Return the backstalk. The
+             backstalk should probably be a tracing stalk obtained from another local function."
+             (if (eq direction :from)
+                 (setf (stalk-to backstalk) new-berry)
+                 (setf (stalk-from backstalk) new-berry))
+             (let ((other-berry
+                     (if (eq direction :from)
+                         (stalk-from backstalk) (stalk-to backstalk)))
+                   (former-berry ; equivalent to new-berry in the original graph
+                     (if (eq direction :from)
+                         (stalk-to backstalk) (stalk-from backstalk))))
+               ;; Remove the old stalk equivalent to backstalk.
+               (setf (berry-stalks new-berry)
+                     (remove-if (lambda (berry-stalk) (or (eq (stalk-to berry-stalk) former-berry)
+                                                          (eq (stalk-from berry-stalk)
+                                                              former-berry)))
+                                (berry-stalks new-berry)))
+               (setf (berry-stalks other-berry)
+                     (remove-if (lambda (berry-stalk) (or (eq (stalk-to berry-stalk) former-berry)
+                                                          (eq (stalk-from berry-stalk)
+                                                              former-berry)))
+                                (berry-stalks other-berry)))
+               (push backstalk (berry-stalks new-berry))
+               (push backstalk (berry-stalks other-berry)))
+             backstalk))
     (do* ((stalk-forward-function (if backwards-to-root-p #'stalk-from #'stalk-to))
           ;; (note that the flag is not default!)
           (stalk-backward-function (if backwards-to-root-p #'stalk-to #'stalk-from))
@@ -111,7 +156,7 @@ which are replaced with copies with out-of-subgraph stalks removed."
           ;; berry).
           (center-berry (%copy-pruned start-berry stalk-backward-function))
           ;; We can access the previous berry to have its stalk cut (if we end on it) from the stalk.
-          (paths (copy-list (berry-stalks center-berry)))
+          (paths (%tracing-stalks-from center-berry start-berry stalk-forward-function))
           (current-path (pop paths) (pop paths))
           ;;
           ;; Construing the returned subgraph.
@@ -124,25 +169,24 @@ which are replaced with copies with out-of-subgraph stalks removed."
       (let ((next-berry (funcall stalk-forward-function current-path)))
         (if (funcall test-function next-berry)
             ;; Cut off if the test function succeeded.
-            (setf subgraph-berries
-                  (n-replace-once subgraph-berries
-                                  (funcall stalk-backward-function current-path)
-                                  ;; Remove everything that would lead us farther.
-                                  (%copy-pruned (funcall stalk-backward-function current-path)
-                                                stalk-forward-function)))
+            ;; (The end-berry is the one leading us here, while the would-be next-berry is left out)
+            (let* ((end-berry (funcall stalk-backward-function current-path)))
+              ;; Remove everything that would lead us farther. (we don't need to update the
+              ;; subgraph-stalks, since they're only backwards and already accounted for)
+              (%prune-berry end-berry stalk-forward-function))
             ;; Continue if the test function failed.
-            (progn
-              (push next-berry subgraph-berries)
-              (push current-path subgraph-stalks)
-              (setf paths
-                    ;; Append new paths leading from the next-berry at the end, to ensure a
-                    ;; breadth-first search.
-                    (append paths
-                            ;; remove stalks that would move us backwards.
-                            (remove-if (lambda (stalk) (eq (funcall stalk-forward-function
-                                                                    stalk)
-                                                           next-berry))
-                                       (berry-stalks next-berry))))))))))
+              (let ((copied-berry (copy-berry next-berry :keep-old-stalks t)))
+                ;; The current-path is already a tracing stalk that needs to have its target changed
+                ;; to our copy and be registered on its ends. The other direction should be safe to
+                ;; replace their stalks, as it should be only our new copies this way.
+                (push (%fix-backstalk current-path copied-berry (if backwards-to-root-p :to :from))
+                      subgraph-stalks)
+                (push copied-berry subgraph-berries)
+                (setf paths
+                      ;; Append new paths leading from the next-berry at the end, to ensure a
+                      ;; breadth-first search.
+                      (append paths
+                              (%tracing-stalks-from copied-berry next-berry stalk-forward-function)))))))))
 
 (let* ((test-graph
          (create-graph :syntax
@@ -192,4 +236,11 @@ which are replaced with copies with out-of-subgraph stalks removed."
              (truep (find-if (%good-stalk-p-fun "bbb" "ccc")
                              (berry-stalks
                               (find-if (lambda (berry) (equalp (seme-label berry) "ccc"))
-                                       (graph-berries subgraph)))))))))
+                                       (graph-berries subgraph)))))))
+    (format t "The bbb should lead to the same ccc that is included in the graph berry list ~A~%"
+            (ignore-errors
+             (eq (find-if (lambda (berry) (equalp (seme-label berry) "ccc"))
+                          (graph-berries subgraph))
+                 (stalk-to (first (berry-stalks
+                                   (find-if (lambda (berry) (equalp (seme-label berry) "bbb"))
+                                            (graph-berries subgraph))))))))))
