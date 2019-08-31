@@ -49,7 +49,7 @@ represented in the same manner."
 ;;; ("subj" "something" ("-" "something" ("-" "??;lambskin")) ("-" "??;the")
 ;;;         ("-" "??;earpad")))
 
-(defun graph-indices (graph &key (minimum-complexity 2))
+(defun graph-indices (graph &key (minimum-complexity 3))
   "Return a list of string indices indentifying the graph."
   (remove nil
           (mapcar (lambda (berry)
@@ -58,16 +58,6 @@ represented in the same manner."
                                 minimum-complexity)
                         (format nil "~A" (graph->list-tree subgraph)))))
                   (remove-if-not #'berry-verbalp (graph-berries graph)))))
-
-(defun index-summarize-cliques (index-table &key (minimum-size 3))
-  (maphash (lambda (clique-subgraph clique-sentences)
-             (when (<= minimum-size (length clique-sentences))
-               (format t "~A ~A ~A~%"
-                       clique-subgraph
-                       ;; the shortest utterance.
-                       (first (sort (copy-list clique-sentences) #'< :key #'length))
-                       (length clique-sentences))))
-           index-table))
 
 (defun index-strong-cliques (index-table &key (strength 2) (minimum-size 3))
   (let ((included-indices) ; the ones of required length
@@ -133,9 +123,41 @@ represented in the same manner."
                   (gethash index query-index))))))
     query-index))
 
+;;;;
+;;;; Printing and diagnostics.
+;;;;
 (defun write-index-sizes-csv (index-table path)
   (with-open-file (lengths-file path :direction :output :if-does-not-exist :create
                                      :if-exists :supersede)
     (maphash (lambda (index sents)
                (format lengths-file "\"~A\" ~A~%" (csv-sanitized-string index) (length sents)))
              index-table)))
+
+(defun index-summarize-cliques (index-table &key (minimum-size 3))
+  (maphash (lambda (clique-subgraph clique-sentences)
+             (when (<= minimum-size (length clique-sentences))
+               (format t "~A ~A ~A~%"
+                       clique-subgraph
+                       ;; the shortest utterance.
+                       (first (sort (copy-list clique-sentences) #'< :key #'length))
+                       (length clique-sentences))))
+           index-table))
+
+(defun index-pprint-cliques (index-table &key (minimum-size 3) (max-printed 7))
+  (maphash (lambda (clique-subgraph clique-sentences)
+             (let ((clique-sentences ; KLUDGE KLUDGE should be done upstream!
+                     (remove-duplicates clique-sentences
+                                        :test #'equalp
+                                        :key (lambda (sentence)
+                                               (if (search "Click to expand..." sentence)
+                                                   (subseq sentence 0 (- (length sentence) 18))
+                                                   sentence)))))
+               (when (<= minimum-size (length clique-sentences))
+                 (let ((sorted-clique (sort (copy-list clique-sentences) #'< :key #'length)))
+                   (format t "~%####~A ~A~%" clique-subgraph (length clique-sentences))
+                   (block printing
+                     (do ((counter 0 (1+ counter))
+                          (sentence (pop sorted-clique) (pop sorted-clique)))
+                         ((or (= counter max-printed) (null sentence)))
+                       (format t "~A~%" sentence)))))))
+           index-table))

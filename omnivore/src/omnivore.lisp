@@ -23,3 +23,11 @@
 ;;; -> (#<HASH-TABLE :TEST EQUALP :COUNT 125 {104B9BF793}> #<HASH-TABLE :TEST EQUALP :COUNT 24 {104B9BEE33}>)
 ;;;(defparameter *test-query* (conll-sentences-query-index *test-sents* "treble"))
 ;;; -> (#<HASH-TABLE :TEST EQUALP :COUNT 1202 {10029EA3B3}> #<HASH-TABLE :TEST EQUALP :COUNT 257 {10029DFCB3}>)
+
+;;;OMNIVORE> (defparameter *gen-pars* (conll-file-paragraphs-index #p"~/lingwy/therminsley/lectrix/spacy_parsing/general_parse.conll"))
+;;;*GEN-PARS*
+;;;OMNIVORE> (defparameter *gen-query* (paragraph-index-query *gen-pars* "Sennheiser"))
+;;;*GEN-QUERY*
+;;;OMNIVORE> (defparameter *gen-query-cliques* (index-strong-cliques *gen-query*))
+;;;*GEN-QUERY-CLIQUES*
+;;;OMNIVORE> (index-pprint-cliques *gen-query-cliques* :minimum-size 5)
