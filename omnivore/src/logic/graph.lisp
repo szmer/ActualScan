@@ -126,15 +126,16 @@ entirely of newly copied berries and stalks."
              "Replace the target berry of the backstalk (the back being in direction) with new-berry
              and replace the old stalk on the both ends of backstalk. Return the backstalk. The
              backstalk should probably be a tracing stalk obtained from another local function."
-             (if (eq direction :from)
-                 (setf (stalk-to backstalk) new-berry)
-                 (setf (stalk-from backstalk) new-berry))
              (let ((other-berry
                      (if (eq direction :from)
                          (stalk-from backstalk) (stalk-to backstalk)))
                    (former-berry ; equivalent to new-berry in the original graph
                      (if (eq direction :from)
                          (stalk-to backstalk) (stalk-from backstalk))))
+               ;; Update the backstalk.
+               (if (eq direction :from)
+                   (setf (stalk-to backstalk) new-berry)
+                   (setf (stalk-from backstalk) new-berry))
                ;; Remove the old stalk equivalent to backstalk.
                (setf (berry-stalks new-berry)
                      (remove-if (lambda (berry-stalk) (or (eq (stalk-to berry-stalk) former-berry)
