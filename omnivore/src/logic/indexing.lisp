@@ -49,8 +49,8 @@ represented in the same manner."
 ;;; ("subj" "something" ("-" "something" ("-" "??;lambskin")) ("-" "??;the")
 ;;;         ("-" "??;earpad")))
 
-(defun graph-indices (graph &key (minimum-complexity 3))
-  "Return a list of string indices indentifying the graph."
+(defun graph-traits (graph &key (minimum-complexity 3))
+  "Return a list of string traits indentifying the graph."
   (remove nil
           (mapcar (lambda (berry)
                     (let ((subgraph (subgraph-from berry #'berry-verbalp)))
@@ -60,44 +60,47 @@ represented in the same manner."
                   (remove-if-not #'berry-verbalp (graph-berries graph)))))
 
 (defun index-strong-cliques (index-table &key (strength 2) (minimum-size 3))
-  (let ((included-indices) ; the ones of required length
+  "Get cliques defined by sharing traits."
+  (let ((included-traits) ; the ones of required length
         (strong-clique-index (make-hash-table :test #'equalp)))
     (maphash (lambda (clique-subgraph clique-sentences)
                (when (<= minimum-size (length clique-sentences))
-                 (push clique-subgraph included-indices)))
+                 (push clique-subgraph included-traits)))
              index-table)
-    (alexandria:map-combinations (lambda (clique-indices)
-                                   (let ((clique-elements ; intersection of clique indices
+    (alexandria:map-combinations (lambda (clique-traits)
+                                   (let ((clique-elements ; intersection of clique traits
                                            (reduce (lambda (sents-1 sents-2)
                                                      (intersection sents-1 sents-2 :test #'equalp))
-                                                   (mapcar (lambda (index)
-                                                             (gethash index index-table))
-                                                           clique-indices))))
+                                                   (mapcar (lambda (trait)
+                                                             (gethash trait index-table))
+                                                           clique-traits))))
                                      (when (<= 2 (length clique-elements))
-                                       (setf (gethash (cl-strings:join clique-indices
+                                       (setf (gethash (cl-strings:join clique-traits
                                                                        :separator ",")
                                                       strong-clique-index)
                                              clique-elements))))
-                                 included-indices
+                                 included-traits
                                  :length strength)
     strong-clique-index))
 
 (defun conll-paragraph-index (conll-strings)
-  "Index a list of paragraphs given as strings of ConLL-formatted sentences."
+  "Index a list of paragraphs given as strings of ConLL-formatted sentences. The result is a list of
+  paragraphs as lists of sentence with their associated traits."
   (let ((paragraph-sentence-lists (mapcar (lambda (string)
                                             (let ((string-stream (make-string-input-stream string)))
                                               ;; read sentences from the string.
                                               (cl-conllu:read-stream string-stream)))
                                           conll-strings)))
     (mapcar (lambda (paragraph)
-              ;; Make lists of sentence text + its representation indices.
+              ;; Make lists of sentence text + its representation traits.
               (mapcar (lambda (sentence-obj)
                         (cons (cl-conllu:sentence->text sentence-obj)
-                              (graph-indices (sentence->representation sentence-obj))))
+                              (graph-traits (sentence->representation sentence-obj))))
                       paragraph))
             paragraph-sentence-lists)))
 
 (defun conll-file-paragraphs-index (conll-path)
+  "Index a file to a list of paragraphs associated with their traits."
   (conll-paragraph-index
    (do* ((conll-file (open conll-path :if-does-not-exist nil))
          (line (when conll-file (read-line conll-file nil))
@@ -111,26 +114,59 @@ represented in the same manner."
          (push nil paragraph-strings)
          (push line (first paragraph-strings))))))
 
+(defun paragraphs->trait-cliques (paragraphs)
+  (let ((trait-index (make-hash-table :test #'equalp)))
+    (dolist (paragraph paragraphs)
+      (dolist (sentence-entry paragraph)
+        (dolist (trait (rest sentence-entry))
+          (push (first sentence-entry)
+                (gethash trait trait-index)))))
+    trait-index))
+
 (defun paragraph-index-query (paragraphs query-string)
-  (let ((query-index (make-hash-table :test #'equalp)))
+  "Make query on a paragraph index. Returns a trait index."
+  (let ((query-index (make-hash-table :test #'equalp))
+        (sentences-with-traits))
     (dolist (paragraph paragraphs)
       (when (some (lambda (sentence-entry)
                     (search query-string (first sentence-entry)))
                   paragraph)
         (dolist (sentence-entry paragraph)
-          (dolist (index (rest sentence-entry))
+          (dolist (trait (rest sentence-entry))
+            (push sentence-entry
+                  sentences-with-traits)
             (push (first sentence-entry)
-                  (gethash index query-index))))))
-    query-index))
+                  (gethash trait query-index))))))
+    (list query-index
+          sentences-with-traits)))
+
+(defun traits-total-score (traits trait->sentences)
+  (reduce #'+ (mapcar (lambda (trait) (length (gethash trait trait->sentences)))
+                      traits)))
+
+(defun sentence-top-scores (sentences-with-traits trait-index)
+  (sort (mapcar (lambda (sentence-entry)
+                  (cons (first sentence-entry)
+                        (traits-total-score (rest sentence-entry) trait-index)))
+                sentences-with-traits)
+        #'> :key #'cdr))
+
+(defun paragraphs-sentence-top-scores (paragraphs trait-index)
+  ;; takes about a minute on the test corpus
+  (sentence-top-scores (reduce #'append paragraphs) trait-index))
+
+(defun query-sentence-top-scores (query-list)
+  ;; Give the sentence list and the trait index.
+  (sentence-top-scores (second query-list) (first query-list)))
 
 ;;;;
 ;;;; Printing and diagnostics.
 ;;;;
-(defun write-index-sizes-csv (index-table path)
+(defun write-trait-sizes-csv (index-table path)
   (with-open-file (lengths-file path :direction :output :if-does-not-exist :create
                                      :if-exists :supersede)
-    (maphash (lambda (index sents)
-               (format lengths-file "\"~A\" ~A~%" (csv-sanitized-string index) (length sents)))
+    (maphash (lambda (trait sents)
+               (format lengths-file "\"~A\" ~A~%" (csv-sanitized-string trait) (length sents)))
              index-table)))
 
 (defun index-summarize-cliques (index-table &key (minimum-size 3))
