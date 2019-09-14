@@ -179,7 +179,7 @@ represented in the same manner."
                        (length clique-sentences))))
            index-table))
 
-(defun index-pprint-cliques (index-table &key (minimum-size 3) (max-printed 7))
+(defun index-pprint-cliques (index-table &key (minimum-size 3) (max-printed 7) required-atom)
   (maphash (lambda (clique-subgraph clique-sentences)
              (let ((clique-sentences ; KLUDGE KLUDGE should be done upstream!
                      (remove-duplicates clique-sentences
@@ -188,7 +188,9 @@ represented in the same manner."
                                                (if (search "Click to expand..." sentence)
                                                    (subseq sentence 0 (- (length sentence) 18))
                                                    sentence)))))
-               (when (<= minimum-size (length clique-sentences))
+               (when (and (<= minimum-size (length clique-sentences))
+                          (if (not required-atom) t
+                              (search required-atom clique-subgraph)))
                  (let ((sorted-clique (sort (copy-list clique-sentences) #'< :key #'length)))
                    (format t "~%####~A ~A~%" clique-subgraph (length clique-sentences))
                    (block printing

@@ -164,6 +164,23 @@
     '("xcomp" "open clausal complement"))
    :test #'equal))
 
+;;; Temporary dictionary, serving only for associating the "people" berry with some lemmas.
+(defparameter *temp-dictionary*
+  (alexandria:alist-hash-table
+   (mapcar (lambda (term)
+             (cons term
+                   `(create-graph :explication-definition (list ,term "people") '((0 1)))))
+           ;; We skip "headband" because its semantic relation to people is probably indirect.
+           ;; similarly technoical terms like "frequency", "gain"
+           ;; a "design" is made by people, but not necessarily affecting them?
+           (list "anyone" "audio" "audiophile" "bass" "bright" "can" "comfortable" "detail" "difficult"
+                 "ear" "easy" "experience" "friend" "forum" "gear"
+                 "hard" "harsh" "head" "headphone" "high" "hobby" "idea" "imaging"
+                 "music" "musical" "mid" "midrange" "natural" "neutral" "order"
+                 "pad" "person" "price" "product" "recording" "someone" "sound" "soundstage" "small"
+                 "treble" "warm" "volume"))
+   :test #'equalp))
+
 ;;;
 ;;; Reading functions.
 ;;;
@@ -171,8 +188,9 @@
   "Determines whether we know the word contained by the token and returns either a known
 representation or an unknown-token guess at it."
   (declare (type conllu.rdf::token input-token))
-  (let ((official-form))
-    (or official-form ; don't expand to the explanation on default
+  (let ((explanation (gethash (cl-conllu:token-lemma input-token)
+                              *temp-dictionary*)))
+    (or (eval explanation)
         (unknown-token->graph input-token))))
 
 ;;; For the unknown token case.
