@@ -33,7 +33,7 @@
     `("agent" :forward ,#'graph-root-dangling-stalk) ; most often "by"?
     `("acomp" :forward ,#'graph-root-dangling-stalk)
     `("amod" :forward ,#'graph-root-dangling-stalk)
-    ;; NOTE probably should be proxied by a they_be_them
+    ;; NOTE probably should be proxied by a _sth_is_
     `("appos" :forward ,#'graph-root-dangling-stalk)
     `("attr" :forward ,#'graph-root-dangling-stalk)
     `("aux" :backward ,#'graph-pred-dangling-stalk)
@@ -213,8 +213,10 @@ assuming that we have no definition for that term."
         (list
          (list
           (list (cl-strings:join
-                 (list "_they_" *prefix-unknown-token* (cl-conllu:token-lemma input-token)
-                       "_them"))
+                 (list "_sth_" *prefix-unknown-token*
+                       (third-person-present (cl-conllu:token-lemma input-token))
+                       (if (equalp "be" (cl-conllu:token-lemma input-token))
+                         "_" "_sth")))
                 :verbalp :obj-exit-p))
          ()))
        ((equalp "noun" universal-pos)
@@ -233,7 +235,7 @@ assuming that we have no definition for that term."
          '((0 1))))
        ((equalp "adj" universal-pos)
         (list
-         (list '("__they_be_" :verbalp :obj-exit-p)
+         (list '("_sth_is_" :verbalp :obj-exit-p)
                (cl-strings:join (list *prefix-unknown-token*
                                       (cl-conllu:token-lemma input-token))))
          '((0 1 "pred")))) ; TODO failure to label to-verbal stalk should be catched by validation

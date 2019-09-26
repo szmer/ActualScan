@@ -26,3 +26,33 @@
 
 (defun csv-sanitized-string (string)
   (remove #\' (remove #\" string)))
+
+(defun last-element (sequence)
+  "Works for lists, recommended for vectors."
+  (elt sequence (1- (length sequence))))
+
+(defun penultimate-element (sequence)
+  "Works for lists, recommended for vectors."
+  (elt sequence (- (length sequence) 2)))
+
+(defun third-person-present (lemma)
+  (cond ((equalp lemma "be") "is")
+        ;; o, x, ss, sh, ch -> +es
+        ((or (eq (last-element lemma) #\o)
+             (eq (last-element lemma) #\x)
+             (and (eq (penultimate-element lemma) #\s) ; ss
+                  (eq (last-element lemma) #\s))
+             (and (eq (last-element lemma) #\h) ; sh, ch
+                  (or (eq (penultimate-element lemma) #\s)
+                      (eq (penultimate-element lemma) #\c))))
+         (concatenate 'string lemma "es"))
+        ;; y -> ies
+        ((and (eq (last-element lemma) #\y)
+              (not (find (penultimate-element lemma)
+                         "eoiua")))
+         (concatenate 'string
+                      ;; remove the last y, to replace with i in conjugation
+                      (subseq lemma 0 (1- (length lemma)))
+                      "ies"))
+        ;; the default case
+        (t (concatenate 'string lemma "s"))))
