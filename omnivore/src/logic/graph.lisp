@@ -27,14 +27,18 @@
 (defun create-graph (creator berry-specs stalk-specs)
   "Intended for new graphs. The creator applies for all created semes, and also for determining edge
 weights. Berries are defined by labels (optionally in a list, possibly with :verbalp and :obj-exit-p)
-and stalks by berry indices."
+and stalks by berry indices. Each spec list can have another creator keyword as the last element;
+this will be used instead of the global one if present."
   (let ((berries (mapcar
                   (lambda (berry-spec)
                     (let ((berry-spec (if (listp berry-spec) berry-spec
                                           (list berry-spec))))
                       (make-instance 'berry
                                      :label (first berry-spec)
-                                     :creator creator
+                                     :creator (or
+                                                (when (typep (last-car berry-spec) 'element-creator)
+                                                  (last-car berry-spec))
+                                                creator)
                                      :verbalp (truep (find :verbalp berry-spec))
                                      :obj-exit-p (truep (find :obj-exit-p berry-spec)))))
                   berry-specs)))
@@ -44,7 +48,11 @@ and stalks by berry indices."
                             (lambda (stalk-spec)
                               (connect-with-stalk (nth (first stalk-spec) berries)
                                                   (nth (second stalk-spec) berries)
-                                                  creator
+                                                  (or
+                                                    (when (typep (last-car stalk-spec)
+                                                                 'element-creator)
+                                                      (last-car stalk-spec))
+                                                    creator)
                                                   :label
                                                   (or
                                                     (when (and (third stalk-spec)

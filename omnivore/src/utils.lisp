@@ -28,8 +28,14 @@
   (remove #\' (remove #\" string)))
 
 (defun last-element (sequence)
-  "Works for lists, recommended for vectors."
+  "Works for lists, recommended for vectors (use last-car instead)."
   (elt sequence (1- (length sequence))))
+
+(defun last-car (list)
+  (first (last list)))
+
+(defun list-wrapped (object)
+  (when object (list object)))
 
 (defun penultimate-element (sequence)
   "Works for lists, recommended for vectors."

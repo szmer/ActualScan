@@ -23,8 +23,6 @@ quoted list."
 (defmethod xml-basic-representation ((obj stalk) id)
   "Users need to add to the attributes (last element of the quoted list) source and target
 attributed with existing node (berry) ids."
-  ;; TODO also print weights, once the graph manipulation functions have them sorted so they're
-  ;; always present as a slot
   `(xml-emitter:empty-tag "edge" (list '("id" ,id) '("label" ,(seme-label obj)))))
 
 (defun graph->xml (graph &optional (output-stream *standard-output*))
@@ -55,10 +53,12 @@ attributed with existing node (berry) ids."
             (mapcar (lambda (stalk stalk-id)
                       (let ((representation-list (xml-basic-representation stalk stalk-id)))
                         (appendf (car (last representation-list)) ; the last element contains the
-                                                                  ; attribute list
+                                 ; attribute list
                                  ;; We need to add a quoted 2-list to a quoted s-expression.
                                  (list `'("source" ,(gethash (stalk-from stalk) berry->id))
-                                       `'("target" ,(gethash (stalk-to stalk) berry->id))))
+                                       `'("target" ,(gethash (stalk-to stalk) berry->id))
+                                       `'("weight" ,(gethash (seme-creator stalk)
+                                                             *creator->stalk-weight*))))
                         (eval representation-list)))
                     (graph-stalks graph)
                     (alexandria:iota (length (graph-stalks graph))))))))))
