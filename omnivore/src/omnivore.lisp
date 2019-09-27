@@ -1,9 +1,9 @@
 (defpackage :omnivore (:use :cl :trivial-types))
 (in-package :omnivore)
 
-(defparameter *conll-file* #p"/home/szymon/lingwy/therminsley/lectrix/spacy_parsing/test_conlls.conll")
-(defparameter *conll-file-lg* #p"/home/szymon/lingwy/therminsley/lectrix/spacy_parsing/test_conlls.conll")
-(defparameter *conll-file-clear* #p"/home/szymon/lingwy/therminsley/lectrix/spacy_parsing/input_utterances.txt.nlp")
+(defparameter *conll-file* #p"~/therminsley/lectrix/spacy_parsing/test_conlls.conll")
+(defparameter *conll-file-lg* #p"~/therminsley/lectrix/spacy_parsing/test_conlls.conll")
+(defparameter *conll-file-clear* #p"~/therminsley/lectrix/spacy_parsing/input_utterances.txt.nlp")
 (defparameter *sents* (cl-conllu:read-conllu *conll-file*))
 ;;;(cl-conllu:sentence-tokens (fifth *sents*))
 ;;;(cl-conllu:sentence-binary-tree (fifth *sents*))
@@ -18,7 +18,7 @@
 ;;;(defparameter *a* (create-graph :syntax (list "something" "nothing") (list '(1 0))))
 ;;;(defparameter *b* (sentence->representation (fifth *sents*)))
 
-;;;(defparameter *test-sents* (cl-conllu:read-conllu #p"/home/szymon/lingwy/therminsley/lectrix/spacy_parsing/bigparse.conll"))
+;;;(defparameter *test-sents* (cl-conllu:read-conllu #p"~/therminsley/lectrix/spacy_parsing/bigparse.conll"))
 ;;;(defparameter *test-query* (conll-sentences-query-index *test-sents* "compact"))
 ;;; -> (#<HASH-TABLE :TEST EQUALP :COUNT 125 {104B9BF793}> #<HASH-TABLE :TEST EQUALP :COUNT 24 {104B9BEE33}>)
 ;;;(defparameter *test-query* (conll-sentences-query-index *test-sents* "treble"))
