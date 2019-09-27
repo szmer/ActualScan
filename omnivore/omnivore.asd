@@ -3,7 +3,7 @@
   :version "0.0.0"
   :author "Therminsley"
 
-  :depends-on ("alexandria" "cl-conllu" "cl-strings" "trivial-types" "xml-emitter")
+  :depends-on ("alexandria" "cl-conllu" "cl-strings" "plump" "trivial-types" "xml-emitter")
   :components ((:module "src"
                 :components ((:file "omnivore")
                              (:file "utils" :depends-on ("omnivore"))
@@ -14,6 +14,6 @@
                                            (:file "indexing" :depends-on ("representation"))
                                            (:file "reading" :depends-on ("representation")))
                               :depends-on ("omnivore" "utils"))
-                             (:module "output"
-                              :components ((:file "xml"))
+                             (:module "io"
+                              :components ((:file "in-xml") (:file "out-xml"))
                               :depends-on ("logic"))))))

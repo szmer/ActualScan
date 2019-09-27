@@ -26,8 +26,8 @@
 
 (defun create-graph (creator berry-specs stalk-specs)
   "Intended for new graphs. The creator applies for all created semes, and also for determining edge
-weights. Berries are defined by labels (optionally in a list with :verbalp and :obj-exit-p) and
-stalks by berry indices."
+weights. Berries are defined by labels (optionally in a list, possibly with :verbalp and :obj-exit-p)
+and stalks by berry indices."
   (let ((berries (mapcar
                   (lambda (berry-spec)
                     (let ((berry-spec (if (listp berry-spec) berry-spec
@@ -45,7 +45,13 @@ stalks by berry indices."
                               (connect-with-stalk (nth (first stalk-spec) berries)
                                                   (nth (second stalk-spec) berries)
                                                   creator
-                                                  :label (or (third stalk-spec) "-")))
+                                                  :label
+                                                  (or
+                                                    (when (and (third stalk-spec)
+                                                               ;; guard against empty labels
+                                                               (< 0 (length (third stalk-spec))))
+                                                      (third stalk-spec))
+                                                    "-")))
                             stalk-specs))))
 
 (defun concatenate-graphs (&rest graphs)
