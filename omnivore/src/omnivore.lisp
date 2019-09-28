@@ -2,8 +2,7 @@
 (in-package :omnivore)
 
 
-;; This needs to be a wildpath to allow for directory listings.
-(defparameter *filesystem-db-path* #p"~/therminsley/willowseed/db/*")
+(defparameter *filesystem-db-path* #p"~/therminsley/willowseed/db/")
 
 
 (defparameter *conll-file* #p"~/therminsley/lectrix/spacy_parsing/test_conlls.conll")

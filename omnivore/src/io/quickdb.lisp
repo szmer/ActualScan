@@ -8,22 +8,21 @@
 (defun explication-fun-symbol (name)
   (read-from-string (cl-strings:join (list "expl-" name))))
 
-(defmacro atom-label-fun (atom-name atom-spec)
+(defun atom-label-fun (atom-name atom-spec)
   `(,(explication-fun-symbol atom-name)
      () (create-graph :explication-definition
-                      (first ,atom-spec)
-                      (second ,atom-spec))))
+                      (first ',atom-spec)
+                      (second ',atom-spec))))
 
-;;;
-;;; NOTE maybe these generate unevaluated code instead of being a macro (sbcl complains about uknown function expl- etc.)
-;;;
-(defmacro make-molecule-label-fun (molecule-name molecule-spec)
+(defun make-molecule-label-fun (molecule-name molecule-spec)
   `(,(explication-fun-symbol molecule-name)
      () (let* ((berry-graphs
                  (mapcar (lambda (berry-spec)
-                           ;; Let the explication function create the graph for the berry.
-                           (funcall (explication-fun-symbol (first berry-spec))))
-                         (first ,molecule-spec)))
+                           ;; Let the explication function create the graph for the berry. We need
+                           ;; to pack the symbol to reference the wrapping labels.
+                           (funcall (function
+                                      (explication-fun-symbol (first berry-spec)))))
+                         (first ',molecule-spec)))
                (stalk-graphs
                  (mapcar (lambda (edge-spec)
                            (connection-graph :backward ;;; ???? TODO
@@ -31,7 +30,7 @@
                                                  ,#'graph-root-dangling-stalk)
                                              (nth (first edge-spec) berry-graphs)
                                              (nth (second edge-spec) berry-graphs)))
-                         (second ,molecule-spec))))
+                         (second ',molecule-spec))))
           (apply #'concatenate-graphs (append berry-graphs stalk-graphs)))))
 
 (defmacro collect-explications-and-run (lexeme-name)
@@ -55,8 +54,9 @@
           (appendf lexeme-names
                    (mapcar #'first ; berry canonical form
                            (first (get 'explication row-to-explicate)))))))
+    (setf *cobbyhole* (alexandria:hash-table-values name->label-fun))
     `(labels
-       ,@(alexandria:hash-table-values name->label-fun) ; label function definitions
+       (,@(alexandria:hash-table-values name->label-fun)) ; label function definitions
        ;; call our boy:
        (,(explication-fun-symbol lexeme-name)))))
 
@@ -68,24 +68,34 @@
 ;;; TODO handle meanings beyond 1!!!
 (defun lexeme-lookup (word-canonical-form)
   "Return a lexeme row from the database."
-  (let ((lexeme-dir-files (directory (merge-pathnames
-                                       (pathname word-canonical-form)
-                                       *filesystem-db-path*)))
-        ;; Prefill with the canonical form.
-        (lexeme-row (list 'canonical-form word-canonical-form)))
+  (let ((lexeme-dir-files (directory
+                            ;; a wild pathname, indicating any file extension, is needed for dir
+                            ;; listings.
+                            (merge-pathnames (cl-strings:join
+                                               (list
+                                                 (pathname word-canonical-form)
+                                                 "/*.*"))
+                                             *filesystem-db-path*)))
+        (lexeme-row nil))
     ;; Throw an error if called for an unknown lexeme.
     (unless lexeme-dir-files (error (format nil "Unknown lexeme ~A" word-canonical-form)))
+    ;; Enter the canonical form. (adding it in the let doesn't seem to work)
+    (setf (get 'canonical-form lexeme-row) word-canonical-form)
     ;; Indicate atomicity.
-    (when (find "atom1" lexeme-dir-files :key #'file-namestring :test #'equalp)
-      (setf (get 'atomp lexeme-row) t))
+    (if (find "atom1" lexeme-dir-files :key #'file-namestring :test #'equalp)
+      (setf (get 'atomp lexeme-row) t)
+      (setf (get 'atomp lexeme-row) nil))
     ;; Get the explication definition.
     (let ((root-node-n (uiop:read-file-form ; this should also convert to an integer
-                         (find "atom1" lexeme-dir-files
-                               :key #'file-namestring :test #'equalp))))
+                         (or (find "root1" lexeme-dir-files
+                               :key #'file-namestring :test #'equalp)
+                             (error "no root file")))))
       (setf (get 'explication lexeme-row)
             (graph-spec-from-xml (uiop:read-file-string
-                                   (find "atom1" lexeme-dir-files
-                                         :key #'file-namestring :test #'equalp))
+                                   (or
+                                     (find "meaning1.gexf" lexeme-dir-files
+                                           :key #'file-namestring :test #'equalp) 
+                                     (error "no meaning gexf file")))
                                  :root-node-n root-node-n)))
     lexeme-row))
 
@@ -112,3 +122,25 @@
 ;;;===        )
 ;;;===  ))
 ;;;===
+
+;;; Hopeless scribbling.
+;;;==(defmacro dynamic-function (symbol-expression)
+;;;==  `(function ,symbol-expression))
+;;;==
+;;;==(defmacro test1 ()
+;;;== (labels ((daj () 'grzej)
+;;;==         (hej (x) (+ x 1))
+;;;==         (grzej (x) x (hej 4)))
+;;;==  (print (grzej 5))
+;;;==  (print (funcall (function grzej) 8))
+;;;==  `(print (function ,(daj)))
+;;;==  ) 
+;;;==  )
+;;;==
+;;;==(labels ((daj () 'grzej)
+;;;==         (hej (x) (+ x 1))
+;;;==         (grzej (x) x (hej 4)))
+;;;==  (print (grzej 5))
+;;;==  (print (funcall (function grzej) 8))
+;;;==  (print (dynamic-function (daj)))
+;;;==  )

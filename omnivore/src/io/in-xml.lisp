@@ -10,7 +10,8 @@
       ;; Node (berry) specs.
       (mapcar (lambda (node)
                 (let ((label-spec (list (plump:attribute node "label"))))
-                  (if (equalp "_sth_" (subseq (first label-spec) 0 5))
+                  (if (and (< 5 (length (first label-spec)))
+                           (equalp "_sth_" (subseq (first label-spec) 0 5)))
                       (append label-spec
                               (if (equalp "_sth_is_" (first label-spec))
                                   '(:verbalp)
