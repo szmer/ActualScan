@@ -184,13 +184,27 @@
 ;;;
 ;;; Reading functions.
 ;;;
+(defun verb-canonical-form (verb-lemma &key unknownp)
+  (cl-strings:join
+    (list "_sth_" *prefix-unknown-token*
+          (third-person-present verb-lemma) (if (equalp "be" verb-lemma)
+                                              "_" "_sth"))))
+
 (defun token->representation (input-token)
   "Determines whether we know the word contained by the token and returns either a known
 representation or an unknown-token guess at it."
   (declare (type conllu.rdf::token input-token))
-  (let ((explanation (gethash (cl-conllu:token-lemma input-token)
-                              *temp-dictionary*)))
-    (or (eval explanation)
+  ;; If an explication is available, we should a graph spec from the database.
+  (let ((explication
+          (or
+            (explication-lookup (if (equalp "verb" (cl-conllu:token-upostag input-token))
+                                  (verb-canonical-form (cl-conllu:token-lemma input-token))
+                                  (cl-conllu:token-lemma input-token)))
+            ;; this is a KLUDGE to be removed when possible:
+            (eval ; note that (eval nil) is ok, gives us nil
+             (gethash (cl-conllu:token-lemma input-token)
+                              *temp-dictionary*)))))
+    (or explication
         (unknown-token->graph input-token))))
 
 ;;; For the unknown token case.
@@ -212,11 +226,7 @@ assuming that we have no definition for that term."
        ((equalp "verb" universal-pos)
         (list
          (list
-          (list (cl-strings:join
-                 (list "_sth_" *prefix-unknown-token*
-                       (third-person-present (cl-conllu:token-lemma input-token))
-                       (if (equalp "be" (cl-conllu:token-lemma input-token))
-                         "_" "_sth")))
+          (list (verb-canonical-form (cl-conllu:token-lemma input-token) :unknownp t)
                 :verbalp :obj-exit-p))
          ()))
        ((equalp "noun" universal-pos)

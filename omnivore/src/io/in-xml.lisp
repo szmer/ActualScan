@@ -4,7 +4,7 @@
 (declaim (optimize (debug 3)))
 (in-package :omnivore)
 
-(defun graph-spec-from-xml (xml-string)
+(defun graph-spec-from-xml (xml-string &key (root-node-n 0))
   (let ((xml-structure (plump:parse xml-string)))
     (list
       ;; Node (berry) specs.
@@ -17,10 +17,14 @@
                                   '(:verbalp :obj-exit-p)))
                       ;; The normal, non-verbal case.
                       label-spec)))
-              ;; NOTE We currently get those from plump reversed, and the order matters (esp. the
-              ;; root being first).
-              (reverse
-               (plump:get-elements-by-tag-name xml-structure "node")))
+              ;; NOTE We currently get those from plump reversed, and the order matters (the root
+              ;; has to be first).
+              (let* ((node-list (plump:get-elements-by-tag-name xml-structure "node"))
+                     (list-length (length node-list))
+                     (root-true-n (- list-length 1 root-node-n)))
+                (cons (nth root-true-n node-list)
+                      (append (subseq node-list 0 root-true-n)
+                              (subseq node-list (1+ root-true-n))))))
       ;; Edge (stalk) specs.
       (mapcar (lambda (edge)
                 (append
@@ -48,8 +52,10 @@
        (graph-specced-ok
          (equalp
            graph-spec 
-           (list '(("_sth_kicks_sth" :verbalp :obj-exit-p) ("something") ("sticky"))
-                 ;; We will receive edges reversed in order.
-                 '((1 2 :explication-prototype) (0 1 "obj"))))))
+           (list
+             ;; The root (default 0) will be the first, with the rest of the berries reversed.
+             '(("_sth_kicks_sth" :verbalp :obj-exit-p) ("sticky") ("something"))
+             ;; We will receive edges reversed in order.
+             '((1 2 :explication-prototype) (0 1 "obj"))))))
   (format t "Graph properly specced from XML ~A~%" graph-specced-ok)
   (when (not graph-specced-ok) (print graph-spec) (format t "~%")))

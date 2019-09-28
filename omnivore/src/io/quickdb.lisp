@@ -56,18 +56,44 @@
                    (mapcar #'first ; berry canonical form
                            (first (get 'explication row-to-explicate)))))))
     `(labels
-       ,@(alexandria:hash-table-values name->label-fun)
+       ,@(alexandria:hash-table-values name->label-fun) ; label function definitions
+       ;; call our boy:
        (,(explication-fun-symbol lexeme-name)))))
 
+(defun lexeme-known-p (word-canonical-form)
+  (truep (directory (merge-pathnames  (pathname word-canonical-form)
+                                      *filesystem-db-path*))))
+
+;;; TODO handle valence!!!
+;;; TODO handle meanings beyond 1!!!
 (defun lexeme-lookup (word-canonical-form)
   "Return a lexeme row from the database."
-  (declare (ignore word-canonical-form))
-  nil ; TODO
-  )
+  (let ((lexeme-dir-files (directory (merge-pathnames
+                                       (pathname word-canonical-form)
+                                       *filesystem-db-path*)))
+        ;; Prefill with the canonical form.
+        (lexeme-row (list 'canonical-form word-canonical-form)))
+    ;; Throw an error if called for an unknown lexeme.
+    (unless lexeme-dir-files (error (format nil "Unknown lexeme ~A" word-canonical-form)))
+    ;; Indicate atomicity.
+    (when (find "atom1" lexeme-dir-files :key #'file-namestring :test #'equalp)
+      (setf (get 'atomp lexeme-row) t))
+    ;; Get the explication definition.
+    (let ((root-node-n (uiop:read-file-form ; this should also convert to an integer
+                         (find "atom1" lexeme-dir-files
+                               :key #'file-namestring :test #'equalp))))
+      (setf (get 'explication lexeme-row)
+            (graph-spec-from-xml (uiop:read-file-string
+                                   (find "atom1" lexeme-dir-files
+                                         :key #'file-namestring :test #'equalp))
+                                 :root-node-n root-node-n)))
+    lexeme-row))
 
+;;; TODO check if it even exists in db.
 (defun explication-lookup (word-canonical-form)
   "Return a graph."
-  (collect-explications-and-run word-canonical-form))
+  (when (lexeme-known-p word-canonical-form)
+    (collect-explications-and-run word-canonical-form)))
 
 ;;;===(let ((atomic-lexemes (make-hash-table :test #'equalp)) ; maps of definitions
 ;;;===      (molecule-lexemes (make-hash-table :test #'equalp))

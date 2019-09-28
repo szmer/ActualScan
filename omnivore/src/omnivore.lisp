@@ -1,6 +1,11 @@
 (defpackage :omnivore (:use :cl :trivial-types))
 (in-package :omnivore)
 
+
+;; This needs to be a wildpath to allow for directory listings.
+(defparameter *filesystem-db-path* #p"~/therminsley/willowseed/db/*")
+
+
 (defparameter *conll-file* #p"~/therminsley/lectrix/spacy_parsing/test_conlls.conll")
 (defparameter *conll-file-lg* #p"~/therminsley/lectrix/spacy_parsing/test_conlls.conll")
 (defparameter *conll-file-clear* #p"~/therminsley/lectrix/spacy_parsing/input_utterances.txt.nlp")

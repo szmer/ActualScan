@@ -84,7 +84,7 @@ connect-stalk function."
 ;;; HOWEVER, in the code there is some gymnastics around the order in which we construct the main
 ;;; connecting stalk -- treating either the "from" end (backward) or the "to" end (forward) as the
 ;;; more important one. If both connected graphs are verbal, only the more important end gets the
-;;; verbal exit annotation, using a "something" berry proxy.
+;;; verbal exit annotation, using a "something" berry proxy. (compare the "wiki" spec or whatever)
 ;;;
 ;;; Incidentally, almost all :forward relations are stricly to the target root, suggesting that they
 ;;; shouldn't need labeling other than pred (if it's the root for verbals).
