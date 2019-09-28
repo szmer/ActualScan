@@ -14,27 +14,14 @@
                       (first ,atom-spec)
                       (second ,atom-spec))))
 
-(defmacro make-molecule-label-fun (molecule-name molecule-spec explication-funs-table)
+;;;
+;;; NOTE maybe these generate unevaluated code instead of being a macro (sbcl complains about uknown function expl- etc.)
+;;;
+(defmacro make-molecule-label-fun (molecule-name molecule-spec)
   `(,(explication-fun-symbol molecule-name)
      () (let* ((berry-graphs
                  (mapcar (lambda (berry-spec)
-                           ;; Pull and record the missing lexeme labeled function if needed.
-                           (unless (gethash (explication-fun-symbol (first berry-spec))
-                                             ,explication-funs-table)
-                              ;; (TODO This need not constantly call the database if we preload all
-                              ;; explications from some a priori known list.)
-                              (let ((lexeme-row (lexeme-lookup (first berry-spec))))
-                                (setf 
-                                  (gethash (explication-fun-symbol (first berry-spec))
-                                           ,explication-funs-table)
-                                  nil
-                                  (if (get 'atomp lexeme-row)
-                                      (atom-label-fun (first berry-spec)
-                                                      (get 'explication lexeme-row))
-                                      (make-molecule-label-fun (first berry-spec)
-                                                               (get 'explication lexeme-row)
-                                                               ,explication-funs-table)))))
-                           ;; We will need just to let the function create the graph for the berry.
+                           ;; Let the explication function create the graph for the berry.
                            (funcall (explication-fun-symbol (first berry-spec))))
                          (first ,molecule-spec)))
                (stalk-graphs
@@ -43,20 +30,34 @@
                                              (or (third edge-spec)
                                                  ,#'graph-root-dangling-stalk)
                                              (nth (first edge-spec) berry-graphs)
-                                             (nth (second edge-spec) berry-graphs)
-                                             )))))
+                                             (nth (second edge-spec) berry-graphs)))
+                         (second ,molecule-spec))))
           (apply #'concatenate-graphs (append berry-graphs stalk-graphs)))))
 
-(defmacro collect-explications-and-run (lexeme-row)
-  (let* ((label-funs-table (make-hash-table))) ; here leave explications indexed by their symbols
-    (setf (gethash (explication-fun-symbol (get 'canonical-form lexeme-row))
-                   label-funs-table)
-          (make-molecule-label-fun (get 'canonical-form lexeme-row)
-                                   (get 'explication lexeme-row)
-                                   label-funs-table))
+(defmacro collect-explications-and-run (lexeme-name)
+  (let* ((name->label-fun (make-hash-table :test #'equalp)))
+    ;; There's an impulse to collect explications as we define the higher levels, but it makes for
+    ;; nesting macros with side effects, which leads to stack limit breaking on compilation. So
+    ;; we define the higher function first, and then demand rows for the lexemes in references.
+    (do* ((lexeme-names (list lexeme-name))
+          (name-to-explicate (pop lexeme-names) (pop lexeme-names)))
+      ((null name-to-explicate))
+      (unless (gethash name-to-explicate name->label-fun)
+        (let ((row-to-explicate (lexeme-lookup name-to-explicate))) ; pull from the db
+          ;; Create the graph-creating label function for the current row.
+          (setf (gethash name-to-explicate name->label-fun)
+                (if (get 'atomp row-to-explicate)
+                    (atom-label-fun (get 'canonical-form row-to-explicate)
+                                    (get 'explication row-to-explicate))
+                    (make-molecule-label-fun (get 'canonical-form row-to-explicate)
+                                             (get 'explication row-to-explicate))))
+          ;; Demand explications for referenced lexemes.
+          (appendf lexeme-names
+                   (mapcar #'first ; berry canonical form
+                           (first (get 'explication row-to-explicate)))))))
     `(labels
-       ,@(alexandria:hash-table-values label-funs-table)
-       (,(explication-fun-symbol (get 'canonical-form lexeme-row))))))
+       ,@(alexandria:hash-table-values name->label-fun)
+       (,(explication-fun-symbol lexeme-name)))))
 
 (defun lexeme-lookup (word-canonical-form)
   "Return a lexeme row from the database."
@@ -66,7 +67,7 @@
 
 (defun explication-lookup (word-canonical-form)
   "Return a graph."
-  (collect-explications-and-run (lexeme-lookup word-canonical-form)))
+  (collect-explications-and-run word-canonical-form))
 
 ;;;===(let ((atomic-lexemes (make-hash-table :test #'equalp)) ; maps of definitions
 ;;;===      (molecule-lexemes (make-hash-table :test #'equalp))

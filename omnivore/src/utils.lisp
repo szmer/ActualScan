@@ -2,6 +2,20 @@
 
 (defun truep (arg) (not (not arg)))
 
+(defun last-element (sequence)
+  "Works for lists, recommended for vectors (use last-car instead)."
+  (elt sequence (1- (length sequence))))
+
+(defun last-car (list)
+  (first (last list)))
+
+(defun list-wrapped (object)
+  (when object (list object)))
+
+(defun penultimate-element (sequence)
+  "Works for lists, recommended for vectors."
+  (elt sequence (- (length sequence) 2)))
+
 (defun list-longer-p (list n)
   "Return t if the list is longer than n."
   (let ((length-counter 0))
@@ -26,20 +40,6 @@
 
 (defun csv-sanitized-string (string)
   (remove #\' (remove #\" string)))
-
-(defun last-element (sequence)
-  "Works for lists, recommended for vectors (use last-car instead)."
-  (elt sequence (1- (length sequence))))
-
-(defun last-car (list)
-  (first (last list)))
-
-(defun list-wrapped (object)
-  (when object (list object)))
-
-(defun penultimate-element (sequence)
-  "Works for lists, recommended for vectors."
-  (elt sequence (- (length sequence) 2)))
 
 (defun third-person-present (lemma)
   (cond ((equalp lemma "be") "is")
