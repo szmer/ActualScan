@@ -4,28 +4,24 @@
 (declaim (optimize (debug 3)))
 (in-package :omnivore)
 
-(defun graph-spec-from-xml (xml-string &key (root-node-n 0))
+(defun graph-spec-from-xml (xml-string)
+  "The xml-string is valid gexf file contents. Note that you may want to change the node order
+   after construing, if the root is not under the 0 index."
   (let ((xml-structure (plump:parse xml-string)))
     (list
       ;; Node (berry) specs.
-      (mapcar (lambda (node)
-                (let ((label-spec (list (plump:attribute node "label"))))
-                  (if (and (< 5 (length (first label-spec)))
-                           (equalp "_sth_" (subseq (first label-spec) 0 5)))
-                      (append label-spec
-                              (if (equalp "_sth_is_" (first label-spec))
-                                  '(:verbalp)
-                                  '(:verbalp :obj-exit-p)))
-                      ;; The normal, non-verbal case.
-                      label-spec)))
-              ;; NOTE We currently get those from plump reversed, and the order matters (the root
-              ;; has to be first).
-              (let* ((node-list (plump:get-elements-by-tag-name xml-structure "node"))
-                     (list-length (length node-list))
-                     (root-true-n (- list-length 1 root-node-n)))
-                (cons (nth root-true-n node-list)
-                      (append (subseq node-list 0 root-true-n)
-                              (subseq node-list (1+ root-true-n))))))
+      (map 'list
+           (lambda (node)
+             (let ((label-spec (list (plump:attribute node "label"))))
+               (if (and (< 5 (length (first label-spec)))
+                        (equalp "_sth_" (subseq (first label-spec) 0 5)))
+                   (append label-spec
+                           (if (equalp "_sth_is_" (first label-spec))
+                               '(:verbalp)
+                               '(:verbalp :obj-exit-p)))
+                   ;; The normal, non-verbal case.
+                   label-spec)))
+           (plump:child-elements (xml-path xml-structure "gexf" "graph" "nodes")))
       ;; Edge (stalk) specs.
       (mapcar (lambda (edge)
                 (append
@@ -54,8 +50,8 @@
          (equalp
            graph-spec 
            (list
-             ;; The root (default 0) will be the first, with the rest of the berries reversed.
-             '(("_sth_kicks_sth" :verbalp :obj-exit-p) ("sticky") ("something"))
+             ;; The nodes should be in the correct order, and the root first.
+             '(("_sth_kicks_sth" :verbalp :obj-exit-p) ("something") ("sticky"))
              ;; We will receive edges reversed in order.
              '((1 2 :explication-prototype) (0 1 "obj"))))))
   (format t "Graph properly specced from XML ~A~%" graph-specced-ok)

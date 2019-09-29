@@ -31,20 +31,20 @@
     (setf (get 'canonical-form lexeme-row) word-canonical-form)
     ;; Indicate atomicity.
     (if (find "atom1" lexeme-dir-files :key #'file-namestring :test #'equalp)
-      (setf (get 'atomp lexeme-row) t)
-      (setf (get 'atomp lexeme-row) nil))
-    ;; Get the explication definition.
-    (let ((root-node-n (uiop:read-file-form ; this should also convert to an integer
-                         (or (find "root1" lexeme-dir-files
-                               :key #'file-namestring :test #'equalp)
-                             (error "no root file")))))
-      (setf (get 'explication lexeme-row)
-            (graph-spec-from-xml (uiop:read-file-string
-                                   (or
-                                     (find "meaning1.gexf" lexeme-dir-files
-                                           :key #'file-namestring :test #'equalp) 
-                                     (error "no meaning gexf file")))
-                                 :root-node-n root-node-n)))
+        (setf (get 'atomp lexeme-row) t)
+        (setf (get 'atomp lexeme-row) nil))
+    ;; Get the explication definition and root-node-n.
+    (setf (get 'root-node-n lexeme-row)
+          (uiop:read-file-form ; this should also convert to an integer
+            (or (find "root1" lexeme-dir-files
+                      :key #'file-namestring :test #'equalp)
+                (error "no root file"))))
+    (setf (get 'explication lexeme-row)
+          (graph-spec-from-xml (uiop:read-file-string
+                                 (or
+                                   (find "meaning1.gexf" lexeme-dir-files
+                                         :key #'file-namestring :test #'equalp) 
+                                   (error "no meaning gexf file")))))
     lexeme-row))
 
 ;;;;
@@ -54,23 +54,25 @@
 (defun explication-fun-symbol (name)
   (read-from-string (cl-strings:join (list "expl-" name))))
 
-(defun atom-label-fun (atom-name atom-spec)
+(defun atom-label-fun (atom-name atom-spec root-node-n)
   `(,(explication-fun-symbol atom-name)
      () (create-graph :explication-definition
-                      (first ',atom-spec)
+                      (pulled-to-front ,root-node-n (first ',atom-spec))
                       (second ',atom-spec))))
 
-(defun make-molecule-label-fun (molecule-name molecule-spec)
+(defun make-molecule-label-fun (molecule-name molecule-spec root-node-n)
   `(,(explication-fun-symbol molecule-name)
      () (let* ((berry-graphs
-                 ;; We need to create the whole list here as a symbol, because I found no way to
-                 ;; call dynamically created lexical function symbols except for feeding it inside
-                 ;; a symbolic parenthesis.
-                 ,(cons 'list
-                        (mapcar (lambda (berry-spec)
-                                  ;; Let the explication function create the graph for the berry.
-                                  `(,(explication-fun-symbol (first berry-spec))))
-                                (first molecule-spec))))
+                 (pulled-to-front
+                   ,root-node-n
+                   ;; We need to create the whole list here as a symbol, because I found no way to
+                   ;; call dynamically created lexical function symbols except for feeding it inside
+                   ;; a symbolic parenthesis.
+                   ,(cons 'list
+                          (mapcar (lambda (berry-spec)
+                                    ;; Let the explication function create the graph for the berry.
+                                    `(,(explication-fun-symbol (first berry-spec))))
+                                  (first molecule-spec)))))
                (stalk-graphs
                  (mapcar (lambda (edge-spec)
                            (connection-graph :backward ;;; ???? TODO
@@ -95,9 +97,11 @@
           (setf (gethash name-to-explicate name->label-fun)
                 (if (get 'atomp row-to-explicate)
                     (atom-label-fun (get 'canonical-form row-to-explicate)
-                                    (get 'explication row-to-explicate))
+                                    (get 'explication row-to-explicate)
+                                    (get 'root-node-n row-to-explicate))
                     (make-molecule-label-fun (get 'canonical-form row-to-explicate)
-                                             (get 'explication row-to-explicate))))
+                                             (get 'explication row-to-explicate)
+                                             (get 'root-node-n row-to-explicate))))
           ;; Demand explications for referenced lexemes.
           (appendf lexeme-names
                    (mapcar #'first ; berry canonical form

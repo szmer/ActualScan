@@ -25,6 +25,13 @@
       (when (> length-counter n)
         (return-from list-longer-p t)))))
 
+(defun pulled-to-front (element-n list)
+  "Return a copy of the list where the element under element-n is made the head of the list, with
+   the rest unchanged."
+  (append (subseq list element-n (1+ element-n))
+          (subseq list 0 element-n)
+          (subseq list (1+ element-n))))
+
 ;; from HyperSpec, DEFINE-MODIFY-MACRO
 (define-modify-macro appendf (&rest args) append
   "Append onto list")
@@ -62,3 +69,15 @@
                       "ies"))
         ;; the default case
         (t (concatenate 'string lemma "s"))))
+
+(defun xml-path (first-node &rest tag-names)
+  "Starting from first-node, try to find a plump:element going through a path of tag-names through
+   the XML tree."
+  (do ((parent-node first-node)
+       (child-tag-name (pop tag-names) (pop tag-names)))
+      ((null child-tag-name) parent-node)
+      (setf parent-node
+            (or (find child-tag-name (plump:child-elements parent-node)
+                      :key #'plump:tag-name :test #'equalp)
+                (error (format nil "Cannot find tag ~A under the parent"
+                               child-tag-name))))))
