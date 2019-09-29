@@ -110,7 +110,7 @@ error if a stalk between the berries already exists. Returns the stalk."
         (push prospective-stalk (berry-stalks (stalk-from prospective-stalk)))
         (push prospective-stalk (berry-stalks (stalk-to prospective-stalk)))
         prospective-stalk)
-      (cerror "a stalk already exists between berries" 'simple-error)))
+      (error "a stalk already exists between berries")))
 
 (defun connect-with-stalk (berry1 berry2 creator &key (label ""))
   "Connects both nodes with a fresh stalk and adjoins it to their adjacency lists. The stalk is

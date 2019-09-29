@@ -77,6 +77,15 @@ connect-stalk function."
           (error 'exit-not-found-error :exit "sit" :graph graph))))
 (define-graph-stalk-function "sit")
 
+(defparameter *exit-name->dangling-stalk-function*
+  (alexandria:alist-hash-table
+    (list (cons "root" #'graph-root-dangling-stalk)
+          (cons "subj" #'graph-subj-dangling-stalk)
+          (cons "obj" #'graph-obj-dangling-stalk)
+          (cons "pred" #'graph-pred-dangling-stalk)
+          (cons "sit" #'graph-sit-dangling-stalk))
+    :test #'equalp))
+
 ;;; NOTE we currently ignore the actual node direction here when constructing the graph, to preserve
 ;;; always stalking from the root outward. (All backwards relations connect to root to avoid exits
 ;;; unavailable in graph children).
