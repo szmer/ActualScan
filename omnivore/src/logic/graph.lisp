@@ -16,13 +16,14 @@
            :type (proper-list stalks))))
 (defmethod print-object ((obj graph) stream)
   (print-unreadable-object (obj stream :type t :identity t)
-    (format stream "berries:~A ~:_stalks:~A"
-            (if (list-longer-p (graph-berries obj) 10)
-                (append (subseq (graph-berries obj) 0 10) '(and more))
-                (graph-berries obj))
-            (if (list-longer-p (graph-stalks obj) 10)
-                (append (subseq (graph-stalks obj) 0 10) '(and more))
-                (graph-stalks obj)))))
+    (format stream "~<berries: ~A~:_ stalks: ~A~:>"
+            ;; A logical block ~< ~:> expects a single list from which it will extract values.
+            (list (if (list-longer-p (graph-berries obj) 10)
+                      (append (subseq (graph-berries obj) 0 10) '(and more))
+                      (graph-berries obj))
+                  (if (list-longer-p (graph-stalks obj) 10)
+                      (append (subseq (graph-stalks obj) 0 10) '(and more))
+                      (graph-stalks obj))))))
 
 (defun create-graph (creator berry-specs stalk-specs)
   "Intended for new graphs. The creator applies for all created semes, and also for determining edge
