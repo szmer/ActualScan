@@ -16,7 +16,7 @@
            :type (proper-list stalks))))
 (defmethod print-object ((obj graph) stream)
   (print-unreadable-object (obj stream :type t :identity t)
-    (format stream "~%berries:~A~%stalks:~A~%"
+    (format stream "berries:~A ~:_stalks:~A"
             (if (list-longer-p (graph-berries obj) 10)
                 (append (subseq (graph-berries obj) 0 10) '(and more))
                 (graph-berries obj))

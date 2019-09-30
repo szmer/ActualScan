@@ -75,15 +75,18 @@
                                   (first molecule-spec)))))
                (stalk-graphs
                  (mapcar (lambda (edge-spec)
-                           (connection-graph :backward ;;; ???? TODO
+                           (connection-graph :backward ; backward in dependency tree teminology,
+                                                       ; forward in ours
                                              (gethash (or (third edge-spec) "root")
                                                       *exit-name->dangling-stalk-function*)
                                              (nth (first edge-spec) berry-graphs)
                                              (nth (second edge-spec) berry-graphs)))
+                         ;; TODO it would be nice to check for duplicates, which may trip up stalk
+                         ;; creation.
                          (second ',molecule-spec))))
           (apply #'concatenate-graphs (append berry-graphs stalk-graphs)))))
 
-(defmacro collect-explications-and-run (lexeme-name)
+(defun assembled-explication (lexeme-name)
   (let* ((name->label-fun (make-hash-table :test #'equalp)))
     ;; There's an impulse to collect explications as we define the higher levels, but it makes for
     ;; nesting macros with side effects, which leads to stack limit breaking on compilation. So
@@ -106,54 +109,14 @@
           (appendf lexeme-names
                    (mapcar #'first ; berry canonical form
                            (first (get 'explication row-to-explicate)))))))
-    (setf *cobbyhole* (alexandria:hash-table-values name->label-fun))
-    `(labels
+    (eval
+      `(labels
        ,(alexandria:hash-table-values name->label-fun) ; label function definitions
        ;; call our boy:
-       (,(explication-fun-symbol lexeme-name)))))
+       (,(explication-fun-symbol lexeme-name))))))
 
 ;;; TODO check if it even exists in db.
 (defun explication-lookup (word-canonical-form)
   "Return a graph."
   (when (lexeme-known-p word-canonical-form)
-    (collect-explications-and-run word-canonical-form)))
-
-;;;===(let ((atomic-lexemes (make-hash-table :test #'equalp)) ; maps of definitions
-;;;===      (molecule-lexemes (make-hash-table :test #'equalp))
-;;;===      (constituent-graphs)
-;;;===      )
-;;;===  (dolist (berry-spec (first graph-spec))
-;;;===    ;; Add the graph definition for this unit to constituent-graphs.
-;;;===    (if (and (equalp (first berry-spec) current-name)
-;;;===             (gethash (first berry-spec) atomic-lexemes)
-;;;===             ) 
-;;;===        ;; Atoms are the only ones that just add themselves.
-;;;===        (push (gethash (first berry-spec) atomic-lexemes)
-;;;===               constituent-graphs
-;;;===               )
-;;;===        ;; Molecules add, ultimately, all their atoms and necessary connection graphs
-;;;===        )
-;;;===  ))
-;;;===
-
-;;; Hopeless scribbling.
-;;;==(defmacro dynamic-function (symbol-expression)
-;;;==  `(function ,symbol-expression))
-;;;==
-;;;==(defmacro test1 ()
-;;;== (labels ((daj () 'grzej)
-;;;==         (hej (x) (+ x 1))
-;;;==         (grzej (x) x (hej 4)))
-;;;==  (print (grzej 5))
-;;;==  (print (funcall (function grzej) 8))
-;;;==  `(print (function ,(daj)))
-;;;==  ) 
-;;;==  )
-;;;==
-;;;==(labels ((daj () 'grzej)
-;;;==         (hej (x) (+ x 1))
-;;;==         (grzej (x) x (hej 4)))
-;;;==  (print (grzej 5))
-;;;==  (print (funcall (function grzej) 8))
-;;;==  (print (dynamic-function (daj)))
-;;;==  )
+    (assembled-explication word-canonical-form)))
