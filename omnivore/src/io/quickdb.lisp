@@ -13,7 +13,11 @@
   (truep (directory (merge-pathnames  (pathname word-canonical-form)
                                       *filesystem-db-path*))))
 ;;; TODO handle valence!!!
+;;;
 ;;; TODO handle meanings beyond 1!!!
+;;;
+;;; TODO Berries are always marked as of :explication-definition creator, even though they may be
+;;; prototype. There is probably no way to pre-mark them in gexf (?)
 (defun lexeme-lookup (word-canonical-form)
   "Return a lexeme row from the database."
   (let ((lexeme-dir-files (directory
@@ -115,7 +119,7 @@
        ;; call our boy:
        (,(explication-fun-symbol lexeme-name))))))
 
-;;; TODO check if it even exists in db.
+;;; TODO test with some "enshrined" explications.
 (defun explication-lookup (word-canonical-form)
   "Return a graph."
   (when (lexeme-known-p word-canonical-form)
