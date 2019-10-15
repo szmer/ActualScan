@@ -49,7 +49,8 @@
   (remove #\' (remove #\" string)))
 
 (defun third-person-present (lemma)
-  (cond ((equalp lemma "be") "is")
+  (cond ((>= 1 (length lemma)) lemma)
+        ((equalp lemma "be") "is")
         ;; o, x, ss, sh, ch -> +es
         ((or (eq (last-element lemma) #\o)
              (eq (last-element lemma) #\x)

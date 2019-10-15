@@ -197,9 +197,12 @@ representation or an unknown-token guess at it."
   ;; If an explication is available, we should a graph spec from the database.
   (let ((explication
           (or
-            (explication-lookup (if (equalp "verb" (cl-conllu:token-upostag input-token))
-                                  (verb-canonical-form (cl-conllu:token-lemma input-token))
-                                  (cl-conllu:token-lemma input-token)))
+            (unless (find (cl-conllu:token-upostag input-token)
+                          (list "punct" "sym") ; avoid checking for ., /
+                          :test #'equalp)
+              (explication-lookup (if (equalp "verb" (cl-conllu:token-upostag input-token))
+                                      (verb-canonical-form (cl-conllu:token-lemma input-token))
+                                      (cl-conllu:token-lemma input-token))))
             ;; this is a KLUDGE to be removed when possible:
             (eval ; note that (eval nil) is ok, gives us nil
              (gethash (cl-conllu:token-lemma input-token)

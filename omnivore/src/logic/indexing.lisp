@@ -1,6 +1,10 @@
 (declaim (optimize (debug 3)))
 (in-package :omnivore)
 
+;;;
+;;; TODO we could also handle *minority reports* - text themes that are rarer but important
+;;;
+
 (defun graph->list-tree (graph)
   "Get the graph's representation as a nested list, where each stalk is represented by a sublist,
 whose head is the stalk label, then the destination berry label, then its outgoing stalks

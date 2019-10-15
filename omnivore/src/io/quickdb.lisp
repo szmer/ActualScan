@@ -30,7 +30,7 @@
                                              *filesystem-db-path*)))
         (lexeme-row nil))
     ;; Throw an error if called for an unknown lexeme.
-    (unless lexeme-dir-files (error (format nil "Unknown lexeme ~A" word-canonical-form)))
+    (unless lexeme-dir-files (error (format nil "Unknown lexeme '~A'" word-canonical-form)))
     ;; Enter the canonical form. (adding it in the let doesn't seem to work)
     (setf (get 'canonical-form lexeme-row) word-canonical-form)
     ;; Indicate atomicity.
@@ -79,6 +79,12 @@
                                   (first molecule-spec)))))
                (stalk-graphs
                  (mapcar (lambda (edge-spec)
+                           (when (or (>= (first edge-spec) (length berry-graphs))
+                                     (>= (second edge-spec) (length berry-graphs)))
+                            (error (format
+                                     nil
+                                     "One of indices ~A is out of bounds for berries in ~A graph"
+                                     edge-spec ,molecule-name)))
                            (connection-graph :backward ; backward in dependency tree teminology,
                                                        ; forward in ours
                                              (gethash (or (third edge-spec) "root")

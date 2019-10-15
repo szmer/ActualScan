@@ -15,5 +15,6 @@
                                            (:file "reading" :depends-on ("representation")))
                               :depends-on ("omnivore" "utils"))
                              (:module "io"
-                              :components ((:file "in-xml") (:file "out-xml"))
+                              :components ((:file "in-xml") (:file "out-xml")
+                                           (:file "quickdb" :depends-on ("in-xml")))
                               :depends-on ("logic"))))))

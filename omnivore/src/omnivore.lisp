@@ -35,3 +35,6 @@
 ;;;OMNIVORE> (defparameter *gen-query-cliques* (index-strong-cliques *gen-query*))
 ;;;*GEN-QUERY-CLIQUES*
 ;;;OMNIVORE> (index-pprint-cliques *gen-query-cliques* :minimum-size 5)
+
+
+;;;(defparameter *akg-pars* (conll-file-paragraphs-index #p"~/therminsley/lectrix/spacy_parsing/akg_parse.conll"))
