@@ -34,13 +34,13 @@
 (defclass text-object ()
   ((raw-text :accessor object-raw-text :initarg :raw-text :type string)
    ;; use ways of in-place insertion in processing: https://stackoverflow.com/questions/4387570/in-common-lisp-how-can-i-insert-an-element-into-a-list-in-place
-   (descendants :accessor object-descendants :initarg :descendants :type list)))
+   (divisions :accessor object-divisions :initarg :divisions :type list)))
 
 (defun raw-text (text-object)
-  "Retrieve the raw text either from the slot or text-object's descendants."
+  "Retrieve the raw text either from the slot or text-object's divisions."
   (declare (type text-object text-object))
   (if (slot-boundp text-object 'raw-text)
       (object-raw-text text-object)
       (with-output-to-string (str)
-        (dolist (descendant (object-descendants text-object) str)
+        (dolist (descendant (object-divisions text-object) str)
           (format str "~A" (raw-text descendant))))))

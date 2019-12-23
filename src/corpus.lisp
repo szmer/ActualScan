@@ -8,7 +8,7 @@
    (processing-layers :accessor :corpus-processing-layers :initarg :processing-layers :type array :initform #1A())
    (omited-attributes :accessor :corpus-omited-attributes :initarg :omited-attribute :type list :initform nil)))
 
-(defun make-corpus (identifier version &rest other-args &allow-other-keys)
+(defun make-corpus (identifier version &rest other-args)
   "A corpus making function, that accepts also keyword arguments applicable for text records."
   (apply #'make-instance
          (append (list 'corpus :kind 'corpus :identifier identifier :version version)
