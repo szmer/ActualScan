@@ -5,8 +5,10 @@
    (contact :accessor corpus-contact :initarg :contact :type string)
    (maintainer :accessor corpus-maintainer :initarg :maintainer :type string)
    (sources :accessor :corpus-sources :initarg :sources :type array :initform #1A())
-   (processing-layers :accessor :corpus-processing-layers :initarg :processing-layers :type array :initform #1A())
-   (omited-attributes :accessor :corpus-omited-attributes :initarg :omited-attribute :type list :initform nil)))
+   (processing-layers :accessor :corpus-processing-layers :initarg :processing-layers :type hash-table
+                      :initform (make-hash-table :test #'equalp))
+   (omited-attributes :accessor :corpus-omited-attributes :initarg :omited-attribute :type hash-table
+                      :initform (make-hash-table :test #'equalp))))
 
 (defun make-corpus (identifier version &rest other-args)
   "A corpus making function, that accepts also keyword arguments applicable for text records."

@@ -8,15 +8,18 @@
 
 (defclass text-record ()
   ((identifier :accessor record-identifier :initarg :identifier :type string)
+   (kind :accessor record-kind :initarg kind :type record-kind)
    (parent :accessor record-parent :initarg :parent :type text-record)
    (language :accessor record-language :initarg :language :type string)
    (creator :accessor record-creator :initarg :creator :type string)
    (publication-time :accessor record-publication-time :initarg :publication-time :type local-time:timestamp)
    (meta-schemes :accessor record-meta-schemes :initarg :meta-schemes :type list :initform nil)
    (meta :accessor record-meta :initarg :meta :type hash-table :initform (make-hash-table :test #'equalp))
-   (kind :accessor record-kind :initarg kind :type record-kind)
    (corrections :accessor record-corrections :initarg corrections :type array :initform #1A())
-   (deferrables :accessor record-deferrables :initarg :deferrables :type hash-table :initform (list "publication-date" "language" "source" "creator" "source-region" "meta-schemes"))))
+   (deferrables :accessor record-deferrables :initarg :deferrables :type hash-table
+                :initform (alexandria:alist-hash-table
+                            (list (cons "publication-date" t) (cons "language" t) (cons "source" t)
+                                  (cons "creator" t) (cons "source-region" t) (cons "meta-schemes" t))))))
 
 (defun read-attribute (text-record attribute-name)
   "Read attribute of the text-record, or if it is deferrable possibly retrieve it from higher the descendancy chain."
