@@ -13,7 +13,7 @@
    (uri :accessor source-uri :initarg :uri :type string)
    (isbn :accessor source-isbn :initarg :isbn :type string)
    (doi :accessor source-doi :initarg :doi :type string)
-   (meta-schemes :accessor source-meta-schemes :initarg :meta-schemes :type list :initform nil)
+   (meta-schemes :accessor source-meta-schemes :initarg :meta-schemes :type hash-table :initform (make-hash-table :test #'equalp))
    (meta :accessor source-meta :initarg :meta :type hash-table :initform (make-hash-table :test #'equalp))
    (template-meta :accessor source-template-meta :initarg :template-meta :type hash-table :initform (make-hash-table :test #'equalp))))
 

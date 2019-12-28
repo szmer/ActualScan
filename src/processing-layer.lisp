@@ -7,5 +7,6 @@
 
 (defun make-processing-layer (identifier mechanism &key parameters)
   (let ((layer (make-instance 'processing-layer :mechanism mechanism :identifier identifier)))
-    (when parameters (setf processing-parameters parameters))
+    (when parameters
+      (setf (processing-parameters layer) parameters))
     layer))

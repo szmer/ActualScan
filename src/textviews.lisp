@@ -3,7 +3,7 @@
     ;; Classes and accessors.
     :source :source-identifier :source-format :source-creator :source-title :source-publisher
     :source-publication-place :source-publication-date :source-editor :source-institution
-    :source-uri :source-doi :source-meta-schemes :source-meta :source-template-meta
+    :source-uri :source-isbn :source-doi :source-meta-schemes :source-meta :source-template-meta
     :processing-layer :processing-identifier :processing-mechanism :processing-parameters
     :correction :correction-attr-name :correction-replaced-value :correction-processing-layer
     :correction-time
