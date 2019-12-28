@@ -19,13 +19,14 @@
     ;; Make functions.
     :make-source :make-correction :make-processing-layer :make-corpus :make-view
     ;; Types, other functions.
-    :record-kind :read-attribute :raw-text))
+    :record-kind :read-attribute :raw-text :list-as-hash-set))
 
 (in-package :textviews)
 
 (defun list-as-hash-set (list)
   (alexandria:alist-hash-table
     (mapcar (lambda (elem) (cons elem t))
-            list)))
+            list)
+    :test #'equalp))
 
 ;;; TODO A function for accessing a slot or empty string?

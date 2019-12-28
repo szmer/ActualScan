@@ -13,6 +13,11 @@
 
 (defun make-corpus (identifier version sources processing-layers &rest other-args)
   "A corpus making function, that accepts also keyword arguments applicable for text records."
+  ;; Convert a list of omited attributes to a hash set.
+  (when (typep (getf other-args :omited-attributes) list)
+    (setf (getf other-args :omited-attributes)
+          (list-as-hash-set (getf other-args :omited-attributes))))
+  ;; Make the instance.
   (apply #'make-instance
          (append (list 'corpus :record-kind 'corpus :identifier identifier :version version
                        :sources sources :processing-layers processing-layers)

@@ -41,6 +41,7 @@
    ;; use ways of in-place insertion in processing: https://stackoverflow.com/questions/4387570/in-common-lisp-how-can-i-insert-an-element-into-a-list-in-place
    (divisions :accessor object-divisions :initarg :divisions :type list)))
 
+;;;TODO handle multiple divisions with the same identifier but different versions or retrieval time
 (defun raw-text (text-object)
   "Retrieve the raw text either from the slot or text-object's divisions."
   (declare (type text-object text-object))
