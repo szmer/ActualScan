@@ -6,7 +6,7 @@
 ;;;; TODO maybe map criteria to functions?
 
 (defclass category ()
-  ((division-kind :accessor category-division-kind :initarg :division-kind :type division-kind)
+  ((division-kind :accessor category-division-kind :initarg :division-kind :type record-kind)
    (divisions-range :accessor category-divisions-range :initarg :divisions-rage :type cons :initform nil)
    (attribute-name :accessor category-attribute-name :initarg :attribute-name :type string)
    (attribute-value :accessor category-attribute-value :initarg :attribute-value :type string)
