@@ -1,8 +1,11 @@
 (in-package :textviews)
 
-(defclass division (text-object text-record)
-  ((source :accessor record-source :initarg :source :type source)
-   (source-region :accessor record-source-region :initarg :source-region :type string)))
+(defclass division (text-record)
+  ((raw-text :accessor division-raw-text :initarg :raw-text :type string)
+   ;; use ways of in-place insertion in processing: https://stackoverflow.com/questions/4387570/in-common-lisp-how-can-i-insert-an-element-into-a-list-in-place
+   (divisions :accessor division-divisions :initarg :divisions :type list)
+   (source :accessor division-source :initarg :source :type source)
+   (source-region :accessor division-source-region :initarg :source-region :type string)))
    
 
 (defclass document (division)
@@ -33,3 +36,14 @@
                (list :divisions contents)
                (list :raw-text contents))
            other-args)))
+
+
+;;;TODO handle multiple divisions with the same identifier but different versions or retrieval time
+(defun raw-text (division)
+  "Retrieve the raw text either from the slot or division's divisions."
+  (declare (type division division))
+  (if (slot-boundp division 'raw-text)
+      (division-raw-text division)
+      (with-output-to-string (str)
+        (dolist (descendant (division-divisions division) str)
+          (format str "~A" (raw-text descendant))))))

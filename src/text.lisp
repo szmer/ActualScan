@@ -4,7 +4,7 @@
 (in-package :textviews)
 
 (deftype record-kind ()
-  '(member corpus document section sentence token))
+  '(member :corpus :document :section :sentence :token))
 
 (defclass text-record ()
   ((identifier :accessor record-identifier :initarg :identifier :type string)
@@ -25,8 +25,7 @@
 (defun read-attribute (text-record attribute-name)
   "Read attribute of the text-record, or if it is deferrable possibly retrieve it from higher the descendancy chain."
   (declare (type text-record text-record) (type string attribute-name))
-  ;; TODO conversion won't work for the kind type
-  (let ((attribute-symbol (make-symbol (string-upcase attribute-name))))
+  (let ((attribute-symbol (alexandria:make-keyword (string-upcase attribute-name))))
     (cond ((and (slot-exists-p text-record attribute-symbol)
                 (slot-boundp text-record attribute-symbol))
            (slot-value text-record attribute-symbol))
@@ -35,18 +34,3 @@
           ((and (slot-boundp text-record 'parent)
                 (find attribute-name (record-deferrables text-record) :test #'equalp))
            (read-attribute (record-parent text-record) attribute-name)))))
-
-(defclass text-object ()
-  ((raw-text :accessor object-raw-text :initarg :raw-text :type string)
-   ;; use ways of in-place insertion in processing: https://stackoverflow.com/questions/4387570/in-common-lisp-how-can-i-insert-an-element-into-a-list-in-place
-   (divisions :accessor object-divisions :initarg :divisions :type list)))
-
-;;;TODO handle multiple divisions with the same identifier but different versions or retrieval time
-(defun raw-text (text-object)
-  "Retrieve the raw text either from the slot or text-object's divisions."
-  (declare (type text-object text-object))
-  (if (slot-boundp text-object 'raw-text)
-      (object-raw-text text-object)
-      (with-output-to-string (str)
-        (dolist (descendant (object-divisions text-object) str)
-          (format str "~A" (raw-text descendant))))))

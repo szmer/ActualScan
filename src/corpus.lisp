@@ -19,7 +19,7 @@
           (list-as-hash-set (getf other-args :omited-attributes))))
   ;; Make the instance.
   (apply #'make-instance
-         (append (list 'corpus :record-kind 'corpus :identifier identifier :version version
+         (append (list 'corpus :record-kind :corpus :identifier identifier :version version
                        :sources sources :processing-layers processing-layers)
                  other-args)))
 

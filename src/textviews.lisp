@@ -10,14 +10,18 @@
     :text-record :record-identifier :record-kind :record-parent :record-language :record-creator
     :record-publication-date :record-meta-schemes :record-meta :record-corrections
     :record-deferrables
-    :text-object :object-raw-text :object-divisions
+    :division :division-raw-text :division-divisions :division-source :division-source-region
+    :document :document-title
+    :section :section-title
+    :token :token-lemma :token-pos :token-form-description
     :category :category-division-kind :category-divisions-range :category-attribute-name
     :category-attribute-value :category-criterion
     :corpus :corpus-version :corpus-contact :corpus-maintainer :corpus-sources
     :corpus-processing-layers :corpus-omited-attributes
     :view :view-corpus :view-corpus-time :view-method :view-categories :view-subviews :view-divisions :view-values :view-omited-attributes
     ;; Make functions.
-    :make-source :make-correction :make-processing-layer :make-corpus :make-category :make-view
+    :make-source :make-correction :make-processing-layer :make-corpus :make-division :make-category
+    :make-view
     ;; Types, other functions.
     :record-kind :read-attribute :raw-text :list-as-hash-set))
 

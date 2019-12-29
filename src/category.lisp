@@ -1,7 +1,7 @@
 (in-package :textviews)
 
 (deftype category-criterion ()
-  '(member equal like less more less-equal more-equal))
+  '(member :equal :like :less :more :less-equal :more-equal))
 
 ;;;; TODO maybe map criteria to functions?
 
