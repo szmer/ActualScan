@@ -23,10 +23,10 @@
 (defun make-division (kind parent identifier contents &rest other-args)
   "Make an instance of division of the given kind, possibly with a non-nil parent, with contents supplied as a list (sub-divisions of the division) or a string (its raw text). The other-args are used to fill other slots of the object."
   (declare (type record-kind kind) (type text-record parent) (type string identifier))
-  (when (eq kind 'corpus) (error "Make-division function should not be used for corpora"))
+  (when (eq kind :corpus) (error "Make-division function should not be used for corpora"))
   (apply #'make-instance
          (append 
-           (list kind
+           (list (find-symbol (symbol-name kind) 'textviews)
                  :identifier identifier)
            (when parent (list :parent parent))
            (if (typep contents 'list)

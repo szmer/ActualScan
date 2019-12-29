@@ -2,10 +2,21 @@
 
 (defclass view (text-object)
   ((corpus :accessor view-corpus :initarg :corpus :type corpus)
+   (corpus-time :accessor view-corpus-time :initarg :corpus-time :type local-time:timestamp)
    (method :accessor view-method :initarg :method :type string)
-   (category :accessor view-category :initarg :category :type category)
-   (subviews :accessor view-subviews :initarg :subviews :type vector :initform #1A())
-   (values :accessor category-value :initarg :values :type hash-table :initform (make-hash-table :test #'equalp))))
+   (categories :accessor view-categories :initarg :categories :type list :initform nil)
+   (subviews :accessor view-subviews :initarg :subviews :type list :initform nil)
+   (values :accessor category-value :initarg :values :type hash-table :initform (make-hash-table :test #'equalp))
+   (omited-attributes :accessor view-omited-attributes :initarg :omited-attributes :type hash-table
+                      :initform (make-hash-table :test #'equalp))))
 
-(defun make-view (corpus &key method category subviews divisions)
-  (make-instance 'view :corpus corpus :method method :subviews subviews :divisions divisions))
+(defun make-view (corpus &key corpus-time categories subviews divisions omited-attributes)
+  (apply #'make-instance
+         (append (list 'view :corpus corpus)
+                 (when corpus-time (list :corpus-time corpus-time))
+                 (when categories (list :categories categories))
+                 (when subviews (list :subviews subviews))
+                 (when divisions (list :divisions divisions))
+                 (when omited-attributes (list :omited-attributes omited-attributes)))))
+
+;;; Querying all subviews could be used as "OR".

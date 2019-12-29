@@ -15,9 +15,9 @@
     :category-attribute-value :category-criterion
     :corpus :corpus-version :corpus-contact :corpus-maintainer :corpus-sources
     :corpus-processing-layers :corpus-omited-attributes
-    :view :view-corpus :view-method :view-category :view-subviews :view-values
+    :view :view-corpus :view-corpus-time :view-method :view-categories :view-subviews :view-divisions :view-values :view-omited-attributes
     ;; Make functions.
-    :make-source :make-correction :make-processing-layer :make-corpus :make-view
+    :make-source :make-correction :make-processing-layer :make-corpus :make-category :make-view
     ;; Types, other functions.
     :record-kind :read-attribute :raw-text :list-as-hash-set))
 
