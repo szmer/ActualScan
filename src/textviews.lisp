@@ -5,7 +5,7 @@
     :source-publication-place :source-publication-date :source-editor :source-institution
     :source-uri :source-isbn :source-doi :source-meta-schemes :source-meta :source-template-meta
     :processing-layer :processing-identifier :processing-mechanism :processing-parameters
-    :correction :correction-attr-name :correction-replaced-value :correction-processing-layer
+    :correction :correction-attribute-name :correction-replaced-value :correction-processing-layer
     :correction-time
     :text-record :record-identifier :record-kind :record-parent :record-language :record-creator
     :record-publication-date :record-meta-schemes :record-meta :record-corrections
@@ -13,6 +13,7 @@
     :division :division-raw-text :division-divisions :division-source :division-source-region
     :document :document-title
     :section :section-title
+    :sentence
     :token :token-lemma :token-pos :token-form-description
     :category :category-division-kind :category-divisions-range :category-attribute-name
     :category-attribute-value :category-criterion

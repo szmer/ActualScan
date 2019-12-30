@@ -1,6 +1,6 @@
 (in-package :textviews)
 
-(defclass view (text-object)
+(defclass view ()
   ((corpus :accessor view-corpus :initarg :corpus :type corpus)
    (corpus-time :accessor view-corpus-time :initarg :corpus-time :type local-time:timestamp)
    (method :accessor view-method :initarg :method :type string)

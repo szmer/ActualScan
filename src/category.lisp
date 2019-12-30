@@ -1,7 +1,7 @@
 (in-package :textviews)
 
 (deftype category-criterion ()
-  '(member :equal :like :less :more :less-equal :more-equal))
+  '(member :equal :contains :less :more :less-equal :more-equal))
 
 ;;;; TODO maybe map criteria to functions?
 
@@ -13,7 +13,8 @@
    (criterion :accessor category-criterion :initarg :criterion :type category-criterion)))
 
 (defun make-category (division-kind &key divisions-range attribute-name attribute-value criterion)
-  (declare (type string attribute-name) (type category-criterion criterion))
+  (declare (type string attribute-name) (type category-criterion criterion)
+           (type division-kind record-kind))
   (make-instance 'category :division-kind division-kind :divisions-range divisions-range
                  :attribute-name attribute-name :attribute-value attribute-value
                  :criterion criterion))

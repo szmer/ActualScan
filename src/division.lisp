@@ -30,6 +30,7 @@
   (apply #'make-instance
          (append 
            (list (find-symbol (symbol-name kind) 'textviews)
+                 :record-kind kind
                  :identifier identifier)
            (when parent (list :parent parent))
            (if (typep contents 'list)
