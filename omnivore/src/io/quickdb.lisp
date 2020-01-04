@@ -1,4 +1,3 @@
-
 ;;;;; 
 ;;;;; Reading explications from our filesystem "database".
 ;;;;; 

@@ -1,14 +1,29 @@
-(defpackage :omnivore (:use :cl :trivial-types))
+(defpackage :omnivore (:use :cl :trivial-types :textviews))
 (in-package :omnivore)
 
 
 (defparameter *filesystem-db-path* #p"~/therminsley/willowseed/db/")
+(setf pg-textviews:*db-name* "thermdb")
+(setf pg-textviews:*db-username* "therm")
+(setf pg-textviews:*db-password* "RHHvVX6Mverv4sMr8Vcz")
+
+(setf *headphones-corp* (pg-textviews:get-corpus "test_headphones_corp"))
+(defparameter *comfort-cat*
+  (make-category :token :attribute-name "raw_text" :attribute-value "comfort" :criterion :equal))
+;;- (defparameter *view* (pg-textviews:get-view *headphones-corp* (list *cat*) :get-documents t))
+
+;;- (defparameter *typical* (ranked-worst(corrected-with-length-deviation (scored-with-average-tfidf (tokens-sents (view-divisions *view*))) #'*)))
+;;- (defparameter *atypical* (ranked-best (corrected-with-length-deviation (scored-with-average-tfidf (tokens-sents (view-divisions *view*))) #'/)))
+;;- (preview-first *atypical*)
 
 
-(defparameter *conll-file* #p"~/therminsley/lectrix/spacy_parsing/test_conlls.conll")
-(defparameter *conll-file-lg* #p"~/therminsley/lectrix/spacy_parsing/test_conlls.conll")
-(defparameter *conll-file-clear* #p"~/therminsley/lectrix/spacy_parsing/input_utterances.txt.nlp")
-(defparameter *sents* (cl-conllu:read-conllu *conll-file*))
+
+
+;;;(defparameter *conll-file* #p"~/therminsley/lectrix/spacy_parsing/test_conlls.conll")
+;;;(defparameter *conll-file-lg* #p"~/therminsley/lectrix/spacy_parsing/test_conlls.conll")
+;;;(defparameter *conll-file-clear* #p"~/therminsley/lectrix/spacy_parsing/input_utterances.txt.nlp")
+;;;(defparameter *sents* (cl-conllu:read-conllu *conll-file*))
+
 ;;;(cl-conllu:sentence-tokens (fifth *sents*))
 ;;;(cl-conllu:sentence-binary-tree (fifth *sents*))
 ;;;(conllu.draw:tree-sentence (fourth *sents*))

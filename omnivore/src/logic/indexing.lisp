@@ -1,3 +1,6 @@
+;;;;;
+;;;;; Finding important traits (currently berry communities) in graphs.
+;;;;;
 (declaim (optimize (debug 3)))
 (in-package :omnivore)
 
