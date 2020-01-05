@@ -12,8 +12,8 @@
   (make-category :token :attribute-name "raw_text" :attribute-value "comfort" :criterion :equal))
 ;;- (defparameter *view* (pg-textviews:get-view *headphones-corp* (list *cat*) :get-documents t))
 
-;;- (defparameter *typical* (ranked-worst(corrected-with-length-deviation (scored-with-average-tfidf (tokens-sents (view-divisions *view*))) #'*)))
-;;- (defparameter *atypical* (ranked-best (corrected-with-length-deviation (scored-with-average-tfidf (tokens-sents (view-divisions *view*))) #'/)))
+;;- (defparameter *typical* (ranked-worst (corrected-with #'* (scored-with-average-tfidf (tokens-sents (view-divisions *view*))) (scored-with-length-deviation (tokens-sents (view-divisions *view*))))))
+;;- (defparameter *atypical* (ranked-best (corrected-with #'/ (scored-with-average-tfidf (tokens-sents (view-divisions *view*))) (scored-with-length-deviation (tokens-sents (view-divisions *view*))))))
 ;;- (preview-first *atypical*)
 
 

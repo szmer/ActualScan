@@ -19,6 +19,22 @@
         #'< ;; the lowest score first
         :key #'second))
 
+(defun corrected-with (update-fun scored-sentences &rest corrections)
+  "Scored-sentences and corrections are provided in '(sent score) format. Return the list with \
+   scores updated by update-fun with corrections."
+  (apply #'mapcar
+         ;; Build a call with the lambda function (applying the update-fun to first score and the
+         ;; others), the base scored list and the correction ones.
+         (append
+           (list
+             (lambda (sentence-entry &rest correction-entries)
+               (list (car sentence-entry)
+                     (apply update-fun
+                            (append (list (second sentence-entry))
+                                    (mapcar #'second correction-entries)))))
+             scored-sentences)
+           corrections)))
+
 (defun scored-with-average-tfidf (sentences)
   "Return the sentences with assigned average tf-idf scores of their tokens. The list is suitable\
    for correcting and ranking functions."
@@ -43,21 +59,17 @@
                          (length (division-divisions sentence))))))
             sentences)))
 
-(defun corrected-with-length-deviation (scored-sentences update-fun)
-  "Scored-sentences are provided in '(sent score) format. Return the list with scores updated \
-   by update-fun with each sentence's deviation from the average length."
+(defun scored-with-length-deviation (sentences)
+  "Score sentences with their absolute deviation of length from the average."
   (let ((length-average 0.0))
-    (dolist (sentence-entry scored-sentences)
-      (incf length-average (length (division-divisions (car sentence-entry)))))
-    (setf length-average (/ length-average (length scored-sentences)))
-    (mapcar (lambda (sentence-entry)
-              (list (car sentence-entry)
-                    (funcall update-fun
-                             (second sentence-entry)
-                             (let ((deviation (abs (- length-average
-                                                      (length (division-divisions
-                                                                (car sentence-entry)))))))
-                               (if (zerop deviation)
-                                   1e-20 ; avoid division by zero
-                                   deviation)))))
-            scored-sentences)))
+    (dolist (sentence sentences)
+      (incf length-average (length (division-divisions sentence))))
+    (setf length-average (/ length-average (length sentences)))
+    (mapcar (lambda (sentence)
+              (list sentence
+                    (let ((deviation (abs (- length-average
+                                             (length (division-divisions sentence))))))
+                      (if (zerop deviation)
+                          1e-20 ; avoid division by zero
+                          deviation))))
+            sentences)))
