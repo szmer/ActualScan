@@ -1,11 +1,18 @@
 (in-package :omnivore)
 
-(defun preview-first (scored-sentences &key (n 10))
+(defun preview-top (scored-sentences &key (n 10))
   (dotimes (sentence-entry-n n)
     (if (nth sentence-entry-n scored-sentences)
         (let ((sentence-entry (nth sentence-entry-n scored-sentences)))
           (format t "~A ~A~%" (raw-text (car sentence-entry)) (second sentence-entry)))
-        (return-from preview-first))))
+        (return-from preview-top))))
+
+(defun in-length-range (range scored-sentences)
+  "Range should be provided as '(min max+1)"
+  (remove-if (lambda (sentence-entry)
+               (or (> (car range) (length (division-divisions (car sentence-entry))))
+                   (<= (second range) (length (division-divisions (car sentence-entry))))))
+             scored-sentences))
 
 (defun ranked-best (scored-sentences)
   "Scored-sentences are provided in '(sent score) format."
@@ -19,21 +26,19 @@
         #'< ;; the lowest score first
         :key #'second))
 
-(defun corrected-with (update-fun scored-sentences &rest corrections)
+(defun corrected-with (update-fun scored-sentences correcting-scored-sentences &key (magnitude 1.0))
   "Scored-sentences and corrections are provided in '(sent score) format. Return the list with \
    scores updated by update-fun with corrections."
-  (apply #'mapcar
-         ;; Build a call with the lambda function (applying the update-fun to first score and the
-         ;; others), the base scored list and the correction ones.
-         (append
-           (list
-             (lambda (sentence-entry &rest correction-entries)
-               (list (car sentence-entry)
-                     (apply update-fun
-                            (append (list (second sentence-entry))
-                                    (mapcar #'second correction-entries)))))
-             scored-sentences)
-           corrections)))
+  (mapcar
+    (lambda (sentence-entry correcting-entry)
+      (list (car sentence-entry)
+            (funcall update-fun
+                     (second sentence-entry)
+                     (if (zerop (second correcting-entry))
+                         1e-20 ; avoid division by zero
+                         (* magnitude
+                            (second correcting-entry))))))
+    scored-sentences correcting-scored-sentences))
 
 (defun scored-with-average-tfidf (sentences)
   "Return the sentences with assigned average tf-idf scores of their tokens. The list is suitable\
@@ -69,7 +74,19 @@
               (list sentence
                     (let ((deviation (abs (- length-average
                                              (length (division-divisions sentence))))))
-                      (if (zerop deviation)
-                          1e-20 ; avoid division by zero
-                          deviation))))
+                      deviation)))
             sentences)))
+
+(defun scored-with-markers (sentences &optional (markers '("USAGE")))
+  (mapcar (lambda (sentence)
+            (list sentence
+                  (apply
+                    #'max
+                    (mapcar
+                      (lambda (marker)
+                              (marker-presence
+                                marker
+                                ;; Token texts (TODO should be lemmas)
+                                (mapcar #'division-raw-text (division-divisions sentence))))
+                                 markers))))
+          sentences))

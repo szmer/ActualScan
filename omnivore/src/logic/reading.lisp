@@ -164,7 +164,7 @@
     '("xcomp" "open clausal complement"))
    :test #'equal))
 
-;;; Temporary dictionary, serving only for associating the "people" berry with some lemmas.
+;;; Temporary 'fake' dictionary, serving only for associating the "people" berry with some lemmas.
 (defparameter *temp-dictionary*
   (alexandria:alist-hash-table
    (mapcar (lambda (term)
@@ -317,3 +317,33 @@ assuming that we have no definition for that term."
     ;; At the end, the root should contain the whole representation
     (gethash (cl-conllu:token-id (first ordered-tokens))
              token-id->representation)))
+
+(defun marker-presence (marker-name lemmas)
+  "Get marker's presence indication, in the range of roughly (0,1). Zero is possible for\
+   oversaturation only, as there is some positive value on zero occurrences."
+  (labels ((%count-occurrences (word-list)
+             (reduce #'+ (mapcar
+                           (lambda (lemma) (if (find lemma word-list :test #'equalp)
+                                             1 0))
+                           lemmas))))
+    (let ((marker-count (cond ((equalp marker-name "USAGE")
+                               (%count-occurrences
+                                 '("use" "using" "listen" "listened" "listening" "easy" "experience" "experienced"
+                                   "enjoy" "enjoyed" "enjoying" "issue" "issues" "try" "tried" "trying"
+                                   "comfortably" "situation" "situations")))
+                              (t (error (format nil "Unknown marker ~A" marker-name))))))
+      ;; Mean 3 and standard deviation 2 will get max on 3 (~0.2) with little (~0.06) on 0 and 6.
+      (* 4
+        (gaussian
+          marker-count
+          ;; expected mean
+          (max 4 ; don't encourage short sentences
+               (/ (length lemmas) 3)) 
+          2)))))
+
+(list "anyone" "audio" "audiophile" "bass" "bright" "can" "comfortable" "detail" "difficult"
+                 "ear" "easy" "experience" "friend" "forum" "gear"
+                 "hard" "harsh" "head" "headphone" "high" "hobby" "idea" "imaging"
+                 "music" "musical" "mid" "midrange" "natural" "neutral" "order"
+                 "pad" "person" "price" "product" "recording" "someone" "sound" "soundstage" "small"
+                 "treble" "warm" "volume")

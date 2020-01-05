@@ -82,3 +82,10 @@
                       :key #'plump:tag-name :test #'equalp)
                 (error (format nil "Cannot find tag ~A under the parent"
                                child-tag-name))))))
+
+(defun gaussian (value mean standard-deviation)
+  "Compute probability density function of normal distribution with the mean and standard-deviation."
+  (/ (exp (* -0.5 (expt (/ (- value mean) ; exp is e^(...)
+                           standard-deviation)
+                        2))) ; (x-mu/sigma)^2
+     (* standard-deviation (sqrt (* 2.0 pi)))))

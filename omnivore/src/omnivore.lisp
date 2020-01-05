@@ -13,9 +13,18 @@
 ;;- (defparameter *view* (pg-textviews:get-view *headphones-corp* (list *cat*) :get-documents t))
 
 ;;- (defparameter *typical* (ranked-worst (corrected-with #'* (scored-with-average-tfidf (tokens-sents (view-divisions *view*))) (scored-with-length-deviation (tokens-sents (view-divisions *view*))))))
-;;- (defparameter *atypical* (ranked-best (corrected-with #'/ (scored-with-average-tfidf (tokens-sents (view-divisions *view*))) (scored-with-length-deviation (tokens-sents (view-divisions *view*))))))
+;- (defparameter *atypical* (ranked-best (corrected-with #'/ (scored-with-average-tfidf (tokens-sents (view-divisions *view*))) (scored-with-length-deviation (tokens-sents (view-divisions *view*))))))
 ;;- (preview-first *atypical*)
 
+;;- (defparameter *typical-markers*
+;;-   (in-length-range '(6 12)
+;;-                    (ranked-worst (corrected-with #'*
+;;-                                 (corrected-with #'/
+;;-                                                 (scored-with-average-tfidf (tokens-sents (view-divisions *view*)))
+;;-                                                 (scored-with-markers (tokens-sents (view-divisions *view*)))
+;;-                                                 :magnitude 1.0)
+;;-                                 (scored-with-length-deviation (tokens-sents (view-divisions *view*)))
+;;-                                 :magnitude 1.0))))
 
 
 
