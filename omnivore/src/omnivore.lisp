@@ -12,6 +12,8 @@
   (make-category :token :attribute-name "raw_text" :attribute-value "comfort" :criterion :equal))
 ;;- (defparameter *view* (pg-textviews:get-view *headphones-corp* (list *comfort-cat*) :get-documents t))
 
+;;; TODO both list have noticeble, very strong and different length tendencies
+;;; TODO delay when deduplicating
 ;;-(defparameter *typical*
 ;;-  (ranked-low (lowest-chunk 0.1
 ;;-                              (scored-with-average-tfidf (tokens-sents (view-divisions *view*)))
@@ -20,6 +22,16 @@
 ;;-  (ranked-high (corrected-with #'/
 ;;-                             (scored-with-average-tfidf (tokens-sents (view-divisions *view*)))
 ;;-                             (scored-with-length-deviation (tokens-sents (view-divisions *view*))))))
+;;-(defparameter *typical-secs*
+;;-  (ranked-low (lowest-chunk 0.1
+;;-                              (scored-with-average-tfidf (tokens-section-sents (view-divisions *view*)))
+;;-                              (scored-with-length-deviation (tokens-section-sents (view-divisions *view*))))))
+;;-(defparameter *atypical-secs*
+;;-  (ranked-high (corrected-with #'*
+;;-                               (corrected-with #'/
+;;-                                               (scored-with-average-tfidf (tokens-section-sents (view-divisions *view*)))
+;;-                                               (scored-with-length-deviation (tokens-section-sents (view-divisions *view*))))
+;;-                               (scored-with-markers (tokens-section-sents (view-divisions *view*)))) ))
 
 
 ;;;(defparameter *conll-file* #p"~/therminsley/lectrix/spacy_parsing/test_conlls.conll")
