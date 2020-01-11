@@ -1,7 +1,6 @@
 import os
 import json
 import csv
-from nltk.tokenize import sent_tokenize, word_tokenize
 from spacy_conll_star.spacy_conll import Spacy2ConllParser
 from bs4 import BeautifulSoup
 
@@ -50,20 +49,18 @@ with open(output_filename, 'w+') as output_file:
                     paragraph_rowids = []
                     if len(paragraph.strip()) == 0:
                         continue
-                    par_sents = sent_tokenize(paragraph)
-                    parsed_par_sents = spacyconll.parse(input_str=paragraph)
-                    for sent_n, sent in enumerate(par_sents):
+                    par_sents = spacyconll.parse(input_str=paragraph)
+                    for sent_n, (sent_obj, sent_tree) in enumerate(par_sents):
                         sentence_rowids = []
-                        sent_tokens = word_tokenize(sent)
-                        for tok_n, token_text in enumerate(sent_tokens):
+                        for tok_n, token_obj in enumerate(sent_obj):
                             row = [rowid, 'token', 't{}/{}'.format(page_id, rowid),
-                                    token_text, '', doc_root_rowid, '', '']
+                                    token_obj.string.strip(), '', doc_root_rowid, '', '']
                             csv_out.writerow(row)
                             sentence_rowids.append(rowid)
                             rowid += 1
                         row = [rowid, 'sentence', 's{}/{}'.format(page_id, rowid),
                                 '', pg_list(sentence_rowids), doc_root_rowid,
-                                json.dumps({'meta': {'conll_tree': parsed_par_sents[sent_n]}}),
+                                json.dumps({'meta': {'conll_tree': sent_tree}}),
                                 '']
                         csv_out.writerow(row)
                         paragraph_rowids.append(rowid)
