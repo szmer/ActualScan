@@ -1,3 +1,9 @@
+;;;;;
+;;;;; Score sentences for business purposes.
+;;;;;
+
+;;;; TODO BUG scoring the same list of sents two times messes up the older ranking?
+
 (in-package :omnivore)
 
 (defun preview-top (scored-sentences &key (n 10))
@@ -7,20 +13,13 @@
           (format t "~A ~A~%" (raw-text (car sentence-entry)) (second sentence-entry)))
         (return-from preview-top))))
 
-(defun in-length-range (range scored-sentences)
-  "Range should be provided as '(min max+1)"
-  (remove-if (lambda (sentence-entry)
-               (or (> (car range) (length (division-divisions (car sentence-entry))))
-                   (<= (second range) (length (division-divisions (car sentence-entry))))))
-             scored-sentences))
-
-(defun ranked-best (scored-sentences)
+(defun ranked-high (scored-sentences)
   "Scored-sentences are provided in '(sent score) format."
   (sort scored-sentences
         #'>
         :key #'second))
 
-(defun ranked-worst (scored-sentences)
+(defun ranked-low (scored-sentences)
   "Scored-sentences are provided in '(sent score) format."
   (sort scored-sentences
         #'< ;; the lowest score first
@@ -39,6 +38,30 @@
                          (* magnitude
                             (second correcting-entry))))))
     scored-sentences correcting-scored-sentences))
+
+(defun highest-chunk (proportion scored-sentences deciding-sentences)
+  "Return only the (proportion) of the highest sentence entries from scored-sentences according to \
+   deciding-sentences. Note that sentences are compared with their raw text."
+  (let ((included-sentences (make-hash-table :test #'equalp))
+        (deciding-sorted (sort scored-sentences #'> :key #'second)))
+    ;; Created a hashed set of the first proportion of the best sentences.
+    (dolist (sentence-entry (subseq deciding-sorted 0 (floor (* proportion (length deciding-sorted)))))
+      (setf (gethash (raw-text (first sentence-entry)) included-sentences) t))
+    (remove-if (lambda (sentence-entry)
+                 (unless (gethash (raw-text (first sentence-entry)) included-sentences)))
+               scored-sentences)))
+
+(defun lowest-chunk (proportion scored-sentences deciding-sentences)
+  "Return only the (proportion) of the lowest sentence entries from scored-sentences according to \
+   deciding-sentences. Note that sentences are compared with their raw text."
+  (let ((included-sentences (make-hash-table :test #'equalp))
+        (deciding-sorted (sort scored-sentences #'< :key #'second)))
+    ;; Created a hashed set of the first proportion of the best sentences.
+    (dolist (sentence-entry (subseq deciding-sorted 0 (floor (* proportion (length deciding-sorted)))))
+      (setf (gethash (raw-text (first sentence-entry)) included-sentences) t))
+    (remove-if (lambda (sentence-entry)
+                 (unless (gethash (raw-text (first sentence-entry)) included-sentences)))
+               scored-sentences)))
 
 (defun scored-with-average-tfidf (sentences)
   "Return the sentences with assigned average tf-idf scores of their tokens. The list is suitable\
@@ -81,7 +104,7 @@
   (mapcar (lambda (sentence)
             (list sentence
                   (apply
-                    #'max
+                    #'max ; of all the markers searched for
                     (mapcar
                       (lambda (marker)
                               (marker-presence

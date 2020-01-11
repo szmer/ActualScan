@@ -10,22 +10,16 @@
 (setf *headphones-corp* (pg-textviews:get-corpus "test_headphones_corp"))
 (defparameter *comfort-cat*
   (make-category :token :attribute-name "raw_text" :attribute-value "comfort" :criterion :equal))
-;;- (defparameter *view* (pg-textviews:get-view *headphones-corp* (list *cat*) :get-documents t))
+;;- (defparameter *view* (pg-textviews:get-view *headphones-corp* (list *comfort-cat*) :get-documents t))
 
-;;- (defparameter *typical* (ranked-worst (corrected-with #'* (scored-with-average-tfidf (tokens-sents (view-divisions *view*))) (scored-with-length-deviation (tokens-sents (view-divisions *view*))))))
-;- (defparameter *atypical* (ranked-best (corrected-with #'/ (scored-with-average-tfidf (tokens-sents (view-divisions *view*))) (scored-with-length-deviation (tokens-sents (view-divisions *view*))))))
-;;- (preview-first *atypical*)
-
-;;- (defparameter *typical-markers*
-;;-   (in-length-range '(6 12)
-;;-                    (ranked-worst (corrected-with #'*
-;;-                                 (corrected-with #'/
-;;-                                                 (scored-with-average-tfidf (tokens-sents (view-divisions *view*)))
-;;-                                                 (scored-with-markers (tokens-sents (view-divisions *view*)))
-;;-                                                 :magnitude 1.0)
-;;-                                 (scored-with-length-deviation (tokens-sents (view-divisions *view*)))
-;;-                                 :magnitude 1.0))))
-
+;;-(defparameter *typical*
+;;-  (ranked-low (lowest-chunk 0.1
+;;-                              (scored-with-average-tfidf (tokens-sents (view-divisions *view*)))
+;;-                              (scored-with-length-deviation (tokens-sents (view-divisions *view*))))))
+;;-(defparameter *atypical*
+;;-  (ranked-high (corrected-with #'/
+;;-                             (scored-with-average-tfidf (tokens-sents (view-divisions *view*)))
+;;-                             (scored-with-length-deviation (tokens-sents (view-divisions *view*))))))
 
 
 ;;;(defparameter *conll-file* #p"~/therminsley/lectrix/spacy_parsing/test_conlls.conll")
