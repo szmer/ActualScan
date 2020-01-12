@@ -98,3 +98,8 @@
     (mapcar (lambda (elem) (cons elem t))
             list)
     :test #'equalp))
+
+(defun printhash (hash-table)
+ (maphash (lambda (k v) (format t "~A: ~A ~%" k v))
+          hash-table))
+

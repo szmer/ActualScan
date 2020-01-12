@@ -1,5 +1,12 @@
 (in-package :omnivore)
-(declaim (optimize (debug 3)))
+
+(defun sentences-with-ngram (n-gram tv-sentences)
+  "The n-gram should be supplied as a list."
+  (let ((result))
+    (dolist (sent tv-sentences)
+      (when (search n-gram (mapcar #'division-raw-text (division-divisions sent)) :test #'equalp)
+        (push sent result)))
+    result))
 
 (defun make-cumulator (&key (remember-size 800) (keep-freq 5) (comparison-function #'equalp))
   "Make a cumulator focusing on finding items more frequent than keep-freq, Increasing remmber-size\
@@ -84,11 +91,8 @@
                                      (elt (division-divisions sent) second-token-n)))))
             
             (unless (or (stopwordp word1) (stopwordp word2))
-            (funcall register
-                     (cl-strings:join (list word1 word2) :separator " "))))))
-    (maphash (lambda (bigram freq)
-               (format t "~A: ~A ~%" bigram freq))
-             (funcall flush))))
+            (funcall register (list word1 word2))))))
+    (funcall flush)))
 
 (defun top-tree-linkages (tv-sentences &key (freq 10))
   (multiple-value-bind (register flush)
@@ -101,12 +105,8 @@
                       (stopwordp (string-downcase (cl-conllu:token-lemma
                                                     (elt (cl-conllu:sentence-tokens tree)
                                                          (1- (cl-conllu:token-head token)))))))
-            (funcall register (cl-strings:join
-                                (list (string-downcase (cl-conllu:token-lemma token))
+            (funcall register (list (string-downcase (cl-conllu:token-lemma token))
                                       (string-downcase (cl-conllu:token-lemma
                                                          (elt (cl-conllu:sentence-tokens tree)
-                                                              (1- (cl-conllu:token-head token)))))) 
-                                :separator " "))))))
-    (maphash (lambda (bigram freq)
-               (format t "~A: ~A ~%" bigram freq))
-             (funcall flush))))
+                                                              (1- (cl-conllu:token-head token)))))))))))
+    (funcall flush)))

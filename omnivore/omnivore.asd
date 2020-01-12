@@ -15,13 +15,18 @@
                                            (:file "indexing" :depends-on ("representation"))
                                            (:file "reading" :depends-on ("representation")))
                               :depends-on ("omnivore" "utils"))
-                             (:module "raw"
-                              :components ((:file "stopwords")
-                                           (:file "scoring")
-                                           (:file "collocations" :depends-on ("stopwords")))
-                              :depends-on ("omnivore" "utils" "logic"))
                              (:module "io"
                               :components ((:file "in-xml") (:file "out-xml")
                                            (:file "quickdb" :depends-on ("in-xml"))
                                            (:file "in-textviews"))
-                              :depends-on ("omnivore" "logic"))))))
+                              :depends-on ("omnivore" "logic"))
+                             (:module "raw"
+                              :components ((:file "stopwords")
+                                           (:file "scoring")
+                                           (:file "collocations" :depends-on ("stopwords")))
+                              :depends-on ("omnivore" "utils" "logic" "io"))
+                             ))
+                (:module "biz"
+                 :components ((:file "basic")
+                              (:file "main" :depends-on ("basic")))
+                 :depends-on ("src"))))

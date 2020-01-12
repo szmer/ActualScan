@@ -13,17 +13,23 @@
           (format t "~A ~A~%" (raw-text (car sentence-entry)) (second sentence-entry)))
         (return-from preview-top))))
 
-(defun ranked-high (scored-sentences)
+(defun ranked-high (scored-sentences &key (n nil))
   "Scored-sentences are provided in '(sent score) format."
-  (sort scored-sentences
-        #'>
-        :key #'second))
+  (let ((ranking (sort scored-sentences
+                       #'>
+                       :key #'second)))
+    (if n
+        (subseq ranking 0 (min n (length ranking)))
+        ranking)))
 
-(defun ranked-low (scored-sentences)
+(defun ranked-low (scored-sentences &key (n nil))
   "Scored-sentences are provided in '(sent score) format."
-  (sort scored-sentences
-        #'< ;; the lowest score first
-        :key #'second))
+  (let ((ranking (sort scored-sentences
+                       #'<
+                       :key #'second)))
+    (if n
+        (subseq ranking 0 (min n (length ranking)))
+        ranking)))
 
 (defun corrected-with (update-fun scored-sentences correcting-scored-sentences &key (magnitude 1.0))
   "Scored-sentences and corrections are provided in '(sent score) format. Return the list with \
