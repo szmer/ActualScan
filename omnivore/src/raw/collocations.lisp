@@ -22,11 +22,11 @@
                  (when (= remember-size (hash-table-count
                                           (aref low-freqs freq (aref filled-table-ns freq))))
                    ;; Set the new filled table for this freq.
-                   (if (> (array-dimension low-freqs 1) (1+ (aref low-freqs freq filled-table-ns)))
-                       (incf (aref low-freqs freq filled-table-ns))
-                       (setf (aref low-freqs freq filled-table-ns) 0))
+                   (if (> (array-dimension low-freqs 1) (1+ (aref filled-table-ns freq)))
+                       (incf (aref filled-table-ns freq))
+                       (setf (aref filled-table-ns freq) 0))
                    ;; Clear the table under the new pointer.
-                   (clrhash (aref freq (aref low-freqs freq filled-table-ns))))
+                   (clrhash (aref low-freqs freq (aref filled-table-ns freq))))
                  ;; Actually make the entry.
                  (setf (gethash element (aref low-freqs freq (aref filled-table-ns freq))) t)))
         (lambda (element)
@@ -60,6 +60,7 @@
         kept-freqs))))
 
 (defun test-make-cumulator ()
+  ;; TODO also test case when lowfreq tables need to be swapped and cleared.
   (let ((text (list 23 26 12 432 23 23 23 23 23)))
     (multiple-value-bind (register flush)
       (make-cumulator)
@@ -68,3 +69,23 @@
         (assert (eq 6 (gethash 23 table))) 
         (assert (eq 1 (gethash 12 table)))))
     t))
+
+(defun top-bigrams (tv-sentences &key (freq 10))
+  (multiple-value-bind (register flush)
+    (make-cumulator :keep-freq freq)
+    (dolist (sent tv-sentences)
+      (do ((second-token-n 1 (1+ second-token-n)))
+          ((>= second-token-n (length (division-divisions sent))))
+          (let ((word1 (string-downcase
+                                   (division-raw-text
+                                 (elt (division-divisions sent) (1- second-token-n)))))
+                (word2 (string-downcase
+                                   (division-raw-text
+                                     (elt (division-divisions sent) second-token-n)))))
+            
+            (unless (or (stopwordp word1) (stopwordp word2))
+            (funcall register
+                     (cl-strings:join (list word1 word2) :separator " "))))))
+    (maphash (lambda (bigram freq)
+               (format t "~A: ~A ~%" bigram freq))
+             (funcall flush))))

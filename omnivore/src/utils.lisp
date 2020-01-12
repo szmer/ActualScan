@@ -91,3 +91,10 @@
                            standard-deviation)
                         2))) ; (x-mu/sigma)^2
      (* standard-deviation (sqrt (* 2.0 pi)))))
+
+
+(defun list-as-hash-set (list)
+  (alexandria:alist-hash-table
+    (mapcar (lambda (elem) (cons elem t))
+            list)
+    :test #'equalp))

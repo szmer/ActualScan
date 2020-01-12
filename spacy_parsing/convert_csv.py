@@ -53,6 +53,7 @@ with open(output_filename, 'w+') as output_file:
                     for sent_n, (sent_obj, sent_tree) in enumerate(par_sents):
                         sentence_rowids = []
                         for tok_n, token_obj in enumerate(sent_obj):
+                            # TODO interps appended to token texts!
                             row = [rowid, 'token', 't{}/{}'.format(page_id, rowid),
                                     token_obj.string.strip(), '', doc_root_rowid, '', '']
                             csv_out.writerow(row)

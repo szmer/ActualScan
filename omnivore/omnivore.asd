@@ -16,8 +16,9 @@
                                            (:file "reading" :depends-on ("representation")))
                               :depends-on ("omnivore" "utils"))
                              (:module "raw"
-                              :components ((:file "scoring")
-                                           (:file "collocations"))
+                              :components ((:file "stopwords")
+                                           (:file "scoring")
+                                           (:file "collocations" :depends-on ("stopwords")))
                               :depends-on ("omnivore" "utils" "logic"))
                              (:module "io"
                               :components ((:file "in-xml") (:file "out-xml")
