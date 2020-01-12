@@ -8,9 +8,13 @@
 (setf pg-textviews:*db-password* "RHHvVX6Mverv4sMr8Vcz")
 
 (setf *headphones-corp* (pg-textviews:get-corpus "test_headphones_corp"))
+(setf *headphones-corp-trees* (pg-textviews:get-corpus "test_headphones_corp_trees"))
 (defparameter *comfort-cat*
   (make-category :token :attribute-name "raw_text" :attribute-value "comfort" :criterion :equal))
+(defparameter *spec-cat*
+  (make-category :sentence :attribute-name "identifier" :attribute-value "s1047/1170313" :criterion :equal))
 ;;- (defparameter *view* (pg-textviews:get-view *headphones-corp* (list *comfort-cat*) :get-documents t))
+;;- (defparameter *view-trees* (pg-textviews:get-view *headphones-corp-trees* (list *comfort-cat*) :get-documents t))
 
 ;;; TODO both list have noticeble, very strong and different length tendencies
 ;;; TODO delay when deduplicating

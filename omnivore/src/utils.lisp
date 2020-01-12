@@ -1,5 +1,7 @@
 (in-package :omnivore)
 
+;; TODO iterate multi-array? (collocations)
+
 (defun truep (arg) (not (not arg)))
 
 (defun last-element (sequence)
