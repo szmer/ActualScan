@@ -89,3 +89,24 @@
     (maphash (lambda (bigram freq)
                (format t "~A: ~A ~%" bigram freq))
              (funcall flush))))
+
+(defun top-tree-linkages (tv-sentences &key (freq 10))
+  (multiple-value-bind (register flush)
+    (make-cumulator :keep-freq freq)
+    (dolist (sent tv-sentences)
+      (let ((tree (sentence-tree sent)))
+        (dolist (token (cl-conllu:sentence-tokens tree))
+          (unless (or (equalp (cl-conllu:token-deprel token) "ROOT")
+                      (stopwordp (string-downcase (cl-conllu:token-lemma token)))
+                      (stopwordp (string-downcase (cl-conllu:token-lemma
+                                                    (elt (cl-conllu:sentence-tokens tree)
+                                                         (1- (cl-conllu:token-head token)))))))
+            (funcall register (cl-strings:join
+                                (list (string-downcase (cl-conllu:token-lemma token))
+                                      (string-downcase (cl-conllu:token-lemma
+                                                         (elt (cl-conllu:sentence-tokens tree)
+                                                              (1- (cl-conllu:token-head token)))))) 
+                                :separator " "))))))
+    (maphash (lambda (bigram freq)
+               (format t "~A: ~A ~%" bigram freq))
+             (funcall flush))))

@@ -259,6 +259,8 @@ assuming that we have no definition for that term."
            ()))))))
 
 (defun sentence-semantic-token-order (sentence)
+  "The properly ordered list of token objects (guarantee that the children will appear later in \
+   the tree than their parents). The first item will be the root."
   (let* ((tokens (cl-conllu:sentence-tokens sentence))
          (head->token-ids (make-hash-table))
          (root) (token-order))
@@ -281,13 +283,12 @@ assuming that we have no definition for that term."
                                                       ;; these token ids are one-based
                                                       (nth (1- token-id) tokens))
                                                     level-token-ids))))))
+;; Notes for testing.
 ;;(mapcar #'cl-conllu:token-id (sentence-semantic-token-order (fifth *sents*)))
 ;;(4 8 3 22 9 7 5 2 1 23 21 20 19 11 6 24 12 10 25 16 28 17 15 27 18 14 13 26)
 
 (defun sentence->representation (sentence &key debug-info)
   (let ((token-id->representation (make-hash-table))
-        ;; The properly ordered list of token objects (guarantee that the children will appear
-        ;; later in the tree than their parents). The first item will be the root.
         (ordered-tokens (sentence-semantic-token-order sentence)))
     ;; Set individual unit representations.
     (dolist (token ordered-tokens)

@@ -53,7 +53,9 @@
       "us" "used" "using" "various" "very" "very" "via" "was" "we" "well" "were" "what" "whatever"
       "when" "whence" "whenever" "where" "whereafter" "whereas" "whereby" "wherein" "whereupon"
       "wherever" "whether" "which" "while" "whither" "who" "whoever" "whole" "whom" "whose" "why"
-      "will" "with" "within" "without" "would" "yet" "you" "your" "yours" "yourself" "yourselves")))
+      "will" "with" "within" "without" "would" "yet" "you" "your" "yours" "yourself" "yourselves"
+      ;; possible in CoNLLU trees
+      "-pron-")))
 
 (let ((contractions (list "n't" "'d" "'ll" "'m" "'re" "'s" "'ve")))
   (dolist (item contractions)

@@ -23,3 +23,9 @@
            (reduce #'append (mapcar #'division-divisions sections))))
       ;; The second parent (of the string is the section.
       (pushnew (record-parent (record-parent token)) sections)))
+
+(defun sentence-tree (tv-sentence)
+  (when (gethash "conll_tree" (record-meta tv-sentence))
+    (with-input-from-string (stream (gethash "conll_tree" (record-meta tv-sentence)))
+      ;; (we get a list of sentences)
+      (first (cl-conllu:read-conllu stream)))))
