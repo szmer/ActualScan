@@ -32,18 +32,6 @@ from dateutil.parser import parse as dateparse
 from dateutil.utils import default_tzinfo 
 from dateutil.tz import UTC
 
-####try except for different urllib under python3 and python2
-###try:
-###    import urllib.request as urllib
-###except ImportError:
-###    import urllib2 as urllib
-###
-###
-###try:
-###    from bs4 import BeautifulSoup
-###except ImportError:
-###    from BeautifulSoup import BeautifulSoup
-
 def parseStrDate(dateString):
     try:
         dateTimeObj = dateparse(dateString)
@@ -237,16 +225,6 @@ def extractArticlePublishedDate(parsedHTML):
     datetime.datetime object with intelligently parsed date, or None."""
 
     articleDate = None
-
-###        articleDate = _extractFromURL(articleLink)
-###
-###        if html is None:
-###            request = urllib.Request(articleLink)
-###            # Using a browser user agent, decreases the change of sites blocking this request - just a suggestion
-###            # request.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36')
-###            html = urllib.build_opener().open(request).read()
-###
-    ###parsedHTML = BeautifulSoup(html,"lxml")
 
     possibleDate = _extractFromLDJson(parsedHTML)
     if possibleDate is None:
