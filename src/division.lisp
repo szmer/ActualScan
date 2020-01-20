@@ -9,23 +9,25 @@
    
 
 (defclass document (division)
-  ((title :accessor document-title :initarg title :type string)))
+  ((title :accessor document-title :initarg :title :type string)))
 
 (defclass section (division)
-  ((degree :accessor section-degree :initarg degree :type integer)
-   (title :accessor section-title :initarg title :type string)))
+  ((degree :accessor section-degree :initarg :degree :type integer)
+   (title :accessor section-title :initarg :title :type string)))
 
 (defclass sentence (division)
   ())
 
 (defclass token (division)
-  ((lemma :accessor token-lemma :initarg lemma :type string)
-   (pos :accessor token-pos :initarg pos :type string)
-   (form-description :accessor token-form-description :initarg form-description :type string)))
+  ((lemma :accessor token-lemma :initarg :lemma :type string)
+   (pos :accessor token-pos :initarg :pos :type string)
+   (form-description :accessor token-form-description :initarg :form-description :type string)))
 
 (defun make-division (kind parent identifier contents &rest other-args)
   "Make an instance of division of the given kind, possibly with a non-nil parent, with contents supplied as a list (sub-divisions of the division) or a string (its raw text). The other-args are used to fill other slots of the object."
-  (declare (type record-kind kind) (type text-record parent) (type string identifier))
+  (declare (type record-kind kind) (type string identifier)
+           ;(type text-record parent)
+           )
   (when (eq kind :corpus) (error "Make-division function should not be used for corpora"))
   (apply #'make-instance
          (append 
@@ -45,6 +47,10 @@
   (declare (type division division))
   (if (slot-boundp division 'raw-text)
       (division-raw-text division)
-      (with-output-to-string (str)
-        (dolist (descendant (division-divisions division) str)
-          (format str "~A" (raw-text descendant))))))
+      (let ((text
+              (with-output-to-string (str)
+                (dolist (descendant (division-divisions division))
+                  (format str " ~A" (raw-text descendant))))))
+        (if (< 0 (length text))
+            (subseq text 1)
+            text))))
