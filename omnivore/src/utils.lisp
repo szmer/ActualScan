@@ -108,11 +108,11 @@
       response
       (map 'string #'code-char response)))
 
-(defmacro timed-execution (code)
+(defmacro timed-execution (code &key (description nil))
   `(multiple-value-bind (result miliseconds)
        (cl-stopwatch:with-stopwatch (progn ,code))
        (format t "~a took ~a miliseconds~%"
-               (quote ,code) miliseconds)
+               (or ,description (quote ,code)) miliseconds)
        result))
 
 ;;; Let this be a lesson that such attempts are mostly pointless

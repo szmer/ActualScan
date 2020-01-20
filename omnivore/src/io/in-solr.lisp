@@ -17,7 +17,7 @@
                                             ;; deduplication).
                                             "&sort=date_post%20asc"
                                             ;; Set how many rows we want to get.
-                                            "&rows=400")
+                                            "&rows=1500")
                                port core query))
          (response (timed-execution
                        (convert-drakma-to-string
@@ -26,7 +26,7 @@
                                               ;; sort clause
                                               ;;; see https://github.com/edicl/drakma/issues/78
                                               :preserve-uri t))))
-         (response-json (yason:parse response))
+         (response-json (timed-execution (yason:parse response)))
          (json-docs (gethash "docs" (or (gethash "response" response-json)
                                         (error (format nil "No response field in ~A~%"
                                                        response)))))
@@ -34,49 +34,52 @@
                       (error (format nil "No highlighting field in ~A~%" response))))
          (result-tokens)
          (sentence-strings-table (make-hash-table :test #'equalp)))
-    (dolist (json-doc json-docs)
-      (let ((document (make-division :document nil "noid" nil
-                                     :title (gethash "title" json-doc)
-                                     :creator (gethash "author" json-doc)
-                                     ;; KLUDGE this isn't true, but we use it as mockup for now
-                                     :publication-date (gethash "date_retr" json-doc)
-                                     :meta (alexandria:alist-hash-table
-                                             (list (cons "url" (gethash "url" json-doc)))
-                                             :test #'equalp)))
-            (section-strings (reduce
-                               ;; Concatenate all sections extracted from text higlights.
-                               ;;
-                               ;; TODO possible duplication because of this?
-                               #'append
-                               (mapcar 
-                                 (lambda (text)
-                                   (cl-strings:split text
-                                                     ;; for some reason including newline as \n
-                                                     ;; doesn't work
-                                                     (format nil "~%~%")))
-                                 (gethash "text" (gethash (gethash "url" json-doc) hilites))))))
-        (dolist (section-string section-strings)
-          (let* ((whitespace-tokenization ; sentence strings; KLUDGE by whitespace
-                   (cl-strings:split section-string (format nil "~%")))
-                 (section (make-division :section document "noid" nil)))
-            (push section (division-divisions document))
-            (dolist (sentence-string whitespace-tokenization)
-              ;;
-              ;; Avoid sentences with duplicate strings.
-              ;; This should be mostly safe as long as the docs are in chronological order.
-              (unless (gethash (cl-strings:clean sentence-string)
-                               sentence-strings-table)
-                (setf (gethash (cl-strings:clean sentence-string)
-                               sentence-strings-table)
-                      t)
-                (let ((sentence-as-list (cl-strings:split sentence-string " "))
-                      (sentence (make-division :sentence section "noid" nil)))
-                  (push sentence (division-divisions section))
-                  (dolist (token-string sentence-as-list)
-                    (let ((token (make-division :token sentence "noid" token-string)))
-                      (push token (division-divisions sentence))
-                      (push token result-tokens)))
-                  (setf (division-divisions sentence) (reverse (division-divisions sentence))))))
-            (setf (division-divisions section) (reverse (division-divisions section)))))
-        (setf (division-divisions document) (reverse (division-divisions document)))))
+    (timed-execution
+      (dolist (json-doc json-docs)
+        (let ((document (make-division :document nil "noid" nil
+                                       :title (gethash "title" json-doc)
+                                       :creator (gethash "author" json-doc)
+                                       ;; KLUDGE this isn't true, but we use it as mockup for now
+                                       :publication-date (gethash "date_retr" json-doc)
+                                       :meta (alexandria:alist-hash-table
+                                               (list (cons "url" (gethash "url" json-doc)))
+                                               :test #'equalp)))
+              (section-strings (reduce
+                                 ;; Concatenate all sections extracted from text higlights.
+                                 ;;
+                                 ;; TODO possible duplication because of this?
+                                 #'append
+                                 (mapcar
+                                   (lambda (text)
+                                     (cl-strings:split text
+                                                       ;; for some reason including newline as \n
+                                                       ;; doesn't work
+                                                       (format nil "~%~%")))
+                                   (gethash "text" (gethash (gethash "url" json-doc) hilites))))))
+          (dolist (section-string section-strings)
+            (let* ((whitespace-tokenization ; sentence strings; KLUDGE by whitespace
+                     (cl-strings:split section-string (format nil "~%")))
+                   (section (make-division :section document "noid" nil)))
+              (push section (division-divisions document))
+              (dolist (sentence-string whitespace-tokenization)
+                ;;
+                ;; Avoid sentences with duplicate strings.
+                ;; This should be mostly safe as long as the docs are in chronological order.
+                (unless (gethash (cl-strings:clean sentence-string)
+                                 sentence-strings-table)
+                  (setf (gethash (cl-strings:clean sentence-string)
+                                 sentence-strings-table)
+                        t)
+                  (let ((sentence-as-list (cl-strings:split sentence-string " "))
+                        (sentence (make-division :sentence section "noid" nil)))
+                    (push sentence (division-divisions section))
+                    (dolist (token-string sentence-as-list)
+                      (let ((token (make-division :token sentence "noid" token-string)))
+                        (push token (division-divisions sentence))
+                        (push token result-tokens)))
+                    (setf (division-divisions sentence) (reverse (division-divisions sentence))))))
+              (setf (division-divisions section) (reverse (division-divisions section)))))
+          (setf (division-divisions document) (reverse (division-divisions document)))))
+      ;; (for timed-execution)
+      :description "conversion")
     result-tokens))
