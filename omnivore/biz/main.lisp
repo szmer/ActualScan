@@ -20,5 +20,6 @@
 
 (defun query-result-solr! (query)
   (let* ((tv-tokens (solr-tokens *solr-port* *solr-collection*
-                                 (format nil "text:~A" (drakma:url-encode query :utf-8)))))
+                                 ;; enclose in url-encoded quotation marks
+                                 (format nil "text:%22~A%22" (drakma:url-encode query :utf-8)))))
     (result-for-tokens tv-tokens)))
