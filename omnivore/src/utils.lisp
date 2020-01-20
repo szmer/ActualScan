@@ -114,3 +114,15 @@
        (format t "~a took ~a miliseconds~%"
                (quote ,code) miliseconds)
        result))
+
+;;; Let this be a lesson that such attempts are mostly pointless
+;;;;(defun remove-duplicates* (list &key (test #'eq))
+;;;;  (let ((hashes (make-hash-table :test #'equalp :size (length list)))
+;;;;        (result))
+;;;;    (remove-if (lambda (elem)
+;;;;                 (if (gethash elem hashes)
+;;;;                     t
+;;;;                     (progn
+;;;;                       (setf (gethash elem hashes) t)
+;;;;                       nil)))
+;;;;               list)))

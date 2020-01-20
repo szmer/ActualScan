@@ -34,13 +34,12 @@
     (let* ((token-sentence (record-parent token))
            (sentence-n (position token-sentence
                                  (division-divisions (record-parent token-sentence)))))
-    (setf returned-sents
-          (append returned-sents
-                  ;; The sentence's parent is the section.
-                  (subseq (division-divisions (record-parent token-sentence))
-                          (max 0 (- sentence-n window-side-size))
-                          (min (+ sentence-n window-side-size)
-                               (length (division-divisions (record-parent token-sentence))))))))))
+      ;; The sentence's parent is the section.
+      (dolist (sent (subseq (division-divisions (record-parent token-sentence))
+                            (max 0 (- sentence-n window-side-size))
+                            (min (+ sentence-n window-side-size)
+                                 (length (division-divisions (record-parent token-sentence))))))
+        (push sent returned-sents)))))
 
 (defun sentence-tree (tv-sentence)
   (when (gethash "conll_tree" (record-meta tv-sentence))
