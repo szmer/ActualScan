@@ -104,4 +104,13 @@
           hash-table))
 
 (defun convert-drakma-to-string (response)
- (map 'string #'code-char response))
+  (if (stringp response)
+      response
+      (map 'string #'code-char response)))
+
+(defmacro timed-execution (code)
+  `(multiple-value-bind (result miliseconds)
+       (cl-stopwatch:with-stopwatch (progn ,code))
+       (format t "~a took ~a miliseconds~%"
+               (quote ,code) miliseconds)
+       result))

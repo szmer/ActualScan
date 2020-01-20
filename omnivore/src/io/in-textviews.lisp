@@ -1,13 +1,13 @@
 (in-package :omnivore)
 
-;;; NOTE deduplication here noticeably increases the time, up to seconds!!
 
 (defun tokens-sents (tv-tokens &key (deduplicate t))
   (if deduplicate
+      ;; NOTE We can deduplicate by object identity (#'eq) as long as string duplicates are filtered
+      ;; when loading from Solr.
       (remove-duplicates
         (mapcar (lambda (token) (record-parent token))
-                tv-tokens)
-        :test #'equalp :key #'raw-text)
+                tv-tokens))
       (mapcar (lambda (token) (record-parent token))
               tv-tokens)))
 
@@ -18,8 +18,7 @@
       ((null token)
        (if deduplicate
            (remove-duplicates
-             (reduce #'append (mapcar #'division-divisions sections))
-             :test #'equalp :key #'raw-text)
+             (reduce #'append (mapcar #'division-divisions sections)))
            (reduce #'append (mapcar #'division-divisions sections))))
       ;; The second parent of the token is the section.
       (pushnew (record-parent (record-parent token)) sections)))
@@ -30,7 +29,7 @@
         (token (pop tokens-iterated) (pop tokens-iterated)))
     ((null token)
      (if deduplicate
-         (remove-duplicates returned-sents :test #'equalp :key #'raw-text)
+         (remove-duplicates returned-sents)
          returned-sents))
     (let* ((token-sentence (record-parent token))
            (sentence-n (position token-sentence
