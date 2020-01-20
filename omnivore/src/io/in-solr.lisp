@@ -5,13 +5,19 @@
   (let* ((http-query (format nil
                                (concatenate 'string
                                             "http://localhost:~A/solr/~A/select?q=~A"
+                                            ;; Get those fields, but no text (only highlights).
+                                            "&fl=url,author,title,date_post,date_retr"
                                             ;; Enable highliting in text.
-                                            "&hl=true&hl.fl=text"
+                                            "&hl=true&hl.fl=text&hl.method=unified"
+                                            ;; Limit the size and number of highlights per doc.
+                                            "&hl.fragsize=500&hl.snippets=5"
+                                            ;; Disable marking the highlight.
+                                            "&hl.tag.pre=&hl.tag.post="
                                             ;; Sort oldest first (this is important for sentence
                                             ;; deduplication).
                                             "&sort=date_post%20asc"
                                             ;; Set how many rows we want to get.
-                                            "&rows=50")
+                                            "&rows=400")
                                port core query))
          (response (timed-execution
                        (convert-drakma-to-string
@@ -21,14 +27,12 @@
                                               ;;; see https://github.com/edicl/drakma/issues/78
                                               :preserve-uri t))))
          (response-json (yason:parse response))
-         ;; KLUDGE unsafe gethashes
          (json-docs (gethash "docs" (or (gethash "response" response-json)
                                         (error (format nil "No response field in ~A~%"
                                                        response)))))
          (hilites (or (gethash "highlighting" response-json)
                       (error (format nil "No highlighting field in ~A~%" response))))
          (result-tokens)
-         (unincd 0)
          (sentence-strings-table (make-hash-table :test #'equalp)))
     (dolist (json-doc json-docs)
       (let ((document (make-division :document nil "noid" nil
@@ -39,16 +43,18 @@
                                      :meta (alexandria:alist-hash-table
                                              (list (cons "url" (gethash "url" json-doc)))
                                              :test #'equalp)))
-            (document-hilite (cl-ppcre:scan-to-strings
-                               "(?<=<em>).*(?=</em>)"
-                               (first
-                                 (gethash "text"
-                                        (gethash (gethash "url" json-doc) hilites)))))
-            (docinc)
-            (section-strings (cl-strings:split (gethash "text" json-doc)
-                                               ;; for some reason including newline as \n doesn't
-                                               ;; work
-                                               (format nil "~%~%"))))
+            (section-strings (reduce
+                               ;; Concatenate all sections extracted from text higlights.
+                               ;;
+                               ;; TODO possible duplication because of this?
+                               #'append
+                               (mapcar 
+                                 (lambda (text)
+                                   (cl-strings:split text
+                                                     ;; for some reason including newline as \n
+                                                     ;; doesn't work
+                                                     (format nil "~%~%")))
+                                 (gethash "text" (gethash (gethash "url" json-doc) hilites))))))
         (dolist (section-string section-strings)
           (let* ((whitespace-tokenization ; sentence strings; KLUDGE by whitespace
                    (cl-strings:split section-string (format nil "~%")))
@@ -63,19 +69,14 @@
                 (setf (gethash (cl-strings:clean sentence-string)
                                sentence-strings-table)
                       t)
-                (let ((contains-match-p (truep (search document-hilite sentence-string)))
-                      (sentence-as-list (cl-strings:split sentence-string " "))
+                (let ((sentence-as-list (cl-strings:split sentence-string " "))
                       (sentence (make-division :sentence section "noid" nil)))
                   (push sentence (division-divisions section))
                   (dolist (token-string sentence-as-list)
                     (let ((token (make-division :token sentence "noid" token-string)))
                       (push token (division-divisions sentence))
-                      (when contains-match-p
-                        (setf docinc t)
-                        (push token result-tokens))))
+                      (push token result-tokens)))
                   (setf (division-divisions sentence) (reverse (division-divisions sentence))))))
             (setf (division-divisions section) (reverse (division-divisions section)))))
-        (unless docinc (incf unincd))
         (setf (division-divisions document) (reverse (division-divisions document)))))
-    (format t "~A docs skipped, can't find the highlights~%" unincd)
     result-tokens))
