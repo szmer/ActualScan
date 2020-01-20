@@ -3,11 +3,12 @@
 (defun result-for-tokens (tv-tokens)
   "Get a readable, but sexp-structured result for tv-view containing tokens as divisions, with\
    the documents loaded."
-  (let ((tv-sentences  (tokens-sents-with-windows 2 tv-tokens)))
+  (let ((tv-sentences (tokens-sents-with-windows 2 tv-tokens :deduplicate t)))
+    (format t "Working on ~A sentences~%" (length tv-sentences))
     (when tv-sentences
       (list :typical (typical tv-sentences 10)
         :atypical (atypical tv-sentences 10)
-        :phrases (phrases-info tv-sentences 10 3 :sents-to-text nil))
+        :phrases (phrases-info tv-sentences 3 3 :sents-to-text nil))
       )))
 
 (defun query-result (query corpus)

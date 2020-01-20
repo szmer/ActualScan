@@ -2,7 +2,7 @@
 
 (defun solr-tokens (port core query)
   ;;; One of general KLUDGE s is that there is no corpus object here.
-  (let* ((http-query (format nil "http://localhost:~A/solr/~A/select?q=~A&hl=true&hl.fl=text"
+  (let* ((http-query (format nil "http://localhost:~A/solr/~A/select?q=~A&hl=true&hl.fl=text&rows=50"
                              port core query))
          ;; KLUDGE drakma can return a stream
          (response (convert-drakma-to-string (drakma:http-request http-query)))
@@ -10,7 +10,8 @@
          ;; KLUDGE unsafe gethashes
          (json-docs (gethash "docs" (gethash "response" response-json)))
          (hilites (gethash "highlighting" response-json))
-         (result-tokens))
+         (result-tokens)
+         (unincd 0))
     (dolist (json-doc json-docs)
       (let ((document (make-division :document nil "noid" nil
                                      :title (gethash "title" json-doc)
@@ -25,6 +26,7 @@
                                (first
                                  (gethash "text"
                                         (gethash (gethash "url" json-doc) hilites)))))
+            (docinc)
             (section-strings (cl-strings:split (gethash "text" json-doc)
                                                ;; for some reason including newline as \n doesn't
                                                ;; work
@@ -43,8 +45,11 @@
                   (let ((token (make-division :token sentence "noid" token-string)))
                     (push token (division-divisions sentence))
                     (when contains-match-p
+                      (setf docinc t)
                       (push token result-tokens))))
                 (setf (division-divisions sentence) (reverse (division-divisions sentence)))))
             (setf (division-divisions section) (reverse (division-divisions section)))))
+        (unless docinc (incf unincd))
         (setf (division-divisions document) (reverse (division-divisions document)))))
+    (format t "~A docs skipped, can't find the highlights~%" unincd)
     result-tokens))

@@ -13,7 +13,7 @@ from jusText_star.justext.utils import get_stoplist
 # CONFIG desired range of rows here.
 #
 #ids = [1970]
-ids = range(1900, 2186)
+ids = range(0, 2186)
 verbose_ids = [1900, 1944, 1963]
 
 VERBOSE = False

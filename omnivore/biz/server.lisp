@@ -32,7 +32,7 @@
 ;; Dynamic responders.
 (hunchentoot:define-easy-handler (query-response :uri "/result") (q)
   (setf (hunchentoot:content-type*) "text/html")
-  (let ((query-result (query-result-solr! q))
+  (let ((query-result (query-result-solr! (drakma:url-encode q :utf-8)))
         (query-response-template
           (html-template:create-template-printer
             (merge-pathnames (pathname "result.tmpl") *html-path*)
