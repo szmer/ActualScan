@@ -7,12 +7,21 @@
 (setf pg-textviews:*db-username* "therm")
 (setf pg-textviews:*db-password* "RHHvVX6Mverv4sMr8Vcz")
 
-(setf *headphones-corp* (pg-textviews:get-corpus "test_headphones_corp"))
-(setf *headphones-corp-trees* (pg-textviews:get-corpus "test_headphones_corp_trees"))
-(defparameter *comfort-cat*
-  (make-category :token :attribute-name "raw_text" :attribute-value "comfort" :criterion :equal))
-(defparameter *spec-cat*
-  (make-category :sentence :attribute-name "identifier" :attribute-value "s1047/1170313" :criterion :equal))
+(setf drakma:*drakma-default-external-format* :utf-8)
+
+(setf *solr-port* 8983)
+(setf *solr-collection* "lookupy")
+(setf *html-path* #p"~/therminsley/lectrix/omnivore/html/")
+
+;; Pg-textviews objects.
+;;
+;;-(setf *headphones-corp* (pg-textviews:get-corpus "test_headphones_corp"))
+;;-(setf *headphones-corp-trees* (pg-textviews:get-corpus "test_headphones_corp_trees"))
+;;-(defparameter *comfort-cat*
+;;-  (make-category :token :attribute-name "raw_text" :attribute-value "comfort" :criterion :equal))
+;;-(defparameter *spec-cat*
+;;-  (make-category :sentence :attribute-name "identifier" :attribute-value "s1047/1170313" :criterion :equal))
+
 ;;- (defparameter *view* (pg-textviews:get-view *headphones-corp* (list *comfort-cat*) :get-documents t))
 ;;- (defparameter *view-trees* (pg-textviews:get-view *headphones-corp-trees* (list *comfort-cat*) :get-documents t))
 

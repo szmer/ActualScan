@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <meta charset="utf-8">
+      <link rel="stylesheet" type="text/css" href="css/bulma.css">
+
+      <title>Lookupy</title>
+   </head>
+
+   <body>
+      <section class="hero is-primary is-bold">
+         <div class="hero-body">
+            <div class="container">
+               <h1 class="title">
+                  Lookupy
+               </h1>
+
+               <!--
+                  <h2 class="subtitle">
+                  </h2>
+               -->
+
+               <form method="GET" action="/result">
+                  <div class="field has-addons">
+                     <div class="control">
+                        <input class="input" type="text" placeholder="" name="q">
+                     </div>
+                     <div class="control">
+                        <input class="button is-info" value="Go" type="submit">
+                     </div>
+                  </div>
+               </form>
+
+            </div>
+         </div>
+      </section>
+
+      <section class="hero is-dark">
+         <div class="hero-body">
+            <div class="container">
+               <h2 class="subtitle">
+                  Reporting on <em><!-- TMPL_VAR query-text --></em>
+               </h2>
+            </div>
+         </div>
+      </section>
+
+      <div class="columns">
+      <!-- TMPL_IF typical -->
+         <div class="column">
+            <section class="section">
+               <article class="panel is-info">
+                  <p class="panel-heading">
+                  Common opinion
+                  </p>
+
+                  <!-- TMPL_LOOP typical -->
+                  <div class="box">
+                     <article class="media">
+                        <div class="media-content">
+                           <div class="content">
+                              <p>
+                              <!-- TMPL_VAR sent-text -->
+                              <br>
+                              <strong><!-- TMPL_VAR author --></strong>
+                              <small><!-- TMPL_VAR date --></small>
+                              <small><a href="<!-- TMPL_VAR url -->">
+                              See on <!-- TMPL_VAR domain -->
+                              </a></small>
+                              </p>
+                           </div>
+                        </div>
+                     </article>
+                  </div>
+                  <!-- /TMPL_LOOP -->
+
+               </article>
+            </section>
+         </div>
+         <!-- /TMPL_IF -->
+
+      <!-- TMPL_IF phrases -->
+         <div class="column">
+            <section class="section">
+               <article class="panel is-info">
+                  <p class="panel-heading">
+                  Hot phrases
+                  </p>
+
+                  <!-- TMPL_LOOP phrases -->
+                  <div class="box">
+                     <article class="media">
+                        <div class="media-content">
+                           <div class="content">
+                              <strong class="is-size-5"><!-- TMPL_VAR phrase --></strong>
+                              <br>
+                              <ul>
+                              <!-- TMPL_LOOP typical -->
+                                 <li> <!-- TMPL_VAR sent-text -->
+                                 &ndash; <a href="<!-- TMPL_VAR url -->">
+                                 <!-- TMPL_VAR domain --></a>
+                                 (<!-- TMPL_VAR author -->)
+                                 <small><!-- TMPL_VAR date --></small></li>
+                              <!-- /TMPL_LOOP -->
+                              </ul>
+                           </div>
+                        </div>
+                     </article>
+                  </div>
+                  <!-- /TMPL_LOOP -->
+               </article>
+            </section>
+         </div>
+         <!-- /TMPL_IF -->
+
+      <!-- TMPL_IF atypical -->
+         <div class="column">
+            <section class="section">
+               <article class="panel is-info">
+                  <p class="panel-heading">
+                  Obscure posters
+                  </p>
+
+                  <!-- TMPL_LOOP atypical -->
+                  <div class="box">
+                     <article class="media">
+                        <div class="media-content">
+                           <div class="content">
+                              <p>
+                              <!-- TMPL_VAR sent-text -->
+                              <br>
+                              <strong><!-- TMPL_VAR author --></strong>
+                              <small><!-- TMPL_VAR date --></small>
+                              <small><a href="<!-- TMPL_VAR url -->">
+                              See on <!-- TMPL_VAR domain -->
+                              </a></small>
+                              </p>
+                           </div>
+                        </div>
+                     </article>
+                  </div>
+                  <!-- /TMPL_LOOP -->
+
+               </article>
+            </section>
+         </div>
+         <!-- /TMPL_IF -->
+      </div>
+   </body>
+</html>

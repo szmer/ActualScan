@@ -3,8 +3,9 @@
   :version "0.0.0"
   :author "Therminsley"
 
-  :depends-on ("alexandria" "cl-conllu" "cl-json" "cl-strings" "plump" "trivial-types"
-               "xml-emitter" "textviews" "pg-textviews")
+  :depends-on ("alexandria" "cl-conllu" "cl-json" "cl-strings" "drakma" "html-template"
+               "hunchentoot" "plump" "purl" "trivial-types" 
+               "xml-emitter" "yason" "textviews" "pg-textviews")
   :components ((:module "src"
                 :components ((:file "omnivore")
                              (:file "utils" :depends-on ("omnivore"))
@@ -18,7 +19,8 @@
                              (:module "io"
                               :components ((:file "in-xml") (:file "out-xml")
                                            (:file "quickdb" :depends-on ("in-xml"))
-                                           (:file "in-textviews"))
+                                           (:file "in-textviews")
+                                           (:file "in-solr"))
                               :depends-on ("omnivore" "logic"))
                              (:module "raw"
                               :components ((:file "stopwords")
@@ -28,5 +30,6 @@
                              ))
                 (:module "biz"
                  :components ((:file "basic")
-                              (:file "main" :depends-on ("basic")))
+                              (:file "main" :depends-on ("basic"))
+                              (:file "server" :depends-on ("main")))
                  :depends-on ("src"))))

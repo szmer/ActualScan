@@ -103,3 +103,5 @@
  (maphash (lambda (k v) (format t "~A: ~A ~%" k v))
           hash-table))
 
+(defun convert-drakma-to-string (response)
+ (map 'string #'code-char response))

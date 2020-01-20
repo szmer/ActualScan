@@ -22,13 +22,13 @@
               (let* ((phrase (car phrase-entry)) ; the cdr is frequency
                      (containing-sents (sentences-with-ngram phrase tv-sentences)))
                 (append
-                  (list phrase
-                        (list "typical"
-                              (mapcar (if sents-to-text #'raw-text #'identity)
-                                      (typical containing-sents num-examples))))
+                  (list :phrase phrase
+                        :typical
+                        (mapcar (if sents-to-text #'raw-text #'identity)
+                                (typical containing-sents num-examples)))
                   (when give-atypical
-                    (list (list "atypical" (mapcar (if sents-to-text #'raw-text #'identity)
-                                                   (atypical containing-sents num-examples))))))))
+                    (list :atypical (mapcar (if sents-to-text #'raw-text #'identity)
+                                                   (atypical containing-sents num-examples)))))))
             ;; Sort - give the most frequent ones first.
             (sort (alexandria:hash-table-alist phrases)
                   #'> 
