@@ -20,7 +20,7 @@
 ;;; Static stuff.
 (push (hunchentoot:create-static-file-dispatcher-and-handler
         "/" (merge-pathnames (pathname "index.html") *html-path*))
-      hunchentoot:*dispatch-table*) 
+      hunchentoot:*dispatch-table*)
 (push (hunchentoot:create-static-file-dispatcher-and-handler
         "/index.html" (merge-pathnames (pathname "index.html") *html-path*))
       hunchentoot:*dispatch-table*)
@@ -44,12 +44,12 @@
               :typical
               (mapcar #'sent-template-representation
                       (getf query-result :typical))
-              :atypical 
+              :atypical
               (mapcar #'sent-template-representation
                       (getf query-result :atypical))
               :phrases
               (mapcar (lambda (phrase-entry)
-                        (list :phrase (cl-strings:join (getf phrase-entry :phrase) :separator " ") 
+                        (list :phrase (cl-strings:join (getf phrase-entry :phrase) :separator " ")
                               :typical
                               (mapcar #'sent-template-representation
                                       (getf phrase-entry :typical))))

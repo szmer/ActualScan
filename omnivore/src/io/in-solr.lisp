@@ -10,15 +10,15 @@
                                             ;; Enable highliting in text.
                                             "&hl=true&hl.fl=text&hl.method=unified"
                                             ;; Limit the size and number of highlights per doc.
-                                            "&hl.fragsize=500&hl.snippets=5"
+                                            "&hl.fragsize=500&hl.snippets=~A"
                                             ;; Disable marking the highlight.
                                             "&hl.tag.pre=&hl.tag.post="
                                             ;; Sort oldest first (this is important for sentence
                                             ;; deduplication).
                                             "&sort=date_post%20asc"
                                             ;; Set how many rows we want to get.
-                                            "&rows=1500")
-                               port core query))
+                                            "&rows=~A")
+                               port core query *solr-snippets-per-doc* *solr-analyzed-rows-n*))
          (response (timed-execution
                        (convert-drakma-to-string
                          (drakma:http-request http-query

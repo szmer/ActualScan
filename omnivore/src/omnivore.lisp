@@ -9,9 +9,15 @@
 
 (setf drakma:*drakma-default-external-format* :utf-8)
 
-(setf *solr-port* 8983)
-(setf *solr-collection* "lookupy")
-(setf *html-path* #p"~/therminsley/lectrix/omnivore/html/")
+(defparameter *phrase-freq-threshold* 10)
+(defparameter *phrase-example-count* 3)
+
+(defparameter *solr-port* 8983)
+(defparameter *solr-collection* "lookupy")
+(defparameter *solr-analyzed-rows-n* 1000)
+(defparameter *solr-snippets-per-doc* 5)
+
+(defparameter *html-path* #p"~/therminsley/lectrix/omnivore/html/")
 
 ;; Pg-textviews objects.
 ;;
