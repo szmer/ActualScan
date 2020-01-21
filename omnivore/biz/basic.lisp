@@ -4,10 +4,25 @@
     (when *debug-scoring*
       (format t "Looking for typical sentences.~%"))
   (mapcar (if strip-scores #'first #'identity)
-          (ranked-low (lowest-chunk 0.1
-                            (scored-with-average-tfidf tv-sentences)
-                            (scored-with-length-deviation tv-sentences))
-              :n n)))
+          (cond ((< (length tv-sentences) (* 5 n))
+                 ;; If there are few sentences, don't discriminate.
+                 (ranked-low
+                   (scored-with-average-tfidf tv-sentences)
+                   :n n))
+                ((< (length tv-sentences) (* 10 n))
+                 (ranked-low
+                   ;; The intermediate case: take half.
+                   (lowest-chunk 0.5
+                                 (scored-with-average-tfidf tv-sentences)
+                                 (scored-with-length-deviation tv-sentences))
+                   :n n))
+                (t
+                 ;; When there's a lot, take ten times we need.
+                 (ranked-low
+                   (lowest-chunk (/ (* 10 n) (length tv-sentences))
+                                 (scored-with-average-tfidf tv-sentences)
+                                 (scored-with-length-deviation tv-sentences))
+                   :n n)))))
 
 (defun atypical (tv-sentences n &key (strip-scores t))
     (when *debug-scoring*

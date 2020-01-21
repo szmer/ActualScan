@@ -27,6 +27,7 @@
   (let ((ranking (sort scored-sentences
                        #'<
                        :key #'second)))
+    (format t "Received ~A sents~%" (length ranking))
     (if n
         (subseq ranking 0 (min n (length ranking)))
         ranking)))
@@ -49,17 +50,17 @@
   "Return only the (proportion) of the highest sentence entries from scored-sentences according to \
    deciding-sentences. Note that sentences are compared with their raw text."
   (let ((included-sentences (make-hash-table :test #'equalp))
-        (deciding-sorted (sort scored-sentences #'> :key #'second)))
+        (deciding-sorted (sort deciding-sentences #'> :key #'second)))
     (when *debug-scoring*
       (format t " Getting the highest chunk, taking ~A out of ~A (~A and above)~%"
-              (floor (* proportion (length deciding-sorted)))
+              (length (subseq deciding-sorted 0 (floor (* proportion (length deciding-sorted)))))
               (length deciding-sorted)
               (second (elt deciding-sorted (1- (floor (* proportion (length deciding-sorted))))))))
     ;; Create a hashed set of the first proportion of the best sentences.
     (dolist (sentence-entry (subseq deciding-sorted 0 (floor (* proportion (length deciding-sorted)))))
-      (setf (gethash (raw-text (first sentence-entry)) included-sentences) t))
+      (setf (gethash (first sentence-entry) included-sentences) t))
     (remove-if (lambda (sentence-entry)
-                 (if (gethash (raw-text (first sentence-entry)) included-sentences)
+                 (if (gethash (first sentence-entry) included-sentences)
                      nil
                      t))
                scored-sentences)))
@@ -68,17 +69,18 @@
   "Return only the (proportion) of the lowest sentence entries from scored-sentences according to \
    deciding-sentences. Note that sentences are compared with their raw text."
   (let ((included-sentences (make-hash-table :test #'equalp))
-        (deciding-sorted (sort scored-sentences #'< :key #'second)))
+        (deciding-sorted (sort deciding-sentences #'< :key #'second)))
     (when *debug-scoring*
       (format t " Getting the lowest chunk, taking ~A out of ~A (~A and below)~%"
-              (floor (* proportion (length deciding-sorted)))
+              (length (subseq deciding-sorted 0 (floor (* proportion (length deciding-sorted)))))
               (length deciding-sorted)
               (second (elt deciding-sorted (1- (floor (* proportion (length deciding-sorted))))))))
     ;; Create a hashed set of the first proportion of the best sentences.
     (dolist (sentence-entry (subseq deciding-sorted 0 (floor (* proportion (length deciding-sorted)))))
-      (setf (gethash (raw-text (first sentence-entry)) included-sentences) t))
+      (setf (gethash (first sentence-entry) included-sentences) t))
+    (format t "Marked ~A sents for inclusion~%" (hash-table-count included-sentences))
     (remove-if (lambda (sentence-entry)
-                 (if (gethash (raw-text (first sentence-entry)) included-sentences)
+                 (if (gethash (first sentence-entry) included-sentences)
                      nil
                      t))
                scored-sentences)))
