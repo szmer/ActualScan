@@ -8,9 +8,12 @@
     (when tv-sentences
       (list :typical (timed-execution (typical tv-sentences 10))
         :atypical (timed-execution (atypical tv-sentences 10))
-        :phrases (timed-execution (phrases-info tv-sentences
-                                                *phrase-freq-threshold* *phrase-example-count*
-                                                :sents-to-text nil))))))
+        :phrases (timed-execution
+                   (phrases-info tv-sentences
+                                 (max 5
+                                      (ceiling (* *phrase-freq-threshold* (length tv-sentences))))
+                                 *phrase-example-count*
+                                 :sents-to-text nil))))))
 
 (defun query-result (query corpus)
   (let* ((category (make-category :token :attribute-name "raw_text"

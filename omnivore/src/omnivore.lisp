@@ -12,7 +12,7 @@
 
 (setf drakma:*drakma-default-external-format* :utf-8)
 
-(defparameter *phrase-freq-threshold* 10)
+(defparameter *phrase-freq-threshold* 0.005) ; as ratio of number of sentences available
 (defparameter *phrase-example-count* 3)
 
 (defparameter *solr-port* 8983)
