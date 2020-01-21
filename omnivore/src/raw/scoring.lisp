@@ -50,11 +50,18 @@
    deciding-sentences. Note that sentences are compared with their raw text."
   (let ((included-sentences (make-hash-table :test #'equalp))
         (deciding-sorted (sort scored-sentences #'> :key #'second)))
-    ;; Created a hashed set of the first proportion of the best sentences.
+    (when *debug-scoring*
+      (format t " Getting the highest chunk, taking ~A out of ~A (~A and above)~%"
+              (floor (* proportion (length deciding-sorted)))
+              (length deciding-sorted)
+              (second (elt deciding-sorted (1- (floor (* proportion (length deciding-sorted))))))))
+    ;; Create a hashed set of the first proportion of the best sentences.
     (dolist (sentence-entry (subseq deciding-sorted 0 (floor (* proportion (length deciding-sorted)))))
       (setf (gethash (raw-text (first sentence-entry)) included-sentences) t))
     (remove-if (lambda (sentence-entry)
-                 (unless (gethash (raw-text (first sentence-entry)) included-sentences)))
+                 (if (gethash (raw-text (first sentence-entry)) included-sentences)
+                     nil
+                     t))
                scored-sentences)))
 
 (defun lowest-chunk (proportion scored-sentences deciding-sentences)
@@ -62,11 +69,18 @@
    deciding-sentences. Note that sentences are compared with their raw text."
   (let ((included-sentences (make-hash-table :test #'equalp))
         (deciding-sorted (sort scored-sentences #'< :key #'second)))
-    ;; Created a hashed set of the first proportion of the best sentences.
+    (when *debug-scoring*
+      (format t " Getting the lowest chunk, taking ~A out of ~A (~A and below)~%"
+              (floor (* proportion (length deciding-sorted)))
+              (length deciding-sorted)
+              (second (elt deciding-sorted (1- (floor (* proportion (length deciding-sorted))))))))
+    ;; Create a hashed set of the first proportion of the best sentences.
     (dolist (sentence-entry (subseq deciding-sorted 0 (floor (* proportion (length deciding-sorted)))))
       (setf (gethash (raw-text (first sentence-entry)) included-sentences) t))
     (remove-if (lambda (sentence-entry)
-                 (unless (gethash (raw-text (first sentence-entry)) included-sentences)))
+                 (if (gethash (raw-text (first sentence-entry)) included-sentences)
+                     nil
+                     t))
                scored-sentences)))
 
 (defun scored-with-average-tfidf (sentences)
@@ -99,6 +113,8 @@
     (dolist (sentence sentences)
       (incf length-average (length (division-divisions sentence))))
     (setf length-average (/ length-average (length sentences)))
+    (when *debug-scoring*
+      (format t " The average sentence length is ~A~%" length-average))
     (mapcar (lambda (sentence)
               (list sentence
                     (let ((deviation (abs (- length-average

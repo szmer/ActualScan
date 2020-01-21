@@ -109,11 +109,13 @@
       (map 'string #'code-char response)))
 
 (defmacro timed-execution (code &key (description nil))
-  `(multiple-value-bind (result miliseconds)
-       (cl-stopwatch:with-stopwatch (progn ,code))
-       (format t "~a took ~a miliseconds~%"
-               (or ,description (quote ,code)) miliseconds)
-       result))
+  (if *debug-times*
+      `(multiple-value-bind (result miliseconds)
+         (cl-stopwatch:with-stopwatch (progn ,code))
+         (format t "~a took ~a miliseconds~%"
+                 (or ,description (quote ,code)) miliseconds)
+         result)
+      `(progn ,code)))
 
 ;;; Let this be a lesson that such attempts are mostly pointless
 ;;;;(defun remove-duplicates* (list &key (test #'eq))

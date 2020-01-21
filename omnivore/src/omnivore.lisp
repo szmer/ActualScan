@@ -1,6 +1,9 @@
 (defpackage :omnivore (:use :cl :trivial-types :textviews))
 (in-package :omnivore)
 
+(defparameter *debug-times* nil)
+(defparameter *debug-scoring* t)
+
 
 (defparameter *filesystem-db-path* #p"~/therminsley/willowseed/db/")
 (setf pg-textviews:*db-name* "thermdb")
@@ -31,8 +34,6 @@
 ;;- (defparameter *view* (pg-textviews:get-view *headphones-corp* (list *comfort-cat*) :get-documents t))
 ;;- (defparameter *view-trees* (pg-textviews:get-view *headphones-corp-trees* (list *comfort-cat*) :get-documents t))
 
-;;; TODO both list have noticeble, very strong and different length tendencies
-;;; TODO delay when deduplicating
 ;;-(defparameter *typical*
 ;;-  (ranked-low (lowest-chunk 0.1
 ;;-                              (scored-with-average-tfidf (tokens-sents (view-divisions *view*)))
