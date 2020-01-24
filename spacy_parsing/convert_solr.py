@@ -9,6 +9,9 @@ from jusText_star.justext.core import justext
 # WARNING this uses the original installed justext package directory!
 from jusText_star.justext.utils import get_stoplist
 
+def date_fmt(time_obj):
+    return time_obj.strftime('%Y-%m-%dT%H:%M:%SZ')
+
 #
 # CONFIG desired range of rows here.
 #
@@ -24,7 +27,7 @@ site_types = {
         'cnet': 'm',
         'majorhifi': 'm',
         'leadsrating': 'm',
-        'reddit': 's',
+        'reddit': 'f',
         'homestudio': 'b',
         'headphonedungeon': 'b',
         'soundgearlab': 'b'
@@ -232,11 +235,13 @@ with open(output_filename, 'w+') as output_file:
                     if VERBOSE:
                         print('Author: {}'.format(metadata['author']))
                     author_elem = ET.SubElement(doc_elem, 'field', {'name': 'author'})
-                    author_elem.text = '{} on {}'.format(metadata['author'],
-                            re.sub('^www\\.', '', parsed_url.netloc))
+                    author_elem.text = metadata['author']
                     all_elems.append(author_elem)
                 elif VERBOSE:
                     print('Author is unknown')
+                site_name_elem = ET.SubElement(doc_elem, 'field', {'name': 'site_name'})
+                site_name_elem.text = re.sub('^www\\.', '', parsed_url.netloc)
+                all_elems.append(site_name_elem)
 
                 # Text (extracted earlier).
                 text_elem = ET.SubElement(doc_elem, 'field', {'name': 'text'})

@@ -2,7 +2,7 @@
 (in-package :omnivore)
 
 (defparameter *debug-times* nil)
-(defparameter *debug-scoring* t)
+(defparameter *debug-scoring* nil)
 
 
 (defparameter *filesystem-db-path* #p"~/therminsley/willowseed/db/")

@@ -7,7 +7,9 @@
         :date (when (read-attribute sent "publication-date")
                 ;; KLUDGE poor man's formatting
                 (subseq (read-attribute sent "publication-date") 0 10))
-        :author (or (read-attribute sent "creator") "unknown")
+        :author (format nil "~A on ~A"
+                        (or (read-attribute sent "creator") "someone")
+                        (read-attribute sent "site_name"))
         :url (read-attribute sent "url")
         :domain (when (read-attribute sent "url")
                   (purl:url-host (purl:url (read-attribute sent "url"))))))

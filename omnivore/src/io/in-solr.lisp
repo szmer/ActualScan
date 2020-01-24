@@ -6,7 +6,7 @@
                                (concatenate 'string
                                             "http://localhost:~A/solr/~A/select?q=~A"
                                             ;; Get those fields, but no text (only highlights).
-                                            "&fl=url,author,title,date_post,date_retr"
+                                            "&fl=url,author,title,date_post,date_retr,site_name"
                                             ;; Enable highliting in text.
                                             "&hl=true&hl.fl=text&hl.method=unified"
                                             ;; Limit the size and number of highlights per doc.
@@ -42,7 +42,9 @@
                                        ;; KLUDGE this isn't true, but we use it as mockup for now
                                        :publication-date (gethash "date_retr" json-doc)
                                        :meta (alexandria:alist-hash-table
-                                               (list (cons "url" (gethash "url" json-doc)))
+                                               (list (cons "url" (gethash "url" json-doc))
+                                                     (cons "site_name"
+                                                           (gethash "site_name" json-doc)))
                                                :test #'equalp)))
               (section-strings (reduce
                                  ;; Concatenate all sections extracted from text higlights.
