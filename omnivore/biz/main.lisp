@@ -4,7 +4,8 @@
   "Get a readable, but sexp-structured result for tv-view containing tokens as divisions, with\
    the documents loaded."
   (let ((tv-sentences (timed-execution (tokens-sents-with-windows 2 tv-tokens :deduplicate t))))
-    (format t "Working on ~A sentences~%" (length tv-sentences))
+    (when *debug-scoring*
+      (format t "Working on ~A sentences~%" (length tv-sentences)))
     (when tv-sentences
       (list :typical (timed-execution (typical tv-sentences 10))
         :atypical (timed-execution (atypical tv-sentences 10))

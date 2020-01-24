@@ -18,6 +18,8 @@
   (let ((ranking (sort scored-sentences
                        #'>
                        :key #'second)))
+    (when *debug-scoring*
+      (format t "Taking high ranked - received ~A sents~%" (length ranking)))
     (if n
         (subseq ranking 0 (min n (length ranking)))
         ranking)))
@@ -27,7 +29,8 @@
   (let ((ranking (sort scored-sentences
                        #'<
                        :key #'second)))
-    (format t "Received ~A sents~%" (length ranking))
+    (when *debug-scoring*
+      (format t "Taking low ranked - received ~A sents~%" (length ranking)))
     (if n
         (subseq ranking 0 (min n (length ranking)))
         ranking)))
@@ -78,7 +81,6 @@
     ;; Create a hashed set of the first proportion of the best sentences.
     (dolist (sentence-entry (subseq deciding-sorted 0 (floor (* proportion (length deciding-sorted)))))
       (setf (gethash (first sentence-entry) included-sentences) t))
-    (format t "Marked ~A sents for inclusion~%" (hash-table-count included-sentences))
     (remove-if (lambda (sentence-entry)
                  (if (gethash (first sentence-entry) included-sentences)
                      nil
