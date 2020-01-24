@@ -3,8 +3,8 @@
   :version "0.0.0"
   :author "Therminsley"
 
-  :depends-on ("alexandria" "cl-conllu" "cl-json" "cl-stopwatch" "cl-strings" "drakma"
-               "html-template" "hunchentoot" "plump" "purl" "trivial-types"
+  :depends-on ("alexandria" "babel" "cl-conllu" "cl-json" "cl-stopwatch" "cl-strings"
+               "drakma" "html-template" "hunchentoot" "plump" "purl" "trivial-types"
                "xml-emitter" "yason" "textviews" "pg-textviews")
   :components ((:module "src"
                 :components ((:file "omnivore")

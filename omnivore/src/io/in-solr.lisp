@@ -20,12 +20,12 @@
                                             "&rows=~A")
                                port core query *solr-snippets-per-doc* *solr-analyzed-rows-n*))
          (response (timed-execution
-                       (convert-drakma-to-string
+                       (babel:octets-to-string
                          (drakma:http-request http-query
                                               ;; this is needed to preserve the encoded space in
                                               ;; sort clause
                                               ;;; see https://github.com/edicl/drakma/issues/78
-                                              :preserve-uri t))))
+                                              :preserve-uri t :external-format-in :utf-8))))
          (response-json (timed-execution (yason:parse response)))
          (json-docs (gethash "docs" (or (gethash "response" response-json)
                                         (error (format nil "No response field in ~A~%"

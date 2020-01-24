@@ -103,11 +103,6 @@
  (maphash (lambda (k v) (format t "~A: ~A ~%" k v))
           hash-table))
 
-(defun convert-drakma-to-string (response)
-  (if (stringp response)
-      response
-      (map 'string #'code-char response)))
-
 (defmacro timed-execution (code &key (description nil))
   (if *debug-times*
       `(multiple-value-bind (result miliseconds)
