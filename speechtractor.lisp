@@ -1,6 +1,9 @@
 (defpackage :speechtractor (:use :cl))
 (in-package :speechtractor)
 
+;;; Set timezone that will be also returned by chronicity.
+(setf local-time:*default-timezone* local-time:+utc-zone+)
+
 (defparameter *paragraph-tags*
   '("body" "blockquote" "caption" "center" "col" "colgroup" "dd"
     "div" "dl" "dt" "fieldset" "form" "legend" "optgroup" "option"

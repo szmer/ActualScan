@@ -3,15 +3,20 @@
   :version "0.0.1"
   :author "Lookupy"
 
-  :depends-on ("cl-ppcre" "cl-strings" "fiasco" "hunchentoot" "plump" "purl")
-  :components ((:module "src"
-                :components ((:file "speechtractor")
-                             (:file "utils" :depends-on ("speechtractor"))
-                             (:file "paragraph" :depends-on ("utils"))
-                             (:file "classify" :depends-on ("paragraph"))
-                             ))
+  :depends-on ("chronicity" "cl-ppcre" "cl-strings" "fiasco" "hunchentoot" "local-time" "plump")
+  :components ((:file "speechtractor")
+               (:file "utils" :depends-on ("speechtractor"))
+               (:module "src"
+                :components ((:file "paragraph")
+                             (:file "classify" :depends-on ("paragraph")))
+                :depends-on ("utils"))
+               (:module "meta-funs"
+                :components ((:file "docstart") (:file "author") (:file "date") (:file "permalink")
+                             (:file "collections" :depends-on ("docstart" "author" "date" "permalink")))
+                :depends-on ("utils"))
                (:module "test"
-               :components ((:file "setup")
-                            (:file "test-classify" :depends-on ("setup"))
-                            (:file "test-docs" :depends-on ("setup")))
-               :depends-on ("src"))))
+                :components ((:file "setup")
+                             (:file "test-classify" :depends-on ("setup"))
+                             (:file "test-docs" :depends-on ("setup"))
+                             (:file "test-time" :depends-on ("setup")))
+                :depends-on ("src" "meta-funs"))))
