@@ -16,6 +16,12 @@
            (apply #'concatenate (append '(string)
                                         (paragraph-text-nodes paragraph)))))
 
+(defmethod print-object ((paragraph paragraph) stream)
+  (print-unreadable-object (paragraph stream :type t :identity t)
+    (format stream "(~A)~A"
+           (ignore-errors (paragraph-classification paragraph))
+           (cl-strings:shorten (paragraph-text paragraph :cleanp t) 60))))
+
 (defun paragraph-emptyp (paragraph)
   (zerop (length (paragraph-text paragraph :cleanp t))))
 

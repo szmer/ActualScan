@@ -22,7 +22,7 @@
     paragraph))
 
 (deftest basic-link-density ()
-  "Basic classification as in the original justext package tests."
+  "Link density."
 (let ((paragraphs
             (mapcar
               (lambda (text count-in-links)
@@ -35,14 +35,13 @@
                     (make-string 80 :initial-element #\a)
                     (make-string 80 :initial-element #\a))
               '(0 20 40 39 41))))
-      "Link density."
       (speechtractor::classify-paragraphs-basic paragraphs
         :classification-settings (alexandria:alist-hash-table (list (cons :max-link-density 0.5))))
-      (fiasco:is (eq (speechtractor::paragraph-classification (elt paragraphs 0)) :short))
-      (fiasco:is (eq (speechtractor::paragraph-classification (elt paragraphs 1)) :bad))
-      (fiasco:is (eq (speechtractor::paragraph-classification (elt paragraphs 2)) :bad))
-      (fiasco:is (eq (speechtractor::paragraph-classification (elt paragraphs 3)) :bad))
-      (fiasco:is (eq (speechtractor::paragraph-classification (elt paragraphs 4)) :bad))))
+      (is (eq (speechtractor::paragraph-classification (elt paragraphs 0)) :short))
+      (is (eq (speechtractor::paragraph-classification (elt paragraphs 1)) :bad))
+      (is (eq (speechtractor::paragraph-classification (elt paragraphs 2)) :bad))
+      (is (eq (speechtractor::paragraph-classification (elt paragraphs 3)) :bad))
+      (is (eq (speechtractor::paragraph-classification (elt paragraphs 4)) :bad))))
 
 (deftest basic-low-length ()
   "Low length."
@@ -57,8 +56,8 @@
             '(0 20))))
     (speechtractor::classify-paragraphs-basic paragraphs
                                               :classification-settings (alexandria:alist-hash-table (list (cons :length-low 1000))))
-    (fiasco:is (eq (speechtractor::paragraph-classification (elt paragraphs 0)) :short))
-    (fiasco:is (eq (speechtractor::paragraph-classification (elt paragraphs 1)) :bad))))
+    (is (eq (speechtractor::paragraph-classification (elt paragraphs 0)) :short))
+    (is (eq (speechtractor::paragraph-classification (elt paragraphs 1)) :bad))))
 
 (deftest basic-stopwords-high-len ()
   "Stopwords, high length."
@@ -74,17 +73,17 @@
                                          (cons :length-low 0)
                                          (cons :length-high 20)
                                          (cons :stopwords-high 0))))
-    (fiasco:is (eq (speechtractor::paragraph-classification (elt paragraphs 0)) :near-good))
-    (fiasco:is (eq (speechtractor::paragraph-classification (elt paragraphs 1)) :good))))
+    (is (eq (speechtractor::paragraph-classification (elt paragraphs 0)) :near-good))
+    (is (eq (speechtractor::paragraph-classification (elt paragraphs 1)) :good))))
 
 (deftest basic-stopwords-low-len ()
+  "Stopwords, low length."
   (let ((paragraphs
             (mapcar
               #'make-test-paragraph
               (list "a a a a a 2 3 4 5 6 7 8 9"
                     "a a 2 3 4 5 6 7 8 9"
                     "a 2 3 4 5 6 7 8 9"))))
-      "Stopwords, low length."
       (speechtractor::classify-paragraphs-basic paragraphs
         :classification-settings
         (alexandria:alist-hash-table (list (cons :max-link-density 1)
@@ -92,6 +91,34 @@
                                            (cons :stopwords-high 1)
                                            ;; for some float reason fails with 0.2
                                            (cons :stopwords-low 1/5))))
-      (fiasco:is (eq (speechtractor::paragraph-classification (elt paragraphs 0)) :near-good))
-      (fiasco:is (eq (speechtractor::paragraph-classification (elt paragraphs 1)) :near-good))
-      (fiasco:is (eq (speechtractor::paragraph-classification (elt paragraphs 2)) :bad))))
+      (is (eq (speechtractor::paragraph-classification (elt paragraphs 0)) :near-good))
+      (is (eq (speechtractor::paragraph-classification (elt paragraphs 1)) :near-good))
+      (is (eq (speechtractor::paragraph-classification (elt paragraphs 2)) :bad))))
+
+(deftest full-classification ()
+  "Html-document-data shouldn't leave :short or :near-good stuff."
+  (let* ((html
+              "<body><p>a a a a a</p><p>12</p><p>2 3 4 5 6 7 8 9</p><p>a a 2 3 4 5 6 7 8 9<p></body>")
+         (settings (alexandria:alist-hash-table (list (cons :max-link-density 1)
+                                                          (cons :length-low 3)
+                                                          (cons :length-high 6)
+                                                          (cons :stopwords-high 1/5)
+                                                          (cons :stopwords-low 1/10))))
+         (paragraphs (speechtractor::html-document-data
+                       html nil
+                       :classification-settings settings))
+         (initial-classification
+           (speechtractor::classify-paragraphs-basic
+             (mapcar
+               #'make-test-paragraph
+               (list "a a a a a" "12" "2 3 4 5 6 7 8 9" "a a 2 3 4 5 6 7 8 9"))
+             :classification-settings settings)))
+    (is (eq (speechtractor::paragraph-classification (elt initial-classification 0)) :good))
+    (is (eq (speechtractor::paragraph-classification (elt initial-classification 1)) :short))
+    (is (eq (speechtractor::paragraph-classification (elt initial-classification 2)) :bad))
+    (is (eq (speechtractor::paragraph-classification (elt initial-classification 3)) :near-good))
+    (is (= (length paragraphs) 4))
+    (is (eq (speechtractor::paragraph-classification (elt paragraphs 0)) :good))
+    (is (eq (speechtractor::paragraph-classification (elt paragraphs 1)) :bad))
+    (is (eq (speechtractor::paragraph-classification (elt paragraphs 2)) :bad))
+    (is (eq (speechtractor::paragraph-classification (elt paragraphs 3)) :bad))))

@@ -4,7 +4,7 @@
   (find classification '(:good :near-good :bad)))
 
 (defun classify-paragraphs-basic (paragraphs &key (classification-settings (make-hash-table)))
-  (dolist (paragraph paragraphs)
+  (dolist (paragraph paragraphs paragraphs)
     (let* ((text (paragraph-text paragraph :cleanp t))
            (link-density (/ (paragraph-chars-count-in-links paragraph) 
                             (length text)))
@@ -28,7 +28,6 @@
               ;; Many stopwords.
               ((> stopword-density
                   (gethash :stopwords-high classification-settings
-                           
                            *stopwords-high-default*))
                (if (> (length text)
                       (gethash :length-high classification-settings *length-high-default*))
@@ -71,12 +70,12 @@
   (let ((paragraph-n 0))
     (dolist (paragraph paragraphs paragraphs)
       (when (eq (paragraph-classification paragraph) :short)
-        (let ((prev-neighbor-classification (find-if #'value-judgment-p paragraphs
-                                                     :end paragraph-n :from-end t
-                                                     :key #'paragraph-classification))
-              (next-neighbor-classification (find-if #'value-judgment-p paragraphs
-                                                     :start paragraph-n
-                                                     :key #'paragraph-classification)))
+        (let ((prev-neighbor-classification (find-if #'value-judgment-p
+                                                     (mapcar #'paragraph-classification paragraphs)
+                                                     :end paragraph-n :from-end t))
+              (next-neighbor-classification (find-if #'value-judgment-p
+                                                     (mapcar #'paragraph-classification paragraphs)
+                                                     :start (1+ paragraph-n))))
           (setf (paragraph-classification paragraph)
                 (if (find
                       (list prev-neighbor-classification next-neighbor-classification)
@@ -89,13 +88,13 @@
   "Only if surrounded by bad it is bad, otherwise good."
   (let ((paragraph-n 0))
     (dolist (paragraph paragraphs paragraphs)
-      (when (eq (paragraph-classification paragraph) :short)
-        (let ((prev-neighbor-classification (find-if #'value-judgment-p paragraphs
-                                                     :end paragraph-n :from-end t
-                                                     :key #'paragraph-classification))
-              (next-neighbor-classification (find-if #'value-judgment-p paragraphs
-                                                     :start paragraph-n
-                                                     :key #'paragraph-classification)))
+      (when (eq (paragraph-classification paragraph) :near-good)
+        (let ((prev-neighbor-classification (find-if #'value-judgment-p
+                                                     (mapcar #'paragraph-classification paragraphs)
+                                                     :end paragraph-n :from-end t))
+              (next-neighbor-classification (find-if #'value-judgment-p
+                                                     (mapcar #'paragraph-classification paragraphs)
+                                                     :start (1+ paragraph-n))))
           (setf (paragraph-classification paragraph)
                 (if (find (list prev-neighbor-classification next-neighbor-classification)
                           '((:bad :bad) (:bad nil) (nil :bad))
@@ -119,7 +118,7 @@
   "Returns two values: list of paragraph objects and a list of document metadata property \
    lists for paragraphs marked as doc-startp. Metadata-funs should be a property list \
    containing functions that take a plump node and a DOM path (as a list) and possibly return \
-   relevant metadata."
+   relevant metadata. If no doc-startp function is provided, we use *doc-startp-default-fun*."
   (do* ((dom (plump:parse html-string))
         (paragraphs)
         (docs-metadata)
@@ -140,19 +139,27 @@
         (when (plump:element-p node) ; elements in plump have tags, but directly no text
           ;; Extend the path.
           (add-end path (plump:tag-name node))
-          ;; Start a new paragraph if need be.
-          (when (find (plump:tag-name node) *paragraph-tags* :test #'equalp)
-            (unless (paragraph-emptyp paragraph) ; othewise just reuse the previous object
-              (push paragraph paragraphs)
-              (setf paragraph (make-paragraph)))
-            (setf (paragraph-path paragraph) path)
-            (when (find-if (lambda (tag) (cl-ppcre:scan "^h\\d$" tag)) path)
-              (setf (paragraph-headingp paragraph) t)))
-          ;; Detect document starts.
-          (when (and (not (paragraph-doc-startp paragraph)) ; silently ignore multiple signals
-                     (funcall (getf metadata-funs :doc-startp) node path))
-            (setf (paragraph-doc-startp paragraph) t)
-            (setf docs-metadata (append docs-metadata '(nil))))
+          ;; Paragraph detection, starting documents.
+          (labels ((%new-paragraph ()
+                     (unless (paragraph-emptyp paragraph) ; othewise just reuse the previous object
+                       (push paragraph paragraphs)
+                       (setf paragraph (make-paragraph)))
+                     (setf (paragraph-path paragraph) path)
+                     (when (find-if (lambda (tag) (cl-ppcre:scan "^h\\d$" tag)) path)
+                       (setf (paragraph-headingp paragraph) t))))
+            ;; Start a new paragraph if need be.
+            (when (or (find (plump:tag-name node) *paragraph-tags* :test #'equalp)
+                    ;; These are cases where we left the paragraph tag:
+                    (< (length path) (length (paragraph-path paragraph)))
+                    (not (equalp (subseq path 0 (length (paragraph-path paragraph)))
+                                 (paragraph-path paragraph))))
+              (%new-paragraph))
+            ;; Detect document starts.
+            (when (and (not (paragraph-doc-startp paragraph)) ; silently ignore multiple signals
+                    (funcall (getf metadata-funs :doc-startp *doc-startp-default-fun*) node path))
+              (%new-paragraph) ; we may have to add one to avoid docstarting the previous one
+              (setf (paragraph-doc-startp paragraph) t)
+              (setf docs-metadata (append docs-metadata (list nil)))))
           ;; Links counting.
           (when (equalp "a" (plump:tag-name node))
             (incf (paragraph-chars-count-in-links paragraph)

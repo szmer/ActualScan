@@ -21,6 +21,9 @@
 (defparameter *max-heading-distance-default* 200)
 (defparameter *no-headings-default* nil)
 
+(defparameter *doc-startp-default-fun*
+  (lambda (node path) (equalp "body" (plump:tag-name node))))
+
 ;;;; This list was retrieved from SpaCy repo master branch on 12.01.2020.
 ;;;;
 ;;;; SpaCy's license:
