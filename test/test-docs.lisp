@@ -3,11 +3,11 @@
 (defparameter *test-document*
   "<html><head><title>Test document</title></head> \
                     <body><section data-author='isaac'><p>Hello there</p>\ 
-                    <p>Green mooshrums</p>\ 
+                    <p>Green mooshrums? Mooks</p>\ 
                     <date>Jan 1, 2050</date></section> \
                     <section> <p>Farewell</p>\ 
                     <a href='www.example.com/somewhere' title='Permalink'>go there</a>\ 
-                    <p>Really gigantic molluscs</p></section> \
+                    <p>Really gigantic molluscs. I did it again!</p></section> \
                     </body></html>")
 
 (defparameter *test-metadata-funs*
@@ -65,8 +65,22 @@
     (is (= 2 (length reread-json)))
     (is (equalp "Jan 1, 2050" (cdr (assoc :date (first reread-json)))))
     (is (equalp "isaac" (cdr (assoc :author (first reread-json)))))
-    (is (equalp (format nil "Hello there~%~%Green mooshrums~%~%Jan 1, 2050")
+    (is (equalp (format nil "Hello there~%~%Green mooshrums? Mooks~%~%Jan 1, 2050")
                 (cdr (assoc :text (first reread-json)))))
-    (is (equalp (format nil "Farewell~%~%Really gigantic molluscs")
+    (is (equalp (format nil "Farewell~%~%Really gigantic molluscs. I did it again!")
                 (cdr (assoc :text (second reread-json)))))
     (is (equalp "www.example.com/somewhere" (cdr (assoc :permalink (second reread-json)))))))
+
+
+(deftest read-document-json-sents ()
+  (let* ((json (speechtractor::html-document-data-json
+                *test-document* *test-metadata-funs*
+                :classification-settings (alexandria:alist-hash-table
+                                           (list (cons :length-low 3) (cons :length-high 10)
+                                                 (cons :stopwords-high 0) (cons :stopwords-low 0)))
+                :split-sents t))
+         (reread-json (cl-json:decode-json-from-string json)))
+    (is (equalp (format nil "Hello there~%~%Green mooshrums?~%Mooks~%~%Jan 1, 2050")
+                (cdr (assoc :text (first reread-json)))))
+    (is (equalp (format nil "Farewell~%~%Really gigantic molluscs.~%I did it again!")
+                (cdr (assoc :text (second reread-json)))))))

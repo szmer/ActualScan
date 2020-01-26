@@ -4,11 +4,12 @@
   :author "Lookupy"
 
   :depends-on ("chronicity" "cl-json" "cl-ppcre" "cl-strings" "fiasco" "hunchentoot" "local-time"
-               "plump")
+               "plump" "rutils" "rutilsx")
   :components ((:file "speechtractor")
                (:file "utils" :depends-on ("speechtractor"))
                (:module "src"
                 :components ((:file "paragraph")
+                             (:file "sent-split")
                              (:file "classify" :depends-on ("paragraph"))
                              (:file "out" :depends-on ("classify")))
                 :depends-on ("utils"))
