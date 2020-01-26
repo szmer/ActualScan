@@ -6,9 +6,7 @@
    (classification :accessor paragraph-classification)
    (chars-count-in-links :accessor paragraph-chars-count-in-links :initform 0)
    (headingp :accessor paragraph-headingp :initarg :headingp :initform nil)
-   (doc-startp :accessor paragraph-doc-startp :initarg :doc-startp :initform nil)
-   ;; a property list:
-   (doc-metadata :accessor paragraph-doc-metadata :initarg :doc-metadata :initform nil)))
+   (doc-startp :accessor paragraph-doc-startp :initarg :doc-startp :initform nil)))
 
 (defun make-paragraph ()
   (make-instance 'paragraph))

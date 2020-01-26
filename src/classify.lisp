@@ -1,9 +1,7 @@
 (in-package :speechtractor)
 
-(defun has-value-judgment-p (paragraph)
-  (or (eq (paragraph-classification paragraph) :good)
-      (eq (paragraph-classification paragraph) :near-good)
-      (eq (paragraph-classification paragraph) :bad)))
+(defun value-judgment-p (classification)
+  (find classification '(:good :near-good :bad)))
 
 (defun classify-paragraphs-basic (paragraphs &key (classification-settings (make-hash-table)))
   (dolist (paragraph paragraphs)
@@ -68,34 +66,39 @@
                            (return-from near-headings))))))))
       (incf paragraph-n))))
 
-(defun classify-short-paragraphs (paragraphs)
+(defun classify-short-paragraphs (paragraphs &key (classification-settings (make-hash-table)))
   "If there the neighbors are only good and neargood, it is good, otherwise bad."
   (let ((paragraph-n 0))
     (dolist (paragraph paragraphs paragraphs)
       (when (eq (paragraph-classification paragraph) :short)
-        (let ((prev-neighbor (find-if #'has-value-judgment-p paragraphs :end paragraph-n :from-end t
-                                      :key #'paragraph-classification))
-              (next-neighbor (find-if #'has-value-judgment-p paragraphs :start paragraph-n
-                                      :key #'paragraph-classification)))
+        (let ((prev-neighbor-classification (find-if #'value-judgment-p paragraphs
+                                                     :end paragraph-n :from-end t
+                                                     :key #'paragraph-classification))
+              (next-neighbor-classification (find-if #'value-judgment-p paragraphs
+                                                     :start paragraph-n
+                                                     :key #'paragraph-classification)))
           (setf (paragraph-classification paragraph)
                 (if (find
-                      (list prev-neighbor next-neighbor)
+                      (list prev-neighbor-classification next-neighbor-classification)
                       '((:good :good) (:good :near-good) (:near-good :good) (:good nil) (nil :good))
                       :test #'equalp)
                     :good :bad))))
       (incf paragraph-n))))
 
-(defun classify-near-good-paragraphs (paragraphs)
+(defun classify-near-good-paragraphs (paragraphs &key (classification-settings (make-hash-table)))
   "Only if surrounded by bad it is bad, otherwise good."
   (let ((paragraph-n 0))
     (dolist (paragraph paragraphs paragraphs)
       (when (eq (paragraph-classification paragraph) :short)
-        (let ((prev-neighbor (find-if #'has-value-judgment-p paragraphs :end paragraph-n :from-end t
-                                      :key #'paragraph-classification))
-              (next-neighbor (find-if #'has-value-judgment-p paragraphs :start paragraph-n
-                                      :key #'paragraph-classification)))
+        (let ((prev-neighbor-classification (find-if #'value-judgment-p paragraphs
+                                                     :end paragraph-n :from-end t
+                                                     :key #'paragraph-classification))
+              (next-neighbor-classification (find-if #'value-judgment-p paragraphs
+                                                     :start paragraph-n
+                                                     :key #'paragraph-classification)))
           (setf (paragraph-classification paragraph)
-                (if (find (list prev-neighbor next-neighbor) '((:bad :bad) (:bad nil) (nil :bad))
+                (if (find (list prev-neighbor-classification next-neighbor-classification)
+                          '((:bad :bad) (:bad nil) (nil :bad))
                           :test #'equalp)
                     :bad :good))))
       (incf paragraph-n))))
@@ -111,42 +114,75 @@
     (revise-headings :bad paragraphs :classification-settings classification-settings))
   paragraphs)
 
-(defun html-document-data (html-string &key (classification-settings (make-hash-table)))
+(defun html-document-data (html-string metadata-funs
+                                       &key (classification-settings (make-hash-table)))
+  "Returns two values: list of paragraph objects and a list of document metadata property \
+   lists for paragraphs marked as doc-startp. Metadata-funs should be a property list \
+   containing functions that take a plump node and a DOM path (as a list) and possibly return \
+   relevant metadata."
   (do* ((dom (plump:parse html-string))
         (paragraphs)
+        (docs-metadata)
         (paths-nodes (mapcar (lambda (elem) (list nil elem))
-                             (vector->list (plump:child-elements dom))))
+                             (vector->list (plump:children dom))))
         (path-node (pop paths-nodes) (pop paths-nodes))
         (paragraph (make-paragraph)))
     ((null path-node)
      (progn (unless (paragraph-emptyp paragraph) (push paragraph paragraphs))
-       (classify-paragraphs (reverse paragraphs))))
+            (values
+              (classify-paragraphs (reverse paragraphs)
+                                   :classification-settings classification-settings)
+              docs-metadata)))
     (destructuring-bind (path node) path-node
-      (unless (find (plump:tag-name node) *skipped-tags* :test #'equalp)
-        ;; Extend the path.
-        (add-end path (plump:tag-name node))
-        ;; Start a new paragraph if need be.
-        (when (find (plump:tag-name node) *paragraph-tags* :test #'equalp)
-          (unless (paragraph-emptyp paragraph) ; othewise just reuse the previous object
-            (push paragraph paragraphs)
-            (setf paragraph (make-paragraph)))
-          (setf (paragraph-path paragraph) path)
-          (when (find-if (lambda (tag) (cl-ppcre:scan "^h\\d$" tag)) path)
-            (setf (paragraph-headingp paragraph) t)))
-        ;; Links counting.
-        (when (equalp "a" (plump:tag-name node))
-          (incf (paragraph-chars-count-in-links)
-                (length (plump:render-text node))))
+      (unless (and (plump:element-p node)
+                   (find (plump:tag-name node) *skipped-tags* :test #'equalp))
+      ;;;-(format t "~A: ~A~%" path node)
+        (when (plump:element-p node) ; elements in plump have tags, but directly no text
+          ;; Extend the path.
+          (add-end path (plump:tag-name node))
+          ;; Start a new paragraph if need be.
+          (when (find (plump:tag-name node) *paragraph-tags* :test #'equalp)
+            (unless (paragraph-emptyp paragraph) ; othewise just reuse the previous object
+              (push paragraph paragraphs)
+              (setf paragraph (make-paragraph)))
+            (setf (paragraph-path paragraph) path)
+            (when (find-if (lambda (tag) (cl-ppcre:scan "^h\\d$" tag)) path)
+              (setf (paragraph-headingp paragraph) t)))
+          ;; Detect document starts.
+          (when (and (not (paragraph-doc-startp paragraph)) ; silently ignore multiple signals
+                     (funcall (getf metadata-funs :doc-startp) node path))
+            (setf (paragraph-doc-startp paragraph) t)
+            (setf docs-metadata (append docs-metadata '(nil))))
+          ;; Links counting.
+          (when (equalp "a" (plump:tag-name node))
+            (incf (paragraph-chars-count-in-links paragraph)
+                  (length (plump:render-text node))))
+          ;; Metadata extraction.
+          ;; Basically just add function values to metadata under whatever key they are under in the
+          ;; metadata-funs.
+          (when docs-metadata
+            (let ((property-keys (remove-if (lambda (elem)
+                                              (or (not (keywordp elem)) (eq :doc-startp elem)))
+                                            metadata-funs)))
+              (dolist (key property-keys)
+                (let ((value (funcall (getf metadata-funs key) node path)))
+                  (when value
+                    (setf (getf (car (last docs-metadata)) key)
+                          value)))))))
         ;; Add the text to the paragraph.
-        (when (plump:textual-node-p node)
+        (when (or (plump:textual-node-p node) (plump:text-node-p node))
+          ;;;-(format t "~A~%" (cleaned-text (plump:text node)))
           (add-end (paragraph-text-nodes paragraph)
-                   (cleaned-text (plump:text node))))
+                   (cleaned-text (plump:text node)))
+          ;;;-(format t "now ~A~%" (paragraph-text-nodes paragraph))
+          )
         ;; Add the children at the front of the queque (depth-first).
-        (setf paths-nodes
-              (append (mapcar (lambda (elem)
-                                (list (copy-list path) elem))
-                              (vector->list (plump:child-elements node)))
-                      paths-nodes))))))
+        (when (plump:nesting-node-p node)
+          (setf paths-nodes
+                (append (mapcar (lambda (elem)
+                                  (list (copy-list path) elem))
+                                (vector->list (plump:children node)))
+                        paths-nodes)))))))
 
 ;;;;; The general algorithm of paragraph classification is ported from Python justext package
 ;;;;; with the following license:

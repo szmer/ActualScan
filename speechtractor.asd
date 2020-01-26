@@ -12,5 +12,6 @@
                              ))
                (:module "test"
                :components ((:file "setup")
-                            (:file "test-classify" :depends-on ("setup")))
+                            (:file "test-classify" :depends-on ("setup"))
+                            (:file "test-docs" :depends-on ("setup")))
                :depends-on ("src"))))
