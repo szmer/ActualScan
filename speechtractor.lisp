@@ -4,6 +4,8 @@
 ;;; Whether to run the server.
 (defparameter *server-running-p* t)
 (defparameter *http-port* 3756)
+;; Silence hunchentoot reporting.
+(setf *server-silentp* t)
 
 ;;; Set timezone that will be also returned by chronicity.
 (setf local-time:*default-timezone* local-time:+utc-zone+)

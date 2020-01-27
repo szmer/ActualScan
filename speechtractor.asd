@@ -29,5 +29,6 @@
                              (:file "test-classify" :depends-on ("setup"))
                              (:file "test-docs" :depends-on ("setup"))
                              (:file "test-time" :depends-on ("setup"))
-                             (:file "test-http" :depends-on ("setup")))
+                             (:file "test-http" :depends-on ("setup"))
+                             (:file "test-realworld" :depends-on ("setup")))
                 :depends-on ("src" "meta-funs"))))

@@ -1,6 +1,6 @@
 (in-package :speechtractor)
 
-(defun forums-docstart (node path)
+(defun forums-doc-startp (node path)
   (declare (ignore path))
   (or
     ;; Xenforo

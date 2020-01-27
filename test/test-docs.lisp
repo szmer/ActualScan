@@ -2,7 +2,7 @@
 
 (defparameter *test-document*
   "<html><head><title>Test document</title></head> \
-                    <p>Don't mind me</p>\
+                    <p>Don't mind<br>me</p>\
                     <body><section data-author='isaac'><p>Hello there</p>\ 
                     <p>Green mooshrums? Mooks</p>\ 
                     <date>Jan 1, 2050</date></section> \
@@ -33,6 +33,8 @@
                                        (cons :stopwords-high 0) (cons :stopwords-low 0))))
     ;; Handling paragraphs and documents.
     (is (= 7 (length paragraphs)))
+    (is (equalp (format nil "Don't mind~%me")
+                (speechtractor::paragraph-text (first paragraphs) :cleanp t)))
     (is (equalp "Hello there"
                 (speechtractor::paragraph-text (second paragraphs) :cleanp t)))
     (is (equalp "Jan 1, 2050"

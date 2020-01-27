@@ -8,8 +8,9 @@
 (defparameter *source-type-meta-funs*
   (alexandria:alist-hash-table
     (list (list "forums"
-                :docstart-p #'forums-docstart
-                :date-post #'forums-date
+                :doc-startp #'forums-doc-startp
+                ;; cl-json will preserve the underscore in date_post, and re-read as date--post
+                :date_post #'forums-date
                 :author #'forums-author
                 :url #'forums-permalink)
           (list "test"

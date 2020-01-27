@@ -20,4 +20,7 @@
 ;;; Start the server.
 (when *server-running-p*
   (setf *server* (make-instance 'hunchentoot:easy-acceptor :port *http-port*))
+  (when *server-silentp*
+    (setf (hunchentoot:acceptor-access-log-destination *server*) nil)
+    (setf (hunchentoot:acceptor-message-log-destination *server*) nil))
   (hunchentoot:start *server*))

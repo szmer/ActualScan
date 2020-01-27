@@ -12,9 +12,23 @@
   (make-instance 'paragraph))
 
 (defun paragraph-text (paragraph &key (cleanp nil))
-  (funcall (if cleanp #'cleaned-text #'identity)
-           (apply #'concatenate (append '(string)
-                                        (paragraph-text-nodes paragraph)))))
+  (funcall
+    (if cleanp #'cleaned-text #'identity)
+    (with-output-to-string (result-str-stream)
+      (let ((previous-node-text))
+        (dolist (node-text (paragraph-text-nodes paragraph))
+          (unless (or (null previous-node-text)
+                      (unless (zerop (length previous-node-text))
+                        (find (elt previous-node-text (1- (length previous-node-text)))
+                              '(#\Space #\Newline #\Backspace #\Tab
+                                #\Linefeed #\Page #\Return #\Rubout)))
+                      (unless (zerop (length node-text))
+                        (find (elt node-text 0)
+                              '(#\Space #\Newline #\Backspace #\Tab
+                                #\Linefeed #\Page #\Return #\Rubout))))
+            (format result-str-stream " "))
+          (setf previous-node-text node-text)
+          (format result-str-stream "~A" node-text))))))
 
 (defmethod print-object ((paragraph paragraph) stream)
   (print-unreadable-object (paragraph stream :type t :identity t)

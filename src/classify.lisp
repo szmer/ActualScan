@@ -179,11 +179,12 @@
                           value)))))))
         ;; Add the text to the paragraph.
         (when (or (plump:textual-node-p node) (plump:text-node-p node))
-          ;;;-(format t "~A~%" (cleaned-text (plump:text node)))
           (add-end (paragraph-text-nodes paragraph)
-                   (cleaned-text (plump:text node)))
-          ;;;-(format t "now ~A~%" (paragraph-text-nodes paragraph))
-          )
+                   (cleaned-text (plump:text node))))
+        ;; <br>
+        (when (and (plump:element-p node) (equalp "br" (plump:tag-name node)))
+          (add-end (paragraph-text-nodes paragraph)
+                   (format nil "~%")))
         ;; Add the children at the front of the queque (depth-first).
         (when (plump:nesting-node-p node)
           (setf paths-nodes
