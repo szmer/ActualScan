@@ -116,7 +116,7 @@
 (defun html-document-data (html-string metadata-funs
                                        &key (classification-settings (make-hash-table)))
   "Returns two values: list of paragraph objects and a list of document metadata property \
-   lists for paragraphs marked as doc-startp. Metadata-funs should be a property list \
+   lists for paragraphs marked as doc-startp. metadata-funs should be a property list \
    containing functions that take a plump node and a DOM path (as a list) and possibly return \
    relevant metadata. If no doc-startp function is provided, we use *doc-startp-default-fun*."
   (do* ((dom (plump:parse html-string))
