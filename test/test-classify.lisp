@@ -98,12 +98,13 @@
 (deftest full-classification ()
   "Html-document-data shouldn't leave :short or :near-good stuff."
   (let* ((html
-              "<body><p>a a a a a</p><p>12</p><p>2 3 4 5 6 7 8 9</p><p>a a 2 3 4 5 6 7 8 9<p></body>")
+              "<body><p>a a a a a</p><h2>12</h2><p>2 3 4 5 6 7 8 9</p><p>a a 2 3 4 5 6 7 8 9<p></body>")
          (settings (alexandria:alist-hash-table (list (cons :max-link-density 1)
                                                           (cons :length-low 3)
                                                           (cons :length-high 6)
                                                           (cons :stopwords-high 1/5)
-                                                          (cons :stopwords-low 1/10))))
+                                                          (cons :stopwords-low 1/10)
+                                                          (cons :max-heading-distance 3))))
          (paragraphs (speechtractor::html-document-data
                        html nil
                        :classification-settings settings))

@@ -61,6 +61,7 @@
                        (progn
                          (incf distance (length (paragraph-text other-paragraph :cleanp t))) 
                          (when (>= distance (gethash :max-heading-distance
+                                                     classification-settings
                                                      *max-link-density-default*))
                            (return-from near-headings))))))))
       (incf paragraph-n))))
