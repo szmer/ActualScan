@@ -8,6 +8,7 @@
 (defparameter *source-type-meta-funs*
   (alexandria:alist-hash-table
     (list (list "forums"
+                :skip-p #'general-skip-p
                 :doc-startp #'forums-doc-startp
                 ;; cl-json will preserve the underscore in date_post, and re-read as date--post
                 :date_post #'forums-date
@@ -26,10 +27,17 @@
     (list (cons "forums"
                 ;; relaxed parameters for forums.
                 (alexandria:plist-hash-table
-                 '(:stopwords-low 0.17 :stopwords-high 0.22 :length-high 110
-                  ;; but at least be more stringent about link density
-                  :max-link-density 0.16)))
+                 '(:stopwords-low 0.17 :stopwords-high 0.22 :length-low 40 :length-high 40)))
           ;; Empty defaults.
           (cons "test" (make-hash-table))
           (cons nil (make-hash-table)))
     :test #'equalp))
+
+(defun interpret-file-as* (source-type file-path &key (class "message"))
+  "A debug function to see how a html file is interpreted."
+  ;; For example:
+  ;; (interpret-file-as* "forums" (asdf:system-relative-pathname 'speechtractor "test/pages/styleforum-xenforo.html"))
+  (html-document-data (uiop:read-file-string file-path)
+                      (gethash source-type *source-type-meta-funs*)
+                      :classification-settings
+                      (gethash source-type *source-type-classification-settings*)))

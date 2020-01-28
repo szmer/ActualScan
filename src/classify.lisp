@@ -6,7 +6,7 @@
 (defun classify-paragraphs-basic (paragraphs &key (classification-settings (make-hash-table)))
   (dolist (paragraph paragraphs paragraphs)
     (let* ((text (paragraph-text paragraph :cleanp t))
-           (link-density (/ (paragraph-chars-count-in-links paragraph) 
+           (link-density (/ (paragraph-chars-count-in-links paragraph)
                             (length text)))
            (stopword-density (paragraph-stopwords-density paragraph)))
       (setf (paragraph-classification paragraph)
@@ -43,7 +43,7 @@
 (defun revise-headings (initial-classification paragraphs
                          &key (classification-settings (make-hash-table)))
   "Compute distance from subsequent good paragraphs for paragraphs of initial-classification that \
-   may be headings; if they are inside the max distance, they are good." 
+   may be headings; if they are inside the max distance, they are good."
   (let ((paragraph-n 0))
     (dolist (paragraph paragraphs paragraphs)
       (when (and (eq (paragraph-classification paragraph) initial-classification)
@@ -54,12 +54,12 @@
                  (dolist (other-paragraph (subseq paragraphs (1+ paragraph-n)))
                    (if (eq (paragraph-classification other-paragraph) :good)
                        ;; If the subsequent paragraph is good, mark the heading as also good.
-                       (progn 
+                       (progn
                          (setf (paragraph-classification paragraph) :good)
                          (return-from near-headings))
                        ;; Otherwise count the distance.
                        (progn
-                         (incf distance (length (paragraph-text other-paragraph :cleanp t))) 
+                         (incf distance (length (paragraph-text other-paragraph :cleanp t)))
                          (when (>= distance (gethash :max-heading-distance
                                                      classification-settings
                                                      *max-link-density-default*))
@@ -119,7 +119,8 @@
   "Returns two values: list of paragraph objects and a list of document metadata property \
    lists for paragraphs marked as doc-startp. metadata-funs should be a property list \
    containing functions that take a plump node and a DOM path (as a list) and possibly return \
-   relevant metadata. If no doc-startp function is provided, we use *doc-startp-default-fun*."
+   relevant metadata. If no :doc-startp function is provided, we use *doc-startp-default-fun*.\
+   If a :skip-p function is provided, it will be used to skip some tag trees entirely."
   (do* ((dom (plump:parse html-string))
         (paragraphs)
         (docs-metadata)
@@ -135,7 +136,9 @@
               docs-metadata)))
     (destructuring-bind (path node) path-node
       (unless (and (plump:element-p node)
-                   (find (plump:tag-name node) *skipped-tags* :test #'equalp))
+                   (or (find (plump:tag-name node) *skipped-tags* :test #'equalp)
+                       (and (getf metadata-funs :skip-p)
+                            (funcall (getf metadata-funs :skip-p) node path))))
       ;;;-(format t "~A: ~A~%" path node)
         (when (plump:element-p node) ; elements in plump have tags, but directly no text
           ;; Extend the path.
@@ -170,7 +173,8 @@
           ;; metadata-funs.
           (when docs-metadata
             (let ((property-keys (remove-if (lambda (elem)
-                                              (or (not (keywordp elem)) (eq :doc-startp elem)))
+                                              (or (not (keywordp elem)) (eq :doc-startp elem)
+                                                  (eq :skip-p elem)))
                                             metadata-funs)))
               (dolist (key property-keys)
                 (let ((value (funcall (getf metadata-funs key) node path)))

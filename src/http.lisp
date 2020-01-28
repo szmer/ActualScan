@@ -1,7 +1,8 @@
 (in-package :speechtractor)
 
 ;;; Clear what may remain from the earlier server objects
-(when (and (boundp '*server*) *server*) (hunchentoot:stop *server* :soft nil))
+(when (boundp '*server*)
+      (ignore-errors (hunchentoot:stop *server* :soft nil)))
 (defparameter *server* nil)
 
 (hunchentoot:define-easy-handler (interpret-01 :uri "/api/v01/interpret") (html sourcetype)

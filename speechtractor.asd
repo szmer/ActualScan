@@ -13,8 +13,9 @@
                (:file "utils" :depends-on ("speechtractor"))
                (:module "meta-funs"
                 :components ((:file "docstart") (:file "author") (:file "date") (:file "permalink")
+                             (:file "skip")
                              (:file "collections"
-                              :depends-on ("docstart" "author" "date" "permalink")))
+                              :depends-on ("docstart" "author" "date" "permalink" "skip")))
                 :depends-on ("utils"))
                (:module "src"
                 :components ((:file "paragraph")

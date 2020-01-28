@@ -5,7 +5,7 @@
 (defparameter *server-running-p* t)
 (defparameter *http-port* 3756)
 ;; Silence hunchentoot reporting.
-(setf *server-silentp* t)
+(setf *server-silentp* nil)
 
 ;;; Set timezone that will be also returned by chronicity.
 (setf local-time:*default-timezone* local-time:+utc-zone+)
@@ -85,7 +85,9 @@
               "us" "used" "using" "various" "very" "very" "via" "was" "we" "well" "were" "what" "whatever"
               "when" "whence" "whenever" "where" "whereafter" "whereas" "whereby" "wherein" "whereupon"
               "wherever" "whether" "which" "while" "whither" "who" "whoever" "whole" "whom" "whose" "why"
-              "will" "with" "within" "without" "would" "yet" "you" "your" "yours" "yourself" "yourselves"))
+              "will" "with" "within" "without" "would" "yet" "you" "your" "yours" "yourself" "yourselves"
+              ;; our additions
+              "fortunately" "unfortunately" "thanks" "thank"))
     :test #'equalp))
 
 

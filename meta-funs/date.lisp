@@ -1,8 +1,11 @@
 (in-package :speechtractor)
 
 (defun parsed-natural-date (date-string)
-  ;; All our dates should be in the past; get start of the span on ambiguity
-  (chronicity:parse date-string :context :past :guess :start))
+  (chronicity:parse
+    ;; NOTE strings have to be trimmed, due to some bug in chronicity!
+    (string-trim '(#\Space) date-string)
+    ;; All our dates should be in the past; get start of the span on ambiguity
+    :context :past :guess :start))
 
 ;;; TODO test
 (defun solr-date-str (date-time)
@@ -16,7 +19,22 @@
 
 (defun forums-date (node path)
   (cond
-    ;; some old ver of phpBB
+    ;; some old ver of phpBB (redflagdeals)
     ((and (plump:has-attribute node "class")
-          (cl-ppcre:scan "\\bdateline_timestamp\\b" (plump:attribute node "class")))
-     (date-object (plump:render-text node)))))
+          (cl-ppcre:scan (boundary-regex "dateline_timestamp") (plump:attribute node "class")))
+     (date-object (plump:render-text node)))
+    ;; some Xenforo (styleforum)
+;;;;- This is not a very good idea, but instructive stuff:
+;;;;-    ((and (plump:has-attribute node "data-lb-caption-desc")
+;;;;-          ;; we would have to escape & in &middot;, as cl-ppcre interprets it as a variable, but it
+;;;;-          ;; seems to be parsed to unicode anyway
+;;;;-          (cl-ppcre:scan "·" (plump:attribute node "data-lb-caption-desc")))
+;;;;-     (date-object (cl-ppcre:scan-to-strings "(?<=·).*"
+;;;;-                                            (plump:attribute node "data-lb-caption-desc"))))
+    ((and (equalp "time" (plump:tag-name node))
+          (plump:has-attribute node "class")
+          (plump:has-attribute node "title")
+          (cl-ppcre:scan (boundary-regex "u-dt") (plump:attribute node "class"))
+          ;; take only inside links, as it also occurs in other places
+          (equalp '("a" "time") (last path 2)))
+     (date-object (plump:attribute node "title")))))

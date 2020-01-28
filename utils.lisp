@@ -13,3 +13,11 @@
       (progn (rplacd (last ,list) (list ,elem))
              ,list)
       (setf ,list (list ,elem))))
+
+(defun boundary-regex (expr)
+  "Due to \\b not functioning as we'd hoped, this generated a regex guaranteeing that the regex\
+   can be only next to the string boundary or a whitespace."
+  (format nil "(\\s~A\\s|^~A\\s|\\s~A$|^~A$)" expr expr expr expr))
+
+(defun server-debug-print (string)
+  (hunchentoot:acceptor-log-message speechtractor::*server* :info string))
