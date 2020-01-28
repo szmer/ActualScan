@@ -135,10 +135,12 @@
                                    :classification-settings classification-settings)
               docs-metadata)))
     (destructuring-bind (path node) path-node
-      (unless (and (plump:element-p node)
+      (unless (or
+                (plump:comment-p node)
+                (and (plump:element-p node)
                    (or (find (plump:tag-name node) *skipped-tags* :test #'equalp)
                        (and (getf metadata-funs :skip-p)
-                            (funcall (getf metadata-funs :skip-p) node path))))
+                            (funcall (getf metadata-funs :skip-p) node path)))))
       ;;;-(format t "~A: ~A~%" path node)
         (when (plump:element-p node) ; elements in plump have tags, but directly no text
           ;; Extend the path.

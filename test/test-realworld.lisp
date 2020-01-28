@@ -182,7 +182,6 @@
       (is (not (search "by signing in with your social account"
                   (cdr (assoc :text (last-doc-with-content parsed-docs)))))))))
 
- ( deftest x-fashionspot () nil)
 (deftest x-fashionspot-maybe-xenforo ()
   (when speechtractor::*server-running-p*
     (let* ((response (request-test-page "fashionspot-maybe-xenforo.html" "forums"))
@@ -223,3 +222,71 @@
       (is (not (search "This site uses cookies"
                        (cdr (assoc :text (car (last parsed-docs)))))))
       (is (not (search "Share This Page" (cdr (assoc :text (car (last parsed-docs))))))))))
+
+(deftest x-askandyaboutclothes-xenforo ()
+  (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "askandyaboutclothes-xenforo.html" "forums"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      (is (= 3 (length parsed-docs)))
+      ;; The basic check for lost posts.
+      (is (eq nil
+              (find-if (lambda (doc) (zerop (length (cdr (assoc :text doc)))))
+                       parsed-docs)))
+      ;; Ensure that everything has a permalink.
+      (is (eq nil
+              (find-if (lambda (doc) (null (cdr (assoc :url doc)))) parsed-docs)))
+      (is (equalp "LMFHW" (cdr (assoc :author (first parsed-docs)))))
+      (is (equalp "2018:12:11T04:40:00Z" (cdr (assoc :date--post (first parsed-docs)))))
+      (is (equalp "/forum/threads/jeans.240628/post-1895949"
+                  (cdr (assoc :url (first parsed-docs)))))
+      (is (equalp "amy@ts" (cdr (assoc :author (car (last parsed-docs))))))
+      (is (equalp "/forum/threads/jeans.240628/post-1896606"
+                  (cdr (assoc :url (car (last parsed-docs))))))
+      (is (search "Seven for All Mankind and Diesel have rises lower than the industry standard"
+                 (cdr (assoc :text (car (last parsed-docs))))))
+      (is (not (search "Your email address will not be publicly visible"
+                       (cdr (assoc :text (car (last parsed-docs)))))))
+      (is (not (search "VINTAGE IRVIN FOSTER HORSEHIDE FLIGHT JACKET, RE-LINED IN BEAUTIFUL HARRIS TWEED!"
+                       (cdr (assoc :text (car (last parsed-docs)))))))
+      (is (not (search "This site uses cookies"
+                       (cdr (assoc :text (car (last parsed-docs))))))))))
+
+(deftest x-edcforums-xenforo ()
+  (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "edcforums-xenforo.html" "forums"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      ;; The basic check for lost posts.
+      (is (eq nil
+              (find-if (lambda (doc) (zerop (length (cdr (assoc :text doc)))))
+                       (remove-if (lambda (doc)
+                                    (find (cdr (assoc :author doc))
+                                          ;; KLUDGE ? short post "Whites."
+                                          '("John Radabaugh"
+                                            ;; KLUDGE most of the post is a long link to a product
+                                            "ripjack13")
+                                          :test #'equalp))
+                                  parsed-docs))))
+      ;; Ensure that everything has a permalink.
+      (is (eq nil
+              (find-if (lambda (doc) (null (cdr (assoc :url doc)))) parsed-docs)))
+      (is (equalp "skip0911" (cdr (assoc :author (first parsed-docs)))))
+      (is (equalp "2016:02:19T00:00:00Z" (cdr (assoc :date--post (first parsed-docs)))))
+      (is (equalp "threads/cowboy-boots.133239/"
+                  (cdr (assoc :url (first parsed-docs)))))
+      (is (equalp "onebadwagon" (cdr (assoc :author (car (last parsed-docs))))))
+      (is (equalp "threads/cowboy-boots.133239/#post-2664264"
+                  (cdr (assoc :url (car (last parsed-docs))))))
+      (is (search "Red Wings pull ons, branded Irish Setter for work"
+                 (cdr (assoc :text (car (last parsed-docs))))))
+      (is (not (search "Add on change"
+                       (cdr (assoc :text (car (last parsed-docs)))))))
+      (is (not (search "message_user_info_avatar"
+                       (cdr (assoc :text (car (last parsed-docs)))))))
+      (is (not (search "Page 1 of 2"
+                       (cdr (assoc :text (car (last parsed-docs)))))))
+      (is (not (search "login form"
+                       (cdr (assoc :text (car (last parsed-docs)))))))
+      (is (not (search "(You must log in or sign up to post here.)"
+                       (cdr (assoc :text (car (last parsed-docs)))))))
+      (is (not (search "Some XenForo functionality crafted by Audentio Design."
+                       (cdr (assoc :text (car (last parsed-docs))))))))))
