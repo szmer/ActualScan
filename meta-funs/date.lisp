@@ -50,4 +50,9 @@
           (plump:has-attribute (plump:parent node) "class")
           (cl-ppcre:scan (boundary-regex "post-subheader")
                          (plump:attribute (plump:parent node) "class")))
-     (date-solr-str (plump:render-text node)))))
+     (date-solr-str (plump:render-text node)))
+    ;; Wallstreetoasis
+    ((and (plump:has-attribute node "class")
+          (cl-ppcre:scan (boundary-regex "post-when") (plump:attribute node "class")))
+     ;; NOTE Chronicity cannot handle hyphens for some reason
+     (date-solr-str (cl-strings:replace-all (plump:render-text node) "-" "")))))

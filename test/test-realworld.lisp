@@ -14,6 +14,10 @@
                                       'speechtractor
                                       (format nil "test/pages/~A" file-name)))))))
 
+(defun last-doc-with-content (parsed-docs)
+  (find-if (lambda (doc) (not (zerop (length (cdr (assoc :text doc))))))
+           parsed-docs :from-end t))
+
 (defmacro first-beginning-p (text)
   "Ensure that the text is at the beginning of the first document's text."
   `(equalp ,text (subseq (cdr (assoc :text (first parsed-docs)))
@@ -151,3 +155,29 @@
                   (cdr (assoc :text (car (last parsed-docs)))))))
       (is (not (search "are trading names of The Student Room Group Ltd."
                   (cdr (assoc :text (car (last parsed-docs))))))))))
+
+(deftest x-wallstreetoasis ()
+  ;; NOTE Here tests are a little sloppy for now, since we are bombarded with low-effort posts.
+  (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "wallstreetoasis.html" "forums"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      ;; it's hard to count them here
+      (is (< 20 (length parsed-docs)))
+      ;; The basic check for lost posts.
+      (is (> 10
+             (length (find-if (lambda (doc) (zerop (length (cdr (assoc :text doc)))))
+                       parsed-docs))))
+      ;; Ensure that everything has a permalink.
+      (is (eq nil
+              (find-if (lambda (doc) (null (cdr (assoc :url doc)))) parsed-docs)))
+      (is (equalp "https://www.wallstreetoasis.com/forums/what-do-you-monkeys-wear-with-jeans"
+                  (cdr (assoc :url (first parsed-docs)))))
+      (is (search "Cool, right?"
+                  (cdr (assoc :text (last-doc-with-content parsed-docs)))))
+      ;; Keep out the junk.
+      (is (not (search "WSO depends on everyone being able to pitch in when they know something."
+                  (cdr (assoc :text (last-doc-with-content parsed-docs))))))
+      (is (not (search "Sorry, you need to login or sign up in order to vote."
+                  (cdr (assoc :text (last-doc-with-content parsed-docs))))))
+      (is (not (search "by signing in with your social account"
+                  (cdr (assoc :text (last-doc-with-content parsed-docs)))))))))

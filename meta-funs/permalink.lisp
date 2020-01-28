@@ -38,4 +38,16 @@
         (plump:has-attribute (plump:parent node) "id")
         (equalp "postsContainer" (plump:attribute (plump:parent node) "id")))
      ;; technically this uniquely links to the post
+     (concatenate 'string "#" (plump:attribute node "id")))
+    ;; Wallstreetoasis - main question
+    ((and (plump:has-attribute node "itemid")
+          (plump:has-attribute node "itemtype")
+          (equalp "https://schema.org/Question" (plump:attribute node "itemtype")))
+     (plump:attribute node "itemid"))
+    ;; Wallstreetoasis - comments
+    ((and
+        (plump:has-attribute node "class")
+        (plump:has-attribute node "id")
+        (cl-ppcre:scan (boundary-regex "comment") (plump:attribute node "class")))
+     ;; technically this uniquely links to the post
      (concatenate 'string "#" (plump:attribute node "id")))))

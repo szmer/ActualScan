@@ -88,7 +88,8 @@
               "wherever" "whether" "which" "while" "whither" "who" "whoever" "whole" "whom" "whose" "why"
               "will" "with" "within" "without" "would" "yet" "you" "your" "yours" "yourself" "yourselves"
               ;; our additions
-              "fortunately" "unfortunately" "thanks" "thank"))
+              "amen" "course" "etc" "fortunately" "unfortunately" "got" "obviously" "overly" "pretty"
+              "surprisingly" "thanks" "thank"))
     :test #'equalp))
 
 
