@@ -6,6 +6,7 @@
 (defparameter *http-port* 3756)
 ;; Silence hunchentoot reporting.
 (defparameter *server-silentp* t)
+(defparameter *server-enter-debug-p* t)
 
 ;;; Set timezone that will be also returned by chronicity.
 (setf local-time:*default-timezone* local-time:+utc-zone+)

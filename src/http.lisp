@@ -24,4 +24,5 @@
   (when *server-silentp*
     (setf (hunchentoot:acceptor-access-log-destination *server*) nil)
     (setf (hunchentoot:acceptor-message-log-destination *server*) nil))
+  (setf hunchentoot:*catch-errors-p* (not *server-enter-debug-p*))
   (hunchentoot:start *server*))

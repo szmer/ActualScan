@@ -7,10 +7,10 @@
      (plump:attribute node "data-author")) 
     ;; some old ver of phpBB
     ((and (plump:has-attribute node "class")
-          (cl-ppcre:scan "\\bpostauthor\\b" (plump:attribute node "class")))
+          (cl-ppcre:scan (boundary-regex "postauthor") (plump:attribute node "class")))
      (plump:render-text node))
     ;; some Wordpress forums
     ((and (equalp "a" (plump:tag-name node))
           (plump:has-attribute node "class")
-          (cl-ppcre:scan "\\buser-name\\b" (plump:attribute node "class")))
+          (cl-ppcre:scan (boundary-regex "user-name") (plump:attribute node "class")))
      (plump:render-text node))))

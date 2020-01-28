@@ -32,6 +32,9 @@
                        ;; KLUDGE ? we skip the ultra-short "Crocs and socks." comment
                        (remove-if (lambda (doc) (equalp "uber_shnitz" (cdr (assoc :author doc))))
                                   parsed-docs))))
+      ;; Ensure that everything has a permalink.
+      (is (eq nil
+              (find-if (lambda (doc) (null (cdr (assoc :url doc)))) parsed-docs)))
       (is (equalp "unshavenyak" (cdr (assoc :author (first parsed-docs)))))
       ;; That's how cl-json re-reads date_post
       (is (equalp "2020:01:10T18:03:00Z" (cdr (assoc :date--post (first parsed-docs)))))
@@ -54,6 +57,9 @@
       (is (eq nil
               (find-if (lambda (doc) (zerop (length (cdr (assoc :text doc)))))
                        parsed-docs)))
+      ;; Ensure that everything has a permalink.
+      (is (eq nil
+              (find-if (lambda (doc) (null (cdr (assoc :url doc)))) parsed-docs)))
       (is (equalp "Ennius" (cdr (assoc :author (first parsed-docs)))))
       ;; Ensure no junk at the beginning
       (is (first-beginning-p "Hey Gents"))
@@ -86,6 +92,9 @@
                                                       '("JAileen" "rachylou" "Cee")
                                                       :test #'equalp))
                                   parsed-docs))))
+      ;; Ensure that everything has a permalink.
+      (is (eq nil
+              (find-if (lambda (doc) (null (cdr (assoc :url doc)))) parsed-docs)))
       (is (equalp "Diana" (cdr (assoc :author (first parsed-docs)))))
       (is (equalp (speechtractor::date-solr-str "11 months ago")
                   (cdr (assoc :date--post (first parsed-docs)))))
@@ -99,6 +108,8 @@
       ;; add that before a punctuation mark?
       (is (equalp (format nil "Diana , you look amazing.~%SOOOOO cozy all bundled up.~%Of course your first \"me\" outfit had to include one of your beautiful hand knits!~%That sweater is so texturally rich.~%Love both outfits on you.")
                   (cdr (assoc :text (second parsed-docs)))))
+      (is (equalp "https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006846"
+                  (cdr (assoc :url (car (last parsed-docs))))))
       (is (search "Unfortunately the Liberty jeans can't be patched."
                   (cdr (assoc :text (car (last parsed-docs))))))
       (is (not (search "Not a member?"
