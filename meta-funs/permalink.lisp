@@ -27,4 +27,15 @@
           (cl-ppcre:scan (boundary-regex "post-time")
                          (plump:attribute (plump:parent node) "class"))
           (plump:has-attribute node "href"))
-     (plump:attribute node "href"))))
+     (plump:attribute node "href"))
+    ;; thestudentroom
+    ((and 
+        (plump:has-attribute node "class")
+        (plump:has-attribute node "id")
+        ;; thestudentroom
+        (cl-ppcre:scan (boundary-regex "post") (plump:attribute node "class"))
+        (typep node 'plump:child-node)
+        (plump:has-attribute (plump:parent node) "id")
+        (equalp "postsContainer" (plump:attribute (plump:parent node) "id")))
+     ;; technically this uniquely links to the post
+     (concatenate 'string "#" (plump:attribute node "id")))))

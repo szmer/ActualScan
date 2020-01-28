@@ -13,4 +13,13 @@
     ((and (equalp "a" (plump:tag-name node))
           (plump:has-attribute node "class")
           (cl-ppcre:scan (boundary-regex "user-name") (plump:attribute node "class")))
+     (plump:render-text node))
+    ;; thestudentroom
+    ((and (equalp "a" (plump:tag-name node))
+          (plump:has-attribute node "data-userid")
+          (typep node 'plump:child-node)
+          (typep (plump:parent node) 'plump:child-node)
+          (plump:has-attribute (plump:parent (plump:parent node)) "class")
+          (cl-ppcre:scan (boundary-regex "post-user")
+                         (plump:attribute (plump:parent (plump:parent node)) "class")))
      (plump:render-text node))))

@@ -116,3 +116,38 @@
                   (cdr (assoc :text (car (last parsed-docs)))))))
       (is (not (search "Rights Reserved"
                   (cdr (assoc :text (car (last parsed-docs))))))))))
+
+(deftest x-thestudentroom ()
+  (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "thestudentroom.html" "forums"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      (is (= 9 (length parsed-docs)))
+      ;; The basic check for lost posts.
+      (is (eq nil
+              (find-if (lambda (doc) (zerop (length (cdr (assoc :text doc)))))
+                       ;; KLUDGE ? remove "New Look have quite cheap jeans"
+                       (remove-if (lambda (doc) (find (cdr (assoc :author doc))
+                                                      '("SlightlySummer")
+                                                      :test #'equalp))
+                                  parsed-docs))))
+      ;; Ensure that everything has a permalink.
+      (is (eq nil
+              (find-if (lambda (doc) (null (cdr (assoc :url doc)))) parsed-docs)))
+      (is (equalp "RG250" (cdr (assoc :author (first parsed-docs)))))
+      (is (equalp (speechtractor::date-solr-str "7 months ago")
+                  (cdr (assoc :date--post (first parsed-docs)))))
+      (is (equalp "#post83753960"
+                  (cdr (assoc :url (first parsed-docs)))))
+      (is (first-beginning-p "I have always shopped at Primark for jeans but they don't last very long"))
+      (is (equalp "#post83897350"
+                  (cdr (assoc :url (car (last parsed-docs))))))
+      (is (search "Their jeans are amazing."
+                  (cdr (assoc :text (car (last parsed-docs))))))
+      (is (not (search "We have a brilliant team of more than 60 Support Team members"
+                  (cdr (assoc :text (car (last parsed-docs)))))))
+      (is (not (search "Tell us a little about yourself to get started."
+                  (cdr (assoc :text (car (last parsed-docs)))))))
+      (is (not (search "Have you ever signed up for an open day and then not gone to it?"
+                  (cdr (assoc :text (car (last parsed-docs)))))))
+      (is (not (search "are trading names of The Student Room Group Ltd."
+                  (cdr (assoc :text (car (last parsed-docs))))))))))

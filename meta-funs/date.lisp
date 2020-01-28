@@ -41,4 +41,13 @@
     ;; some Wordpress forums
     ((and (plump:has-attribute node "class")
           (cl-ppcre:scan (boundary-regex "post-time") (plump:attribute node "class")))
+     (date-solr-str (plump:render-text node)))
+    ;; thestudentroom
+    ((and (equalp "span" (plump:tag-name node))
+          (plump:has-attribute node "class")
+          (cl-ppcre:scan (boundary-regex "timestamp") (plump:attribute node "class"))
+          (typep node 'plump:child-node)
+          (plump:has-attribute (plump:parent node) "class")
+          (cl-ppcre:scan (boundary-regex "post-subheader")
+                         (plump:attribute (plump:parent node) "class")))
      (date-solr-str (plump:render-text node)))))
