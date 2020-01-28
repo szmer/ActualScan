@@ -14,6 +14,12 @@
                                       'speechtractor
                                       (format nil "test/pages/~A" file-name)))))))
 
+(defmacro first-beginning-p (text)
+  "Ensure that the text is at the beginning of the first document's text."
+  `(equalp ,text (subseq (cdr (assoc :text (first parsed-docs)))
+                         0 (min (length ,text)
+                                (length (cdr (assoc :text (first parsed-docs))))))))
+
 (deftest x-redflagdeals-phpbb ()
   (when speechtractor::*server-running-p*
     (let* ((response (request-test-page "redflagdeals-phpbb.html" "forums"))
@@ -49,13 +55,53 @@
               (find-if (lambda (doc) (zerop (length (cdr (assoc :text doc)))))
                        parsed-docs)))
       (is (equalp "Ennius" (cdr (assoc :author (first parsed-docs)))))
+      ;; Ensure no junk at the beginning
+      (is (first-beginning-p "Hey Gents"))
+      (is (equalp "/threads/wool-blend-jeans-five-pocket-pants.656128/post-10023303"
+                  (cdr (assoc :url (first parsed-docs)))))
       (is (equalp "circumspice" (cdr (assoc :author (second parsed-docs)))))
       (is (equalp "2020:01:06T15:53:00Z" (cdr (assoc :date--post (second parsed-docs)))))
       (is (equalp (format nil "@Gus may have some recommendations.~%I think something in this vein is his travel pent jam")
                   (cdr (assoc :text (second parsed-docs)))))
       (is (equalp (format nil "Not finding much in search, unfortunately")
                   (cdr (assoc :text (fourth parsed-docs)))))
+      (is (equalp "/threads/wool-blend-jeans-five-pocket-pants.656128/post-10027224"
+                  (cdr (assoc :url (first (last parsed-docs))))))
       ;; Omit the cookie notice.
       (is (not (search "Privacy Policy" (cdr (assoc :text (car (last parsed-docs)))))))
       (is (not (search "register to reply here" (cdr (assoc :text (car (last parsed-docs)))))))
       (is (search "Thanks Sir!" (cdr (assoc :text (car (last parsed-docs)))))))))
+
+(deftest x-welookfab-wordpress ()
+  (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "welookfab-wordpress.html" "forums"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      (is (= 22 (length parsed-docs)))
+      ;; The basic check for lost posts.
+      (is (eq nil
+              (find-if (lambda (doc) (zerop (length (cdr (assoc :text doc)))))
+                       ;; KLUDGE ? remove "Beautiful mittens, too.", "Love it! Total Diana",
+                       ;; "You can't go wrong"
+                       (remove-if (lambda (doc) (find (cdr (assoc :author doc))
+                                                      '("JAileen" "rachylou" "Cee")
+                                                      :test #'equalp))
+                                  parsed-docs))))
+      (is (equalp "Diana" (cdr (assoc :author (first parsed-docs)))))
+      (is (equalp (speechtractor::date-solr-str "11 months ago")
+                  (cdr (assoc :date--post (first parsed-docs)))))
+      (is (equalp "https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006057"
+                  (cdr (assoc :url (first parsed-docs)))))
+      (is (first-beginning-p "Today's Angie Challenge entry is a FFBO, featuring my favorite sweater, perfect jeans, and combat boots."))
+      (is (equalp "Suz" (cdr (assoc :author (second parsed-docs)))))
+      (is (equalp (speechtractor::date-solr-str "11 months ago")
+                  (cdr (assoc :date--post (second parsed-docs)))))
+      ;; NOTE the space in Diana , is because of text node concatenation. It could potentially not
+      ;; add that before a punctuation mark?
+      (is (equalp (format nil "Diana , you look amazing.~%SOOOOO cozy all bundled up.~%Of course your first \"me\" outfit had to include one of your beautiful hand knits!~%That sweater is so texturally rich.~%Love both outfits on you.")
+                  (cdr (assoc :text (second parsed-docs)))))
+      (is (search "Unfortunately the Liberty jeans can't be patched."
+                  (cdr (assoc :text (car (last parsed-docs))))))
+      (is (not (search "Not a member?"
+                  (cdr (assoc :text (car (last parsed-docs)))))))
+      (is (not (search "Rights Reserved"
+                  (cdr (assoc :text (car (last parsed-docs))))))))))

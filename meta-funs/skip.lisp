@@ -5,6 +5,8 @@
        (or 
          (cl-ppcre:scan (boundary-regex "(notice|cookie)\\S*(notice|cookie)")
                         (plump:attribute node "class"))
+         (cl-ppcre:scan (boundary-regex "login-signup")
+                        (plump:attribute node "class"))
          ;; Xenforo's "Click to expand..."
          (cl-ppcre:scan (boundary-regex "bbCodeBlock-expandLink")
                         (plump:attribute node "class")))))

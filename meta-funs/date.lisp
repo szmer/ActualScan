@@ -14,7 +14,7 @@
     nil date-time
     :format '((:year 4) ":" (:month 2) ":" (:day 2) "T" (:hour 2) ":" (:min 2) ":" (:sec 2) "Z")))
 
-(defun date-object (date-string)
+(defun date-solr-str (date-string)
   (solr-date-str (parsed-natural-date date-string)))
 
 (defun forums-date (node path)
@@ -22,14 +22,14 @@
     ;; some old ver of phpBB (redflagdeals)
     ((and (plump:has-attribute node "class")
           (cl-ppcre:scan (boundary-regex "dateline_timestamp") (plump:attribute node "class")))
-     (date-object (plump:render-text node)))
+     (date-solr-str (plump:render-text node)))
     ;; some Xenforo (styleforum)
 ;;;;- This is not a very good idea, but instructive stuff:
 ;;;;-    ((and (plump:has-attribute node "data-lb-caption-desc")
 ;;;;-          ;; we would have to escape & in &middot;, as cl-ppcre interprets it as a variable, but it
 ;;;;-          ;; seems to be parsed to unicode anyway
 ;;;;-          (cl-ppcre:scan "·" (plump:attribute node "data-lb-caption-desc")))
-;;;;-     (date-object (cl-ppcre:scan-to-strings "(?<=·).*"
+;;;;-     (date-solr-str (cl-ppcre:scan-to-strings "(?<=·).*"
 ;;;;-                                            (plump:attribute node "data-lb-caption-desc"))))
     ((and (equalp "time" (plump:tag-name node))
           (plump:has-attribute node "class")
@@ -37,4 +37,8 @@
           (cl-ppcre:scan (boundary-regex "u-dt") (plump:attribute node "class"))
           ;; take only inside links, as it also occurs in other places
           (equalp '("a" "time") (last path 2)))
-     (date-object (plump:attribute node "title")))))
+     (date-solr-str (plump:attribute node "title")))
+    ;; some Wordpress forums
+    ((and (plump:has-attribute node "class")
+          (cl-ppcre:scan (boundary-regex "post-time") (plump:attribute node "class")))
+     (date-solr-str (plump:render-text node)))))
