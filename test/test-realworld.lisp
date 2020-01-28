@@ -290,3 +290,29 @@
                        (cdr (assoc :text (car (last parsed-docs)))))))
       (is (not (search "Some XenForo functionality crafted by Audentio Design."
                        (cdr (assoc :text (car (last parsed-docs))))))))))
+
+(deftest x-dieworkwear-tumblr ()
+  (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "dieworkwear-tumblr.html" "blog"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      ;; TODO - ld+json
+      nil)))
+
+(deftest x-fashionista ()
+  (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "fashionista.html" "media"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      ;; Note that we don't require :url in media articles.
+      (is (= 1 (length parsed-docs)))
+      (is (equalp "Fashionista" (cdr (assoc :author (first parsed-docs)))))
+      (is (equalp "2020:01:23T03:09:25Z" (cdr (assoc :date--post (first parsed-docs)))))
+      (is (search "Gaultier took his final Haute Couture bow on Wednesday."
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (search "Théatre du Châtelet in Paris on Wednesday"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (search "Breton stripes and cone bras."
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (not (search "Want more Fashionista?"
+                       (cdr (assoc :text (first parsed-docs))))))
+      (is (not (search "dress done in strands of white and dark navy."
+                       (cdr (assoc :text (first parsed-docs)))))))))

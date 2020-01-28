@@ -14,11 +14,19 @@
                 :date_post #'forums-date
                 :author #'forums-author
                 :url #'forums-permalink)
+          (list "blog"
+                :skip-p #'general-skip-p
+                :meta-burner #'general-meta-burner) 
+          (list "media"
+                :skip-p #'general-skip-p
+                :doc-startp #'full-html-doc-startp
+                :date_post #'media-date
+                :meta-burner #'general-meta-burner) 
+          ;; Empty defaults.
           (list "test"
                 :author (lambda (node path)
                           (when (plump:has-attribute node "author")
                             (plump:attribute node "author"))))
-          ;; Empty defaults.
           (cons nil nil))
     :test #'equalp))
 
@@ -28,6 +36,8 @@
                 ;; relaxed parameters for forums.
                 (alexandria:plist-hash-table
                  '(:stopwords-low 0.17 :stopwords-high 0.22 :length-low 40 :length-high 40)))
+          (cons "blog" (make-hash-table))
+          (cons "media" (make-hash-table))
           ;; Empty defaults.
           (cons "test" (make-hash-table))
           (cons nil (make-hash-table)))

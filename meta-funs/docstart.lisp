@@ -1,5 +1,8 @@
 (in-package :speechtractor)
 
+(defun full-html-doc-startp (node path)
+  (equalp "html" (plump:tag-name node)))
+
 (defun forums-doc-startp (node path)
   (declare (ignore path))
   (or

@@ -60,3 +60,12 @@
           (cl-ppcre:scan (boundary-regex "post-when") (plump:attribute node "class")))
      ;; NOTE Chronicity cannot handle hyphens for some reason
      (date-solr-str (cl-strings:replace-all (plump:render-text node) "-" "")))))
+
+(defun media-date (node path)
+  (cond ((and (equalp "time" (plump:tag-name node)) 
+              (plump:has-attribute node "itemprop")
+              (plump:has-attribute node "datetime")
+              (equalp "datePublished" (plump:attribute node "itemprop")))
+         ;; It's already in the RFC format, so local-time will handle it better than chronicity
+         (solr-date-str (local-time:parse-timestring
+                          (plump:attribute node "datetime") :fail-on-error t)))))
