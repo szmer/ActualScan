@@ -181,3 +181,45 @@
                   (cdr (assoc :text (last-doc-with-content parsed-docs))))))
       (is (not (search "by signing in with your social account"
                   (cdr (assoc :text (last-doc-with-content parsed-docs)))))))))
+
+ ( deftest x-fashionspot () nil)
+(deftest x-fashionspot-maybe-xenforo ()
+  (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "fashionspot-maybe-xenforo.html" "forums"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      (is (= 15 (length parsed-docs)))
+      ;; The basic check for lost posts.
+      (is (eq nil
+              (find-if (lambda (doc) (zerop (length (cdr (assoc :text doc)))))
+                       (remove-if (lambda (doc)
+                                    (find (cdr (assoc :author doc))
+                                          ;; their posts are only images
+                                          '("Machinegumm" "dior_couture1245"
+                                            ;; KLUDGE ? "This is... a lot."
+                                            "SophiaVB")
+                                          :test #'equalp))
+                                  parsed-docs))))
+      ;; Ensure that everything has a permalink.
+      (is (eq nil
+              (find-if (lambda (doc) (null (cdr (assoc :url doc)))) parsed-docs)))
+      (is (equalp "Machinegumm" (cdr (assoc :author (first parsed-docs)))))
+      (is (equalp "2020:01:18T12:57:00Z" (cdr (assoc :date--post (first parsed-docs)))))
+      (is (equalp "threads/loewe-mens-f-w-2020-21-paris.396285/"
+                  (cdr (assoc :url (first parsed-docs)))))
+      (is (equalp "jeanclaude" (cdr (assoc :author (car (last parsed-docs))))))
+      (is (equalp "threads/loewe-mens-f-w-2020-21-paris.396285/#post-30675897"
+                  (cdr (assoc :url (car (last parsed-docs))))))
+      (is (search "you are going against your whole idea wearing neutral basics"
+                 (cdr (assoc :text (car (last parsed-docs))))))
+      ;; KLUDGE this falls through as bad?
+      ;;(is (search "It does not feel authentic at all..."
+      ;;           (cdr (assoc :text (car (last parsed-docs))))))
+      (is (not (search "Click to expand..."
+                       (cdr (assoc :text (car (last parsed-docs)))))))
+      (is (not (search "Welcome to the web’s largest community of fashion influencers"
+                       (cdr (assoc :text (car (last parsed-docs)))))))
+      (is (not (search "TheFashionSpot.com is a property of TotallyHer Media"
+                       (cdr (assoc :text (car (last parsed-docs)))))))
+      (is (not (search "This site uses cookies"
+                       (cdr (assoc :text (car (last parsed-docs)))))))
+      (is (not (search "Share This Page" (cdr (assoc :text (car (last parsed-docs))))))))))

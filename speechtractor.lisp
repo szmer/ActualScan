@@ -18,7 +18,9 @@
     "ul" "li" "h1" "h2" "h3" "h4" "h5" "h6"))
 
 (defparameter *skipped-tags*
-  '("head" "meta" "script" "style" "iframe" "form"))
+  ;; TODO merge with skip-p maybe?
+  ;; Apparently some people (fashionspot) can wrap everything in a "form"
+  '("head" "meta" "script" "style" "iframe"))
 
 (defparameter *max-link-density-default* 0.2)
 (defparameter *length-low-default* 70)

@@ -38,6 +38,10 @@
           ;; take only inside links, as it also occurs in other places
           (equalp '("a" "time") (last path 2)))
      (date-solr-str (plump:attribute node "title")))
+    ;; Xenforo fashionspot
+    ((and (plump:has-attribute node "class")
+          (cl-ppcre:scan (boundary-regex "datePermalink") (plump:attribute node "class")))
+     (date-solr-str (plump:render-text node)))
     ;; some Wordpress forums
     ((and (plump:has-attribute node "class")
           (cl-ppcre:scan (boundary-regex "post-time") (plump:attribute node "class")))
