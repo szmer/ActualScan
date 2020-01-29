@@ -387,3 +387,49 @@
                        (cdr (assoc :text (first parsed-docs))))))
       (is (not (search "Get the day on Dazed straight to your inbox"
                        (cdr (assoc :text (first parsed-docs)))))))))
+
+(deftest x-glamour ()
+  (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "glamour.html" "media"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      (is (= 1 (length parsed-docs)))
+      (is (equalp "Anne T. Donahue" (cdr (assoc :author (first parsed-docs)))))
+      (is (equalp "2019:10:18T00:00:00Z" (cdr (assoc :date--post (first parsed-docs)))))
+      ;; the lede is skipped
+      (is (search "in my hometown mall and was an enthusiastic participant"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (search "I was a Denim Expert who rejected regular old skinnies"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (not (search "Watch women sizes 0 through 28 try on the exact same blue jeans"
+                       (cdr (assoc :text (first parsed-docs))))))
+      (is (not (search "Authentic, Accessible, Relevant"
+                       (cdr (assoc :text (first parsed-docs))))))
+      (is (not (search "of this site constitutes acceptance of our"
+                       (cdr (assoc :text (first parsed-docs))))))
+      (is (not (search "may earn a portion of sales from products that are purchased through our site"
+                       (cdr (assoc :text (first parsed-docs)))))))))
+
+(deftest x-thefashionpolice ()
+  (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "thefashionpolice.html" "media"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      (is (= 1 (length parsed-docs)))
+      ;; TODO TODO should we allow such hacks as having links in the author field?
+      (is (equalp "https://www.facebook.com/thefashionpolice" (cdr (assoc :author (first parsed-docs)))))
+      (is (equalp "2016:10:04T18:46:00Z" (cdr (assoc :date--post (first parsed-docs)))))
+      (is (search "the death of the skinny jean for quite some time now"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (search "Well, the jury’s still out on this one"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (search "also opted for a plain white t-shirt to"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (search "Which could be either a good thing or a bad one, depending on your point of view"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (not (search "Graphic Hoodies"
+                       (cdr (assoc :text (first parsed-docs))))))
+      (is (not (search "Ask the Fashion Police"
+                       (cdr (assoc :text (first parsed-docs))))))
+      (is (not (search "The Best and Worst Looks From the 2020 SAG Awards"
+                       (cdr (assoc :text (first parsed-docs))))))
+      (is (not (search "Comments are closed"
+                       (cdr (assoc :text (first parsed-docs)))))))))

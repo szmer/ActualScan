@@ -39,15 +39,17 @@
 (defun paragraph-emptyp (paragraph)
   (zerop (length (paragraph-text paragraph :cleanp t))))
 
-(defun paragraph-stopwords-density (paragraph)
+(defun text-stopwords-density (text)
   (let* ((text (string-downcase
                  ;; remove all punctuation
                  (cl-ppcre:regex-replace-all "[\\-\\:;\\.,\\?!\\(\\)\\[\\]'’‘\\\"]"
-                                          (paragraph-text paragraph :cleanp t)
-                                          "")))
+                                          text "")))
          (tokens (cl-strings:split text))
          (count 0))
     (dolist (token tokens)
       (when (gethash token *stopwords*)
         (incf count)))
     (/ count (length tokens))))
+
+(defun paragraph-stopwords-density (paragraph)
+  (text-stopwords-density (paragraph-text paragraph :cleanp t)))

@@ -3,11 +3,11 @@
 (defun forums-author (node path)
   (cond
     ;; Xenforo
-    ((and 
+    ((and
        (plump:has-attribute node "class")
        (cl-ppcre:scan (boundary-regex "message") (plump:attribute node "class"))
-       (plump:has-attribute node "data-author")) 
-     (plump:attribute node "data-author")) 
+       (plump:has-attribute node "data-author"))
+     (plump:attribute node "data-author"))
     ;; some old ver of phpBB
     ((and (plump:has-attribute node "class")
           (cl-ppcre:scan (boundary-regex "postauthor") (plump:attribute node "class")))

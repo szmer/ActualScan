@@ -16,13 +16,13 @@
                 :url #'forums-permalink)
           (list "blog"
                 :skip-p #'general-skip-p
-                :meta-burner #'general-meta-burner) 
+                :meta-burner #'general-meta-burner)
           (list "media"
                 :skip-p #'general-skip-p
                 :doc-startp #'full-html-doc-startp
                 :date_post #'media-date
                 :author #'media-author
-                :meta-burner #'general-meta-burner) 
+                :meta-burner #'general-meta-burner)
           ;; Empty defaults.
           (list "test"
                 :author (lambda (node path)
@@ -41,7 +41,7 @@
           (cons "media"
                 (alexandria:plist-hash-table
                   ;; media can have some pretty short paragraphs for effect and link a lot
-                  '(:length-low 60 :max-link-density 0.4)))
+                  '(:length-low 60 :length-high 120 :max-link-density 0.4)))
           ;; Empty defaults.
           (cons "test" (make-hash-table))
           (cons nil (make-hash-table)))
