@@ -368,3 +368,22 @@
                        (cdr (assoc :text (first parsed-docs))))))
       (is (not (search "#wwdfashion"
                        (cdr (assoc :text (first parsed-docs)))))))))
+
+(deftest x-dazeddigital ()
+  (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "dazeddigital.html" "media"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      (is (= 1 (length parsed-docs)))
+      (is (equalp "Jessica Heron-Langton" (cdr (assoc :author (first parsed-docs)))))
+      (is (equalp "2019:12:10T14:15:00Z" (cdr (assoc :date--post (first parsed-docs)))))
+      ;; the first paragraph has many links
+      (is (search "blown-up bumbags, over the course of the last few seasons"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (search "train he used to ride while studying at fashion school"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (search "carrying their oversized Metro card invitations"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (not (search "you accept our use of cookies"
+                       (cdr (assoc :text (first parsed-docs))))))
+      (is (not (search "Get the day on Dazed straight to your inbox"
+                       (cdr (assoc :text (first parsed-docs)))))))))

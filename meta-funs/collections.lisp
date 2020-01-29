@@ -21,6 +21,7 @@
                 :skip-p #'general-skip-p
                 :doc-startp #'full-html-doc-startp
                 :date_post #'media-date
+                :author #'media-author
                 :meta-burner #'general-meta-burner) 
           ;; Empty defaults.
           (list "test"
@@ -39,8 +40,8 @@
           (cons "blog" (make-hash-table))
           (cons "media"
                 (alexandria:plist-hash-table
-                  ;; media can have some pretty short paragraphs for effect
-                  '(:length-low 60)))
+                  ;; media can have some pretty short paragraphs for effect and link a lot
+                  '(:length-low 60 :max-link-density 0.4)))
           ;; Empty defaults.
           (cons "test" (make-hash-table))
           (cons nil (make-hash-table)))

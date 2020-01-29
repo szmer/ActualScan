@@ -31,3 +31,9 @@
           (cl-ppcre:scan (boundary-regex "post-user")
                          (plump:attribute (plump:parent (plump:parent node)) "class")))
      (plump:render-text node))))
+
+(defun media-author (node path)
+  (cond
+    ((and (plump:has-attribute node "class")
+          (cl-ppcre:scan (boundary-regex "contributor-name") (plump:attribute node "class")))
+     (plump:render-text node))))
