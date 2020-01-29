@@ -103,26 +103,30 @@
                     :bad :good))))
       (incf paragraph-n))))
 
-(defun classify-paragraphs (paragraphs &key (classification-settings (make-hash-table)))
-  "Perform the paragraph classification."
+(defun classify-paragraphs (paragraphs &key (classification-settings (make-hash-table))
+                                       (initial-only nil))
+  "Perform the paragraph classification. initial-only option is for debugging (display :near-good\
+   etc.)"
   (classify-paragraphs-basic paragraphs :classification-settings classification-settings)
-  (unless (gethash :no-headings classification-settings *no-headings-default*)
-    (revise-headings :short paragraphs :classification-settings classification-settings))
-  (classify-short-paragraphs paragraphs :classification-settings classification-settings)
-  (classify-near-good-paragraphs paragraphs :classification-settings classification-settings)
-  (unless (gethash :no-headings classification-settings *no-headings-default*)
-    (revise-headings :bad paragraphs :classification-settings classification-settings))
+  (unless initial-only
+    (unless (gethash :no-headings classification-settings *no-headings-default*)
+      (revise-headings :short paragraphs :classification-settings classification-settings))
+    (classify-short-paragraphs paragraphs :classification-settings classification-settings)
+    (classify-near-good-paragraphs paragraphs :classification-settings classification-settings)
+    (unless (gethash :no-headings classification-settings *no-headings-default*)
+      (revise-headings :bad paragraphs :classification-settings classification-settings)))
   paragraphs)
 
 (defun html-document-data (html-string metadata-funs
-                                       &key (classification-settings (make-hash-table)))
+                                       &key (classification-settings (make-hash-table))
+                                       (initial-only nil))
   "Returns two values: list of paragraph objects and a list of document metadata property \
    lists for paragraphs marked as doc-startp. metadata-funs should be a property list \
    containing functions that take a plump node and a DOM path (as a list) and possibly return \
    relevant metadata. If no :doc-startp function is provided, we use *doc-startp-default-fun*.\
    If a :skip-p function is provided, it will be used to skip some tag trees entirely. \
    A :meta-burner function can be used to extract metadata from a HTML subtree that would be \
-   otherwise ignored."
+   otherwise ignored. initial-only option is for debugging (display :near-good etc.)"
   (do* ((dom (plump:parse html-string))
         (paragraphs)
         (docs-metadata)
@@ -134,7 +138,8 @@
      (progn (unless (paragraph-emptyp paragraph) (push paragraph paragraphs))
             (values
               (classify-paragraphs (reverse paragraphs)
-                                   :classification-settings classification-settings)
+                                   :classification-settings classification-settings
+                                   :initial-only initial-only)
               docs-metadata)))
     (destructuring-bind (path node) path-node
       (if (or

@@ -13,6 +13,8 @@
            (equalp "footer" (plump:attribute node "id"))))  
     (and (plump:has-attribute node "class")
          (or
+           (cl-ppcre:scan (boundary-regex "date-header")
+                          (plump:attribute node "class"))
            (cl-ppcre:scan (boundary-regex "bigFooter")
                           (plump:attribute node "class"))
            (cl-ppcre:scan (boundary-regex "button")
@@ -52,3 +54,8 @@
                           (plump:attribute node "class"))
            (cl-ppcre:scan (boundary-regex "quoteExpand")
                           (plump:attribute node "class"))))))
+
+(defun blog-skip-p (node path)
+  (and (plump:has-attribute node "id")
+       ;; Blogspot
+       (equalp "comments" (plump:attribute node "id"))))

@@ -15,7 +15,9 @@
                 :author #'forums-author
                 :url #'forums-permalink)
           (list "blog"
-                :skip-p #'general-skip-p
+                :skip-p (lambda (node path)
+                          (or (blog-skip-p node path)
+                              (general-skip-p node path)))
                 ;; having a docstart at the beginning of the document lets us capture on meta in the
                 ;; <head> because the document is already started
                 :doc-startp #'full-html-doc-startp
@@ -52,11 +54,12 @@
           (cons nil (make-hash-table)))
     :test #'equalp))
 
-(defun interpret-file-as* (source-type file-path &key (class "message"))
+(defun interpret-file-as* (source-type file-path &key (initial-only nil))
   "A debug function to see how a html file is interpreted."
   ;; For example:
   ;; (interpret-file-as* "forums" (asdf:system-relative-pathname 'speechtractor "test/pages/styleforum-xenforo.html"))
   (html-document-data (uiop:read-file-string file-path)
                       (gethash source-type *source-type-meta-funs*)
+                      :initial-only initial-only
                       :classification-settings
                       (gethash source-type *source-type-classification-settings*)))

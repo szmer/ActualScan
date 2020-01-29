@@ -24,11 +24,11 @@
 
 (defparameter *max-link-density-default* 0.2)
 (defparameter *length-low-default* 60) ; changed from less realistic 70
-(defparameter *length-high-default* 200)
+(defparameter *length-high-default* 130) ; changed from less realistic 200
 (defparameter *stopwords-low-default* 0.30)
 (defparameter *stopwords-high-default* 0.32)
 (defparameter *max-heading-distance-default* 200)
-(defparameter *no-headings-default* nil)
+(defparameter *no-headings-default* t)
 
 (defparameter *doc-startp-default-fun*
   (lambda (node path) (equalp "body" (plump:tag-name node))))

@@ -62,13 +62,14 @@
      (solr-date-from (cl-strings:replace-all (plump:render-text node) "-" "")))))
 
 (defun media-date (node path)
-  (cond ((and (equalp "time" (plump:tag-name node))
-              (plump:has-attribute node "itemprop")
-              (plump:has-attribute node "datetime")
+  (cond ((and (plump:has-attribute node "itemprop")
               (equalp "datePublished" (plump:attribute node "itemprop")))
          ;; It's already in the RFC format, so local-time will handle it better than chronicity
-         (solr-date-str (local-time:parse-timestring
-                          (plump:attribute node "datetime") :fail-on-error t)))
+         (solr-date-str (or 
+                          (local-time:parse-timestring ; on Blogspot
+                            (plump:attribute node "title") :fail-on-error nil)
+                          (local-time:parse-timestring
+                            (plump:attribute node "datetime") :fail-on-error nil))))
         ;; This is in Glamour - probably better to extract this from somewhere in the JSON metadata
         ;; soup (the actual class is content-header__publish-date)
         ((and (equalp "time" (plump:tag-name node))

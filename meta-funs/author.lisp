@@ -40,8 +40,12 @@
 
 (defun blog-author (node path)
   (cond
+    ;; Wordpress
     ((and (plump:has-attribute node "class")
-          ;; Wordpress
           (cl-ppcre:scan (boundary-regex "entry-author-name") (plump:attribute node "class")))
-     (server-debug-print (plump:render-text node))
+     (plump:render-text node))
+    ;; Blogspot
+    ((and (equalp "a" (plump:tag-name node))
+          (plump:has-attribute node "rel")
+          (equalp "author" (plump:attribute node "rel")))
      (plump:render-text node))))

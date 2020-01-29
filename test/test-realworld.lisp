@@ -43,7 +43,7 @@
       ;; That's how cl-json re-reads date_post
       (is (equalp "2020:01:10T18:03:00Z" (cdr (assoc :date--post (first parsed-docs)))))
       (is (equalp "#p32010571" (cdr (assoc :url (first parsed-docs)))))
-      (is (equalp (format nil "Your fashion pet peeves~%~%Alright fashionistas.~%What is fashion faux pas drives you crazy?~%I will get the ball rolling: men who wear white crew necks under their dress shirts and leave the neck open.~%It's so sloppy.")
+      (is (equalp (format nil "Alright fashionistas.~%What is fashion faux pas drives you crazy?~%I will get the ball rolling: men who wear white crew necks under their dress shirts and leave the neck open.~%It's so sloppy.")
                   (cdr (assoc :text (first parsed-docs)))))
       (is (equalp "smartie" (cdr (assoc :author (nth 11 parsed-docs)))))
       (is (equalp "2020:01:14T21:52:00Z" (cdr (assoc :date--post (nth 11 parsed-docs)))))
@@ -337,6 +337,29 @@
       (is (not (search "spending time with his wife and family"
                        (cdr (assoc :text (first parsed-docs))))))
       (is (not (search "Join the Club"
+                       (cdr (assoc :text (first parsed-docs)))))))))
+
+(deftest x-effortlesseverydaystyle-blogspot ()
+  (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "effortlesseverydaystyle-blogspot.html" "blog"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      (is (= 1 (length parsed-docs)))
+      (is (equalp "Effortless Everyday Style" (cdr (assoc :author (first parsed-docs)))))
+      (is (equalp "2019:04:08T13:04:00Z" (cdr (assoc :date--post (first parsed-docs)))))
+      (is (search "It's been a minute since my last post"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (search "antimicrobial shower flip flops are a MUST"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (search "or for your daughters Easter basket or for yourself"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (search "going to try to keep up on this social media"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (not (search "Effortless Everyday Style"
+                       (cdr (assoc :text (first parsed-docs))))))
+      (is (not (search "Monday, April 8, 2019"
+                       (cdr (assoc :text (first parsed-docs))))))
+      ;; comment
+      (is (not (search "Very good, really admired"
                        (cdr (assoc :text (first parsed-docs)))))))))
 
 (deftest x-fashionista ()
