@@ -62,3 +62,21 @@
                           )
                   #'> 
                   :key #'cdr))))
+
+(defun sites-stats (tv-sentences &key (max-entries 10) (others-name "others"))
+  (let ((result (multiple-value-bind (register flush)
+                  (make-cumulator)
+                  (dolist (sent tv-sentences)
+                    (let ((site-name (read-attribute sent "site_name")))
+                      (when site-name (funcall register site-name))))
+                  (sort (alexandria:hash-table-alist (funcall flush))
+                        #'> 
+                        :key #'cdr))))
+    (if (<= (length result) max-entries)
+        result
+        ;; If there is too many results, sum up the tail for the "others" entry.
+        (let ((others-count 0))
+          (dolist (site-entry (subseq result (1- max-entries)))
+            (incf others-count (cdr site-entry)))
+          (append (subseq result 0 (1- max-entries))
+                  (list (cons others-name others-count)))))))

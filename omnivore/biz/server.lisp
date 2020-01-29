@@ -30,6 +30,12 @@
 (push (hunchentoot:create-static-file-dispatcher-and-handler
         "/css/bulma.css" (merge-pathnames (pathname "css/bulma.css") *html-path*))
       hunchentoot:*dispatch-table*)
+(push (hunchentoot:create-static-file-dispatcher-and-handler
+        "/css/chartist.min.css" (merge-pathnames (pathname "css/chartist.min.css") *html-path*))
+      hunchentoot:*dispatch-table*)
+(push (hunchentoot:create-static-file-dispatcher-and-handler
+        "/js/chartist.min.js" (merge-pathnames (pathname "js/chartist.min.js") *html-path*))
+      hunchentoot:*dispatch-table*)
 
 ;;;
 ;;; Dynamic responders.
@@ -56,7 +62,11 @@
                               :typical
                               (mapcar #'sent-template-representation
                                       (getf phrase-entry :typical))))
-                      (getf query-result :phrases)))
+                      (getf query-result :phrases))
+              :sites-stats
+              (mapcar (lambda (site-entry) (list :site (car site-entry)
+                                                 :frequency (cdr site-entry)))
+                      (getf query-result :sites-stats)))
         :stream string-stream))))
 
 ;;;

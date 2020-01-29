@@ -3,6 +3,8 @@
    <head>
       <meta charset="utf-8">
       <link rel="stylesheet" type="text/css" href="css/bulma.css">
+      <link rel="stylesheet" type="text/css" href="css/chartist.min.css">
+      <script type="text/javascript" src="js/chartist.min.js"></script>
 
       <title>"<!-- TMPL_VAR query-text -->" - Lookupy</title>
    </head>
@@ -115,6 +117,22 @@
 
       <!-- TMPL_IF atypical -->
          <div class="column">
+
+         <!-- TMPL_IF sites-stats -->
+            <section class="section">
+               <article class="panel is-info">
+                  <p class="panel-heading">
+                  Sites
+                  </p>
+
+                  <div class="ct-chart ct-golden-section"></div>
+
+
+               </article>
+            </section>
+            <!-- /TMPL_IF -->
+
+
             <section class="section">
                <article class="panel is-info">
                   <p class="panel-heading">
@@ -146,5 +164,35 @@
          </div>
          <!-- /TMPL_IF -->
       </div>
+
+      <script>
+      var data = {
+        labels: [<!-- TMPL_LOOP sites-stats -->'<!-- TMPL_VAR site -->',<!-- /TMPL_LOOP --> ],
+        series: [<!-- TMPL_LOOP sites-stats --><!-- TMPL_VAR frequency -->,<!-- /TMPL_LOOP --> ]
+      };
+
+      var options = {
+        labelInterpolationFnc: function(value) {
+          return value[0]
+        }
+      };
+
+      var responsiveOptions = [
+        ['screen and (min-width: 640px)', {
+          chartPadding: 30,
+          labelOffset: 100,
+          labelDirection: 'explode',
+          labelInterpolationFnc: function(value) {
+            return value;
+          }
+        }],
+        ['screen and (min-width: 1024px)', {
+          labelOffset: 20,
+          chartPadding: 20
+        }]
+      ];
+
+      new Chartist.Pie('.ct-chart', data, options, responsiveOptions);
+                        </script>
    </body>
 </html>

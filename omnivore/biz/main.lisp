@@ -9,6 +9,7 @@
     (when tv-sentences
       (list :typical (timed-execution (typical tv-sentences 10))
         :atypical (timed-execution (atypical tv-sentences 10))
+        :sites-stats (timed-execution (sites-stats tv-sentences))
         :phrases (timed-execution
                    (phrases-info tv-sentences
                                  (max 5
