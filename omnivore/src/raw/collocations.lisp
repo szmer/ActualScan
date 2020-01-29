@@ -91,7 +91,26 @@
                                      (elt (division-divisions sent) second-token-n)))))
             
             (unless (or (stopwordp word1) (stopwordp word2))
-            (funcall register (list word1 word2))))))
+              (funcall register (list word1 word2))))))
+    (funcall flush)))
+
+(defun top-trigrams (tv-sentences &key (freq 10))
+  (multiple-value-bind (register flush)
+    (make-cumulator :keep-freq freq)
+    (dolist (sent tv-sentences)
+      (do ((third-token-n 2 (1+ third-token-n)))
+          ((>= third-token-n (length (division-divisions sent))))
+          (let ((word1 (string-downcase
+                                   (division-raw-text
+                                 (elt (division-divisions sent) (- third-token-n 2)))))
+                (word2 (string-downcase
+                                   (division-raw-text
+                                     (elt (division-divisions sent) (1- third-token-n)))))
+                (word3 (string-downcase
+                                   (division-raw-text
+                                     (elt (division-divisions sent) third-token-n)))))
+            (unless (or (stopwordp word1) (stopwordp word2) (stopwordp word3))
+              (funcall register (list word1 word2 word3))))))
     (funcall flush)))
 
 (defun top-tree-linkages (tv-sentences &key (freq 10))
