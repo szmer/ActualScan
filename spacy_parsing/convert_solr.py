@@ -12,25 +12,59 @@ from jusText_star.justext.utils import get_stoplist
 def date_fmt(time_obj):
     return time_obj.strftime('%Y-%m-%dT%H:%M:%SZ')
 
+def paragraph_report(par):
+    print('~~~')
+    print('Paragraph content: {}'.format(par.text[:180]))
+    print('Paragraph length: {}'.format(len(par.text)))
+    print('Paragraph classification: {}'.format(par.class_type))
+    print('Paragraph stopword density: {}'.format(par.stopwords_density(get_stoplist('English'))))
+    print('Paragraph links density: {}'.format(par.links_density()))
+    print('~~~')
+
 #
 # CONFIG desired range of rows here.
 #
 #ids = [1970]
-ids = range(0, 2186)
-verbose_ids = [1900, 1944, 1963]
+ids = range(2240, 2250)#2326)
+verbose_ids = [2249]
 
 VERBOSE = False
+# This regexes are searched for when in VERBOSE mode and paragraphs with them get shown some diagnostics.
+WATCH_PATTERNS = ['autopilot', 'Welcome']
 
 site_types = {
         'head-fi': 'f',
         'forums': 'f',
         'cnet': 'm',
+        'dazeddigital': 'm',
+        'fashionista': 'm',
+        'glamour': 'm',
         'majorhifi': 'm',
         'leadsrating': 'm',
+        'thefashionables': 'm',
+        'thefashionpolice': 'm',
+        'vogue': 'm',
+        'wwd': 'm',
+        'askandyaboutclothes': 'f',
+        'edcforums': 'f',
         'reddit': 'f',
+        'redflagdeals': 'f',
+        'styleforum': 'f',
+        'thefashionspot': 'f',
+        'thestudentroom': 'f',
+        'wallstreetoasis': 'f',
+        'youlookfab': 'f', # NOTE we look at domain, but really its the /welookfab directory!
+        'dieworkwear': 'b',
+        'effortlesseverydaystyle': 'b',
+        'fashionbyina': 'b',
+        'frugalfashionshopper': 'b',
         'homestudio': 'b',
         'headphonedungeon': 'b',
-        'soundgearlab': 'b'
+        'jseverydayfashion': 'b',
+        'kendieveryday': 'b',
+        'pennypincherfashion': 'b',
+        'soundgearlab': 'b',
+        'themodestman': 'b',
         }
 
 output_filename = 'test_solr.xml'
@@ -43,10 +77,15 @@ splitter = SentenceSplitter(language='en')
 
 def is_newdoc(tag, attrs):
     result = False
-    # on head-fi, stevehuffman, audioholics (Xenforo software)
     if (None, 'class') in attrs: # None namespace
         # \b "matches the empty string, but only at the beginning or end of a word."
+        # on head-fi, stevehuffman, audioholics (Xenforo software)
+        # also thefashionspot
         result = re.search('\\bmessage\\b', attrs.getValue((None, 'class')))
+        # on redflagdeals
+        result = result or re.search('\\bthread_post\\b', attrs.getValue((None, 'class')))
+        # on welookfab (but not the first post)
+        result = result or re.search('\\breply\\b', attrs.getValue((None, 'class')))
     return result
 
 def doc_text_transform_xenforo1(text_sections):
@@ -146,7 +185,11 @@ with open(output_filename, 'w+') as output_file:
                 print('HTML page title: {}.'.format(doc_title))
 
             if multidocs:
-                paragraphs = justext(dom, get_stoplist('English'), docstart_fun=is_newdoc)
+                paragraphs = justext(dom, get_stoplist('English'), docstart_fun=is_newdoc,
+                        # relaxed parameters for forums.
+                        stopwords_low=0.17, stopwords_high=0.22, length_high=110,
+                        # but at least be more stringent about link density
+                        max_link_density=0.16)
             else:
                 paragraphs = justext(dom, get_stoplist('English'))
 
@@ -158,13 +201,15 @@ with open(output_filename, 'w+') as output_file:
 
             if multidocs:
                 documents = []
-                current_sections = []
+                current_sections = [] # sections are paragraphs
                 pre_doc = True # before the first document/post
                 metadata = dict()
 
                 for par in paragraphs:
                     if par.docstart: # commit the current post
                         metadata = par.doc_metadata
+                        if VERBOSE:
+                            print('_docstart_: "{}"'.format(re.sub('\\s', ' ', par.text[:40])))
                         if pre_doc:
                             pre_doc = False
                         else:
@@ -177,6 +222,11 @@ with open(output_filename, 'w+') as output_file:
                         current_sections, extra_meta = doc_text_transform_xenforo1(current_sections)
                         current_sections.append(par.text)
 
+                    if VERBOSE:
+                        for pattern in WATCH_PATTERNS:
+                            if re.search(pattern, par.text):
+                                paragraph_report(par)
+
                 # Commit the last post if needed.
                 if len(current_sections) != 0:
                     current_sections, extra_meta = doc_text_transform_xenforo1(current_sections)
@@ -185,6 +235,11 @@ with open(output_filename, 'w+') as output_file:
             if not multidocs:
                 sections = [par.text for par in paragraphs if par.class_type == 'good']
                 documents = [(doc_title, sections, paragraphs[0].doc_metadata)]
+
+                if VERBOSE and WATCH_PATTERNS:
+                    for pattern in WATCH_PATTERNS:
+                        if re.search(pattern, par.text):
+                            paragraph_report(par)
 
             #
             # Write the documents to XML.
@@ -197,7 +252,7 @@ with open(output_filename, 'w+') as output_file:
                     continue
 
                 text = ''
-                for sec_str in sections:
+                for sec_str in sections: # section contains one paragraph text
                     sec_sents = splitter.split(sec_str)
                     # Each sentence is delimited with \n, and each section with two \n's
                     for sent in sec_sents:
@@ -247,6 +302,8 @@ with open(output_filename, 'w+') as output_file:
                 text_elem = ET.SubElement(doc_elem, 'field', {'name': 'text'})
                 text_elem.text = text
                 all_elems.append(text_elem)
+                if VERBOSE:
+                    print('Text: "{}"'.format(re.sub('\\s', ' ', text[:40])))
 
                 # Date retrieved.
                 date_retr_elem = ET.SubElement(doc_elem, 'field', {'name': 'date_retr'})
@@ -266,7 +323,7 @@ with open(output_filename, 'w+') as output_file:
                     all_elems.append(date_post_elem)
                 elif VERBOSE:
                     print('Date is unknown')
-            if skipped_no_permalink > 0:
+            if skipped_no_permalink > 0 and VERBOSE:
                 print('---------')
                 print('Skipped {} messages on {} due to lack of permalink'.format(skipped_no_permalink, url))
                 print('---------')

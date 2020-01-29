@@ -59,7 +59,7 @@
 
 (let ((contractions (list "n't" "'d" "'ll" "'m" "'re" "'s" "'ve"
                           ;; Added for whitespace instead of Spacy tokenization
-                          "i'm" "i'd" "isn't" "don't" "doesn't")))
+                          "i'm" "i'd" "i'll" "it's" "isn't" "don't" "doesn't" "didn't")))
   (dolist (item contractions)
     (setf (gethash item *stopwords*) t))
   (dolist (apostrophe (list "‘" "’"))

@@ -1,7 +1,7 @@
 (in-package :omnivore)
 
-;;
-;;
+;;;
+;;;
 (defun sent-template-representation (sent)
   (list :sent-text (raw-text sent)
         :date (when (read-attribute sent "publication-date")
@@ -14,7 +14,7 @@
         :domain (when (read-attribute sent "url")
                   (purl:url-host (purl:url (read-attribute sent "url"))))))
 
-;; Clear what may remain from the earlier server objects
+;;; Clear what may remain from the earlier server objects
 (when (and (boundp '*server*) *server*) (hunchentoot:stop *server* :soft nil))
 (defparameter *server* nil)
 
@@ -30,8 +30,8 @@
         "/css/bulma.css" (merge-pathnames (pathname "css/bulma.css") *html-path*))
       hunchentoot:*dispatch-table*)
 
-;;
-;; Dynamic responders.
+;;;
+;;; Dynamic responders.
 (hunchentoot:define-easy-handler (query-response :uri "/result") (q)
   (setf (hunchentoot:content-type*) "text/html")
   (let ((query-result (query-result-solr! q))
@@ -58,7 +58,7 @@
                       (getf query-result :phrases)))
         :stream string-stream))))
 
-;;
-;; Start the server.
+;;;
+;;; Start the server.
 (setf *server* (make-instance 'hunchentoot:easy-acceptor :port 4242))
 (hunchentoot:start *server*)

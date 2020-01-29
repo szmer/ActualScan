@@ -18,7 +18,7 @@
       ;; Node (berry) specs.
       (map 'list
            (lambda (node node-n)
-             ;; Save the positional node n. 
+             ;; Save the positional node n.
              (setf (gethash (read-from-string (plump:attribute node "id"))
                             gexf->positional-node-index)
                    node-n)
@@ -44,8 +44,8 @@
                                  gexf->positional-node-index))
                   ;; Add a label if there is one defined.
                   (list-wrapped
-                    (and (plump:attribute edge "label") 
-                         (< 0 (length 
+                    (and (plump:attribute edge "label")
+                         (< 0 (length
                                 (plump:attribute edge "label")))
                          ;; (repeat to return it)
                          (plump:attribute edge "label")))
@@ -64,7 +64,7 @@
        (graph-spec (graph-spec-from-xml xml-string))
        (graph-specced-ok
          (equalp
-           graph-spec 
+           graph-spec
            (list
              ;; The nodes should be in the correct order, and the root first.
              '(("_sth_kicks_sth" :verbalp :obj-exit-p) ("something") ("sticky"))
