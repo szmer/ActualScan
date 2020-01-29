@@ -4,9 +4,10 @@
 ;;;
 (defun sent-template-representation (sent)
   (list :sent-text (raw-text sent)
-        :date (when (read-attribute sent "publication-date")
+        :date (if (read-attribute sent "publication-date")
                 ;; KLUDGE poor man's formatting
-                (subseq (read-attribute sent "publication-date") 0 10))
+                (subseq (read-attribute sent "publication-date") 0 10)
+                "")
         :author (format nil "~A on ~A"
                         (or (read-attribute sent "creator") "someone")
                         (read-attribute sent "site_name"))

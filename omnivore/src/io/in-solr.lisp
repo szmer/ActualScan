@@ -39,8 +39,7 @@
         (let ((document (make-division :document nil "noid" nil
                                        :title (gethash "title" json-doc)
                                        :creator (gethash "author" json-doc)
-                                       ;; KLUDGE this isn't true, but we use it as mockup for now
-                                       :publication-date (gethash "date_retr" json-doc)
+                                       :publication-date (gethash "date_post" json-doc)
                                        :meta (alexandria:alist-hash-table
                                                (list (cons "url" (gethash "url" json-doc))
                                                      (cons "site_name"
