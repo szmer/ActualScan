@@ -1,119 +1,58 @@
+import json
 import os
 import re
-from datetime import timezone
 from urllib.parse import urlparse
-import xml.etree.cElementTree as ET
-from sentence_splitter import SentenceSplitter
-from lxml import html
-from jusText_star.justext.core import justext
-# WARNING this uses the original installed justext package directory!
-from jusText_star.justext.utils import get_stoplist
-
-def date_fmt(time_obj):
-    return time_obj.strftime('%Y-%m-%dT%H:%M:%SZ')
-
-def paragraph_report(par):
-    print('~~~')
-    print('Paragraph content: {}'.format(par.text[:180]))
-    print('Paragraph length: {}'.format(len(par.text)))
-    print('Paragraph classification: {}'.format(par.class_type))
-    print('Paragraph stopword density: {}'.format(par.stopwords_density(get_stoplist('English'))))
-    print('Paragraph links density: {}'.format(par.links_density()))
-    print('~~~')
+import requests
 
 #
 # CONFIG desired range of rows here.
 #
 #ids = [1970]
-ids = range(2240, 2250)#2326)
+ids = range(2209, 2325)#2326)
 verbose_ids = [2249]
 
+SPEECHTRACTOR_ADDR = 'http://localhost:3756/api/v01/interpret'
+
 VERBOSE = False
-# This regexes are searched for when in VERBOSE mode and paragraphs with them get shown some diagnostics.
-WATCH_PATTERNS = ['autopilot', 'Welcome']
 
 site_types = {
-        'head-fi': 'f',
-        'forums': 'f',
-        'cnet': 'm',
-        'dazeddigital': 'm',
-        'fashionista': 'm',
-        'glamour': 'm',
-        'majorhifi': 'm',
-        'leadsrating': 'm',
-        'thefashionables': 'm',
-        'thefashionpolice': 'm',
-        'vogue': 'm',
-        'wwd': 'm',
-        'askandyaboutclothes': 'f',
-        'edcforums': 'f',
-        'reddit': 'f',
-        'redflagdeals': 'f',
-        'styleforum': 'f',
-        'thefashionspot': 'f',
-        'thestudentroom': 'f',
-        'wallstreetoasis': 'f',
-        'youlookfab': 'f', # NOTE we look at domain, but really its the /welookfab directory!
-        'dieworkwear': 'b',
-        'effortlesseverydaystyle': 'b',
-        'fashionbyina': 'b',
-        'frugalfashionshopper': 'b',
-        'homestudio': 'b',
-        'headphonedungeon': 'b',
-        'jseverydayfashion': 'b',
-        'kendieveryday': 'b',
-        'pennypincherfashion': 'b',
-        'soundgearlab': 'b',
-        'themodestman': 'b',
+        'dazeddigital.com': 'media',
+        'fashionista.com': 'media',
+        'glamour.com': 'media',
+        'thefashionpolice.net': 'media',
+        'vogue.com': 'media',
+        'wwd.com': 'media',
+        'askandyaboutclothes.com': 'forums',
+        'edcforums.com': 'forums',
+        'forums.redflagdeals.com': 'forums',
+        'styleforum.net': 'forums',
+        'forums.thefashionspot.com': 'forums',
+        'thestudentroom.co.uk': 'forums',
+        'wallstreetoasis.com': 'forums',
+        'youlookfab.com': 'forums', # NOTE we look at domain, but really its the /welookfab directory!
+        'dieworkwear.com': 'blog',
+        'effortlesseverydaystyle.blogspot.com': 'blog',
+        'kendieveryday.com': 'blog',
+        'pennypincherfashion.com': 'blog',
+        'themodestman.com': 'blog',
+###        'fashionbyina': 'blog',
+###        'frugalfashionshopper': 'blog',
+###        'homestudio': 'blog',
+###        'headphonedungeon': 'blog',
+###        'jseverydayfashion': 'blog',
+###        'majorhifi': 'media',
+###        'leadsrating': 'media',
+###        'thefashionables': 'media',
+###        'cnet': 'media',
         }
 
-output_filename = 'test_solr.xml'
-
-splitter = SentenceSplitter(language='en')
-
-#
-# Site-specific helpers.
-#
-
-def is_newdoc(tag, attrs):
-    result = False
-    if (None, 'class') in attrs: # None namespace
-        # \b "matches the empty string, but only at the beginning or end of a word."
-        # on head-fi, stevehuffman, audioholics (Xenforo software)
-        # also thefashionspot
-        result = re.search('\\bmessage\\b', attrs.getValue((None, 'class')))
-        # on redflagdeals
-        result = result or re.search('\\bthread_post\\b', attrs.getValue((None, 'class')))
-        # on welookfab (but not the first post)
-        result = result or re.search('\\breply\\b', attrs.getValue((None, 'class')))
-    return result
-
-def doc_text_transform_xenforo1(text_sections):
-    """Text_sections are not sentence-splitted."""
-    result_sections = []
-    metadata = dict()
-    for sec in text_sections:
-        # Skip the loose metadata.
-        if (len(sec) < 120 and
-                (sec.strip() in ['Click to expand...', 'Headphoneus Supremus']
-                or True in [bool(re.search(p, sec.replace('\n', ' ')))
-                    for p in ['^((1|5)000?\\+ )?(New )?Head-Fier$',
-                        '^(Likes|Posts): [0-9,]+$',
-                        '^Joined: \\w{3} [0-9]{2}, [0-9]{4}$',
-                        '^[0-9,]+$']])):
-            continue
-        result_sections.append(sec)
-    return result_sections, metadata
-
-
-# NOTE WHEN SCRAPING WE WANT TO HAVE UTC AS OUR LOCAL TIMEZONE!
+output_filename = 'test_solr.json'
 
 #
 # Getting and filing documents.
 #
-xml = ET.Element('add')
 processed_urls = set()
-all_elems = [] # keep them for the ET to write
+all_docs = []
 with open(output_filename, 'w+') as output_file:
     for page_id in ids:
 
@@ -168,164 +107,59 @@ with open(output_filename, 'w+') as output_file:
         #
         with open('/home/szymonrutkowski/therminsley/sitesdb/'+str(page_id)+'/index') as html_file:
 
-            multidocs = (source_type == 'f') # true on forums with many posts on one page
-            if VERBOSE:
-                if multidocs:
-                    print('Entering multidocs mode.')
-                else:
-                    print('One doc per page mode.')
+            payload = { 'html': html_file.read(), 'sourcetype': source_type }
+            interpreted_docs = requests.post(SPEECHTRACTOR_ADDR, data=payload)
+            ##-print(interpreted_docs.text)
+            interpreted_docs = interpreted_docs.json()
 
-            #
-            # Collect the documents list of (title, list of sections as strings)
-            dom = html.fromstring(str.encode(html_file.read()))
+            if len(interpreted_docs) == 0:
+                print('No documents found inside, skipping.')
+                continue
 
-            # Extract title (Xpath expression for findding anywhere in the document)
-            doc_title = dom.findtext('.//title')
-            if VERBOSE:
-                print('HTML page title: {}.'.format(doc_title))
-
-            if multidocs:
-                paragraphs = justext(dom, get_stoplist('English'), docstart_fun=is_newdoc,
-                        # relaxed parameters for forums.
-                        stopwords_low=0.17, stopwords_high=0.22, length_high=110,
-                        # but at least be more stringent about link density
-                        max_link_density=0.16)
-            else:
-                paragraphs = justext(dom, get_stoplist('English'))
-
-            if VERBOSE:
-                print('{} paragraphs retrieved ({} good, {} separate documents).'.format(
-                    len(paragraphs),
-                    len([par for par in paragraphs if par.class_type == 'good']),
-                    len([par for par in paragraphs if par.docstart])))
-
-            if multidocs:
-                documents = []
-                current_sections = [] # sections are paragraphs
-                pre_doc = True # before the first document/post
-                metadata = dict()
-
-                for par in paragraphs:
-                    if par.docstart: # commit the current post
-                        metadata = par.doc_metadata
-                        if VERBOSE:
-                            print('_docstart_: "{}"'.format(re.sub('\\s', ' ', par.text[:40])))
-                        if pre_doc:
-                            pre_doc = False
-                        else:
-                            #current_sections, extra_meta = doc_text_transform_xenforo1(current_sections)
-                            documents.append((doc_title, current_sections, metadata))
-                            current_sections = []
-
-                    # Save good paragraphs.
-                    if par.class_type == 'good' and not pre_doc:
-                        current_sections, extra_meta = doc_text_transform_xenforo1(current_sections)
-                        current_sections.append(par.text)
-
-                    if VERBOSE:
-                        for pattern in WATCH_PATTERNS:
-                            if re.search(pattern, par.text):
-                                paragraph_report(par)
-
-                # Commit the last post if needed.
-                if len(current_sections) != 0:
-                    current_sections, extra_meta = doc_text_transform_xenforo1(current_sections)
-                    documents.append((doc_title, current_sections, metadata))
-
-            if not multidocs:
-                sections = [par.text for par in paragraphs if par.class_type == 'good']
-                documents = [(doc_title, sections, paragraphs[0].doc_metadata)]
-
-                if VERBOSE and WATCH_PATTERNS:
-                    for pattern in WATCH_PATTERNS:
-                        if re.search(pattern, par.text):
-                            paragraph_report(par)
-
-            #
-            # Write the documents to XML.
-            skipped_no_permalink = 0
-            for title, sections, metadata in documents:
-
-                # Skip forum posts with no permalink.
-                if multidocs and not 'permalink' in metadata:
-                    skipped_no_permalink += 1
-                    continue
-
-                text = ''
-                for sec_str in sections: # section contains one paragraph text
-                    sec_sents = splitter.split(sec_str)
-                    # Each sentence is delimited with \n, and each section with two \n's
-                    for sent in sec_sents:
-                        text += sent + '\n'
-                    text += '\n'
-                text = text.strip()
-                # Skip if text would be empty.
-                if len(text) == 0:
-                    continue
-
-                doc_elem = ET.SubElement(xml, 'doc')
-                all_elems.append(doc_elem)
-
-                title_elem = ET.SubElement(doc_elem, 'field', {'name': 'title'})
-                title_elem.text = title
-                url_elem = ET.SubElement(doc_elem, 'field', {'name': 'url'})
-                if multidocs:
-                    permalink = metadata['permalink']
-                    parsed_permalink = urlparse(permalink)
-                    if not parsed_permalink.netloc: # add domain if needed
+            # For these speechtractor shouldn't find the permalinks.
+            if source_type == 'media' or source_type == 'blog':
+                assert len(interpreted_docs) == 1
+                interpreted_docs[0]['url'] = url
+            # Fill missing url fragments in permalinks.
+            elif source_type == 'forums':
+                for doc in interpreted_docs:
+                    parsed_permalink = urlparse(doc['url'])
+                    if not parsed_permalink.netloc:
                         parsed_permalink = parsed_permalink._replace(netloc=parsed_url.netloc)
                         parsed_permalink = parsed_permalink._replace(scheme=parsed_url.scheme)
-                    url_elem.text = parsed_permalink.geturl()
-                else:
-                    url_elem.text = url
-                all_elems.append(url_elem)
-                reason_scraped_elem = ET.SubElement(doc_elem, 'field', {'name': 'reason_scraped'})
-                reason_scraped_elem.text = '0'
-                all_elems.append(reason_scraped_elem)
-                source_type_elem = ET.SubElement(doc_elem, 'field', {'name': 'source_type'})
-                source_type_elem.text = source_type
-                all_elems.append(source_type_elem)
+                    if not parsed_permalink.path:
+                        parsed_permalink = parsed_permalink._replace(path=parsed_url.path)
+                    doc['url'] = parsed_permalink.geturl()
 
-                if 'author' in metadata:
-                    if VERBOSE:
-                        print('Author: {}'.format(metadata['author']))
-                    author_elem = ET.SubElement(doc_elem, 'field', {'name': 'author'})
-                    author_elem.text = metadata['author']
-                    all_elems.append(author_elem)
-                elif VERBOSE:
-                    print('Author is unknown')
-                site_name_elem = ET.SubElement(doc_elem, 'field', {'name': 'site_name'})
-                site_name_elem.text = re.sub('^www\\.', '', parsed_url.netloc)
-                all_elems.append(site_name_elem)
+            # Write the documents to XML.
+            skipped_no_permalink = 0
+            skipped_no_author = 0
+            skipped_no_text = 0
+            for doc in interpreted_docs:
+                if not 'url' in doc or not doc['url']:
+                    doc['dead'] = True
+                    skipped_no_permalink += 1
+                    continue
+                if not 'text' in doc or not doc['text']:
+                    doc['dead'] = True
+                    skipped_no_text += 1
+                    continue
+                if not 'author' in doc or not doc['author']:
+                    doc['dead'] = True
+                    skipped_no_author += 1
+                    continue
 
-                # Text (extracted earlier).
-                text_elem = ET.SubElement(doc_elem, 'field', {'name': 'text'})
-                text_elem.text = text
-                all_elems.append(text_elem)
-                if VERBOSE:
-                    print('Text: "{}"'.format(re.sub('\\s', ' ', text[:40])))
+                doc['date_retr'] = date_retrieved
+                doc['reason_scraped'] = '0'
+                doc['source_type'] = source_type[0] # we use the first char
+                doc['site_name'] = re.sub('^www\\.', '', parsed_url.netloc)
+            all_docs += [doc for doc in interpreted_docs if not 'dead' in doc]
 
-                # Date retrieved.
-                date_retr_elem = ET.SubElement(doc_elem, 'field', {'name': 'date_retr'})
-                date_retr_elem.text = date_retrieved
-                all_elems.append(date_retr_elem)
-
-                # Date posted.
-                if 'date' in metadata:
-                    if VERBOSE:
-                        print('Date: {}'.format(metadata['date']))
-                    date_post_elem = ET.SubElement(doc_elem, 'field', {'name': 'date_post'})
-                    # Convert to UTC and the Solr-accepted format. 
-                    formatted_date = metadata['date'].astimezone(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-                    if VERBOSE:
-                        print('Document date formatted as {}'.format(formatted_date))
-                    date_post_elem.text = formatted_date
-                    all_elems.append(date_post_elem)
-                elif VERBOSE:
-                    print('Date is unknown')
-            if skipped_no_permalink > 0 and VERBOSE:
+            if VERBOSE and [skipped_no_permalink, skipped_no_text, skipped_no_author] != [0, 0, 0]:
                 print('---------')
                 print('Skipped {} messages on {} due to lack of permalink'.format(skipped_no_permalink, url))
+                print('Skipped {} messages on {} due to lack of text'.format(skipped_no_text, url))
+                print('Skipped {} messages on {} due to lack of author'.format(skipped_no_author, url))
                 print('---------')
-tree = ET.ElementTree(xml)
-tree.write(output_filename, encoding='utf-8')
+with open(output_filename, 'w+') as output_file:
+    json.dump(all_docs, output_file, indent=2, separators=(',', ': '))
