@@ -41,12 +41,12 @@
               (find-if (lambda (doc) (null (cdr (assoc :url doc)))) parsed-docs)))
       (is (equalp "unshavenyak" (cdr (assoc :author (first parsed-docs)))))
       ;; That's how cl-json re-reads date_post
-      (is (equalp "2020:01:10T18:03:00Z" (cdr (assoc :date--post (first parsed-docs)))))
+      (is (equalp "2020-01-10T18:03:00Z" (cdr (assoc :date--post (first parsed-docs)))))
       (is (equalp "#p32010571" (cdr (assoc :url (first parsed-docs)))))
       (is (equalp (format nil "Alright fashionistas.~%What is fashion faux pas drives you crazy?~%I will get the ball rolling: men who wear white crew necks under their dress shirts and leave the neck open.~%It's so sloppy.")
                   (cdr (assoc :text (first parsed-docs)))))
       (is (equalp "smartie" (cdr (assoc :author (nth 11 parsed-docs)))))
-      (is (equalp "2020:01:14T21:52:00Z" (cdr (assoc :date--post (nth 11 parsed-docs)))))
+      (is (equalp "2020-01-14T21:52:00Z" (cdr (assoc :date--post (nth 11 parsed-docs)))))
       (is (equalp "#p32027817" (cdr (assoc :url (nth 11 parsed-docs)))))
       (is (search "Becks wrote:" (cdr (assoc :text (nth 11 parsed-docs)))))
       (is (search (format nil "I have to ask which area do you live?~%Seems a lot artists there")
@@ -70,7 +70,7 @@
       (is (equalp "/threads/wool-blend-jeans-five-pocket-pants.656128/post-10023303"
                   (cdr (assoc :url (first parsed-docs)))))
       (is (equalp "circumspice" (cdr (assoc :author (second parsed-docs)))))
-      (is (equalp "2020:01:06T15:53:00Z" (cdr (assoc :date--post (second parsed-docs)))))
+      (is (equalp "2020-01-06T15:53:00Z" (cdr (assoc :date--post (second parsed-docs)))))
       (is (equalp (format nil "@Gus may have some recommendations.~%I think something in this vein is his travel pent jam")
                   (cdr (assoc :text (second parsed-docs)))))
       (is (equalp (format nil "Not finding much in search, unfortunately")
@@ -202,7 +202,7 @@
       (is (eq nil
               (find-if (lambda (doc) (null (cdr (assoc :url doc)))) parsed-docs)))
       (is (equalp "Machinegumm" (cdr (assoc :author (first parsed-docs)))))
-      (is (equalp "2020:01:18T12:57:00Z" (cdr (assoc :date--post (first parsed-docs)))))
+      (is (equalp "2020-01-18T12:57:00Z" (cdr (assoc :date--post (first parsed-docs)))))
       (is (equalp "threads/loewe-mens-f-w-2020-21-paris.396285/"
                   (cdr (assoc :url (first parsed-docs)))))
       (is (equalp "jeanclaude" (cdr (assoc :author (car (last parsed-docs))))))
@@ -236,7 +236,7 @@
       (is (eq nil
               (find-if (lambda (doc) (null (cdr (assoc :url doc)))) parsed-docs)))
       (is (equalp "LMFHW" (cdr (assoc :author (first parsed-docs)))))
-      (is (equalp "2018:12:11T04:40:00Z" (cdr (assoc :date--post (first parsed-docs)))))
+      (is (equalp "2018-12-11T04:40:00Z" (cdr (assoc :date--post (first parsed-docs)))))
       (is (equalp "/forum/threads/jeans.240628/post-1895949"
                   (cdr (assoc :url (first parsed-docs)))))
       (is (equalp "amy@ts" (cdr (assoc :author (car (last parsed-docs))))))
@@ -270,7 +270,7 @@
       (is (eq nil
               (find-if (lambda (doc) (null (cdr (assoc :url doc)))) parsed-docs)))
       (is (equalp "skip0911" (cdr (assoc :author (first parsed-docs)))))
-      (is (equalp "2016:02:19T00:00:00Z" (cdr (assoc :date--post (first parsed-docs)))))
+      (is (equalp "2016-02-19T00:00:00Z" (cdr (assoc :date--post (first parsed-docs)))))
       (is (equalp "threads/cowboy-boots.133239/"
                   (cdr (assoc :url (first parsed-docs)))))
       (is (equalp "onebadwagon" (cdr (assoc :author (car (last parsed-docs))))))
@@ -304,7 +304,7 @@
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       (is (= 1 (length parsed-docs)))
       (is (equalp "Kimberly" (cdr (assoc :author (first parsed-docs)))))
-      (is (equalp "2012:03:10T21:13:00Z" (cdr (assoc :date--post (first parsed-docs)))))
+      (is (equalp "2012-03-10T21:13:00Z" (cdr (assoc :date--post (first parsed-docs)))))
       (is (search "my husband isn’t a big fan of it"
                   (cdr (assoc :text (first parsed-docs)))))
       ;; comments
@@ -327,7 +327,7 @@
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       (is (= 1 (length parsed-docs)))
       (is (equalp "Brock" (cdr (assoc :author (first parsed-docs)))))
-      (is (equalp "2020:01:12T13:00:51Z" (cdr (assoc :date--post (first parsed-docs)))))
+      (is (equalp "2020-01-12T13:00:51Z" (cdr (assoc :date--post (first parsed-docs)))))
       (is (search "jeans that fit and flatter your build"
                   (cdr (assoc :text (first parsed-docs)))))
       (is (search "you can without your jeans pulling tight across your skin"
@@ -346,7 +346,7 @@
       (is (= 1 (length parsed-docs)))
       ;; TODO ld+json
       ;;;(is (equalp "Kendi Everyday" (cdr (assoc :author (first parsed-docs)))))
-      (is (equalp "2019:08:30T20:44:29Z" (cdr (assoc :date--post (first parsed-docs)))))
+      (is (equalp "2019-08-30T20:44:29Z" (cdr (assoc :date--post (first parsed-docs)))))
       (is (first-beginning-p "Happy Friday before a long weekend"))
       (is (search "Let’s talk about cardigans!"
                   (cdr (assoc :text (first parsed-docs)))))
@@ -364,7 +364,7 @@
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       (is (= 1 (length parsed-docs)))
       (is (equalp "Effortless Everyday Style" (cdr (assoc :author (first parsed-docs)))))
-      (is (equalp "2019:04:08T13:04:00Z" (cdr (assoc :date--post (first parsed-docs)))))
+      (is (equalp "2019-04-08T13:04:00Z" (cdr (assoc :date--post (first parsed-docs)))))
       (is (search "It's been a minute since my last post"
                   (cdr (assoc :text (first parsed-docs)))))
       (is (search "antimicrobial shower flip flops are a MUST"
@@ -388,7 +388,7 @@
       ;; Note that we don't require :url in media articles.
       (is (= 1 (length parsed-docs)))
       (is (equalp "Fashionista" (cdr (assoc :author (first parsed-docs)))))
-      (is (equalp "2020:01:23T03:09:25Z" (cdr (assoc :date--post (first parsed-docs)))))
+      (is (equalp "2020-01-23T03:09:25Z" (cdr (assoc :date--post (first parsed-docs)))))
       (is (search "Gaultier took his final Haute Couture bow on Wednesday."
                   (cdr (assoc :text (first parsed-docs)))))
       (is (search "Théatre du Châtelet in Paris on Wednesday"
@@ -411,7 +411,7 @@
       (is (= 1 (length parsed-docs)))
       ;; people besides Sally are the video and text editors but this is good enough
       (is (equalp "Sally Singer, Cass Bird, Jorden Bickham" (cdr (assoc :author (first parsed-docs)))))
-      (is (equalp "2017:08:30T18:09:29Z" (cdr (assoc :date--post (first parsed-docs)))))
+      (is (equalp "2017-08-30T18:09:29Z" (cdr (assoc :date--post (first parsed-docs)))))
       (is (search "great American fashion eclipse of 2017?"
                   (cdr (assoc :text (first parsed-docs)))))
       (is (search "a bunch of crocheted bikinis and tiny tanks, strings of shells"
@@ -435,7 +435,7 @@
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       (is (= 1 (length parsed-docs)))
       (is (equalp "Jean E. Palmieri" (cdr (assoc :author (first parsed-docs)))))
-      (is (equalp "2018:09:10T04:01:11Z" (cdr (assoc :date--post (first parsed-docs)))))
+      (is (equalp "2018-09-10T04:01:11Z" (cdr (assoc :date--post (first parsed-docs)))))
       ;; (the lede is not included as of 29-01-2020)
       (is (search "that Bethenny Frankel is most drawn to in her first fashion"
                   (cdr (assoc :text (first parsed-docs)))))
@@ -458,7 +458,7 @@
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       (is (= 1 (length parsed-docs)))
       (is (equalp "Jessica Heron-Langton" (cdr (assoc :author (first parsed-docs)))))
-      (is (equalp "2019:12:10T14:15:00Z" (cdr (assoc :date--post (first parsed-docs)))))
+      (is (equalp "2019-12-10T14:15:00Z" (cdr (assoc :date--post (first parsed-docs)))))
       ;; the first paragraph has many links
       (is (search "blown-up bumbags, over the course of the last few seasons"
                   (cdr (assoc :text (first parsed-docs)))))
@@ -477,7 +477,7 @@
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       (is (= 1 (length parsed-docs)))
       (is (equalp "Anne T. Donahue" (cdr (assoc :author (first parsed-docs)))))
-      (is (equalp "2019:10:18T00:00:00Z" (cdr (assoc :date--post (first parsed-docs)))))
+      (is (equalp "2019-10-18T00:00:00Z" (cdr (assoc :date--post (first parsed-docs)))))
       ;; the lede is skipped
       (is (search "in my hometown mall and was an enthusiastic participant"
                   (cdr (assoc :text (first parsed-docs)))))
@@ -499,7 +499,7 @@
       (is (= 1 (length parsed-docs)))
       ;; TODO TODO should we allow such hacks as having links in the author field?
       (is (equalp "https://www.facebook.com/thefashionpolice" (cdr (assoc :author (first parsed-docs)))))
-      (is (equalp "2016:10:04T18:46:00Z" (cdr (assoc :date--post (first parsed-docs)))))
+      (is (equalp "2016-10-04T18:46:00Z" (cdr (assoc :date--post (first parsed-docs)))))
       (is (search "the death of the skinny jean for quite some time now"
                   (cdr (assoc :text (first parsed-docs)))))
       (is (search "Well, the jury’s still out on this one"

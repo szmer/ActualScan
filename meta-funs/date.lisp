@@ -12,7 +12,7 @@
   "Return a string with datetime formatted that is digestible by Solr."
   (local-time:format-timestring
     nil date-time
-    :format '((:year 4) ":" (:month 2) ":" (:day 2) "T" (:hour 2) ":" (:min 2) ":" (:sec 2) "Z")))
+    :format '((:year 4) "-" (:month 2) "-" (:day 2) "T" (:hour 2) ":" (:min 2) ":" (:sec 2) "Z")))
 
 (defun solr-date-from (date-string)
   (solr-date-str (parsed-natural-date date-string)))
