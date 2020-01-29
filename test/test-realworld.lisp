@@ -339,6 +339,25 @@
       (is (not (search "Join the Club"
                        (cdr (assoc :text (first parsed-docs)))))))))
 
+(deftest x-kendieveryday-wordpress ()
+  (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "kendieveryday-wordpress.html" "blog"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      (is (= 1 (length parsed-docs)))
+      ;; TODO ld+json
+      ;;;(is (equalp "Kendi Everyday" (cdr (assoc :author (first parsed-docs)))))
+      (is (equalp "2019:08:30T20:44:29Z" (cdr (assoc :date--post (first parsed-docs)))))
+      (is (first-beginning-p "Happy Friday before a long weekend"))
+      (is (search "Let’s talk about cardigans!"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (search "I would say stay true to size and expect a looser fit at the arms"
+                  (cdr (assoc :text (first parsed-docs)))))
+      ;; comments
+      (is (not (search "I still remember you writing years ago that you’ve discovered when fall weather"
+                       (cdr (assoc :text (first parsed-docs))))))
+      (is (not (search "My goodness, I have been following you for eons"
+                       (cdr (assoc :text (first parsed-docs)))))))))
+
 (deftest x-effortlesseverydaystyle-blogspot ()
   (when speechtractor::*server-running-p*
     (let* ((response (request-test-page "effortlesseverydaystyle-blogspot.html" "blog"))
