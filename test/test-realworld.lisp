@@ -316,3 +316,32 @@
                        (cdr (assoc :text (first parsed-docs))))))
       (is (not (search "dress done in strands of white and dark navy."
                        (cdr (assoc :text (first parsed-docs)))))))))
+
+(deftest x-vogue ()
+  (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "vogue.html" "media"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      ;; KLUDGE This has ellipses "..." expanded by sentence splitter to separate sentences, which
+      ;; is very questionable
+      ;;
+      ;; Note that we don't require :url in media articles.
+      (is (= 1 (length parsed-docs)))
+      ;; people besides Sally are the video and text editors but this is good enough
+      (is (equalp "Sally Singer, Cass Bird, Jorden Bickham" (cdr (assoc :author (first parsed-docs)))))
+      (is (equalp "2017:08:30T18:09:29Z" (cdr (assoc :date--post (first parsed-docs)))))
+      (is (search "great American fashion eclipse of 2017?"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (search "a bunch of crocheted bikinis and tiny tanks, strings of shells"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (search "The perfect white jeans will be worn now and, yep, after Labor Day"
+                  (cdr (assoc :text (first parsed-docs)))))
+      ;; KLUDGE we give up on this paragraph, which is short, :near-good and surrounded by :bad
+      ;;(is (search "This is true unisex denim on Paloma"
+      ;;            (cdr (assoc :text (first parsed-docs)))))
+      (is (not (search "Loewe wool jacquard sweater, price upon request, for information"
+                       (cdr (assoc :text (first parsed-docs))))))
+      ;; not sure if we should care about this one:
+      (is (not (search "Featuring Andreea Diaconu, Mia Kang, Paloma Elsesser,"
+                       (cdr (assoc :text (first parsed-docs))))))
+      (is (not (search "Use of and/or registration on any portion of this site constitutes acceptance of our"
+                       (cdr (assoc :text (first parsed-docs)))))))))

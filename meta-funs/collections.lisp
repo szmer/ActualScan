@@ -37,7 +37,10 @@
                 (alexandria:plist-hash-table
                  '(:stopwords-low 0.17 :stopwords-high 0.22 :length-low 40 :length-high 40)))
           (cons "blog" (make-hash-table))
-          (cons "media" (make-hash-table))
+          (cons "media"
+                (alexandria:plist-hash-table
+                  ;; media can have some pretty short paragraphs for effect
+                  '(:length-low 60)))
           ;; Empty defaults.
           (cons "test" (make-hash-table))
           (cons nil (make-hash-table)))
