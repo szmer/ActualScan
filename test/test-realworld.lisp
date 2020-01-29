@@ -345,3 +345,26 @@
                        (cdr (assoc :text (first parsed-docs))))))
       (is (not (search "Use of and/or registration on any portion of this site constitutes acceptance of our"
                        (cdr (assoc :text (first parsed-docs)))))))))
+
+(deftest x-wwd ()
+  (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "wwd.html" "media"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      (is (= 1 (length parsed-docs)))
+      (is (equalp "Jean E. Palmieri" (cdr (assoc :author (first parsed-docs)))))
+      (is (equalp "2018:09:10T04:01:11Z" (cdr (assoc :date--post (first parsed-docs)))))
+      ;; (the lede is not included as of 29-01-2020)
+      (is (search "that Bethenny Frankel is most drawn to in her first fashion"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (search "Despite all the bells and whistles"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (search "Frankel has been with the design and marketing"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (not (search "goods are proving to be a real cash cow for LVMH."
+                       (cdr (assoc :text (first parsed-docs))))))
+      (is (not (search "You're missing something!"
+                       (cdr (assoc :text (first parsed-docs))))))
+      (is (not (search "Report: @jdiderich"
+                       (cdr (assoc :text (first parsed-docs))))))
+      (is (not (search "#wwdfashion"
+                       (cdr (assoc :text (first parsed-docs)))))))))

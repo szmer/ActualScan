@@ -28,6 +28,8 @@
                           (plump:attribute node "class")) 
            (cl-ppcre:scan (boundary-regex "sitepoll")
                           (plump:attribute node "class")) 
+           (cl-ppcre:scan (boundary-regex "sidebar-article")
+                          (plump:attribute node "class")) 
            (cl-ppcre:scan (boundary-regex "m-list-hub") ; "related stories" in fashionista
                           (plump:attribute node "class")) 
            (cl-ppcre:scan (boundary-regex "pageNavLinkGroup")
