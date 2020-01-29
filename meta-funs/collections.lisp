@@ -16,6 +16,11 @@
                 :url #'forums-permalink)
           (list "blog"
                 :skip-p #'general-skip-p
+                ;; having a docstart at the beginning of the document lets us capture on meta in the
+                ;; <head> because the document is already started
+                :doc-startp #'full-html-doc-startp
+                :date_post #'media-date
+                ;:author #'blog-author
                 :meta-burner #'general-meta-burner)
           (list "media"
                 :skip-p #'general-skip-p

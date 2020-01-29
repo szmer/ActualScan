@@ -20,7 +20,7 @@
 (defparameter *skipped-tags*
   ;; TODO merge with skip-p maybe?
   ;; Apparently some people (fashionspot) can wrap everything in a "form"
-  '("head" "meta" "script" "style" "iframe" "footer" "nav"))
+  '("head" "meta" "script" "style" "iframe" "footer" "nav" "aside"))
 
 (defparameter *max-link-density-default* 0.2)
 (defparameter *length-low-default* 70)

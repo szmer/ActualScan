@@ -37,3 +37,11 @@
     ((and (plump:has-attribute node "class")
           (cl-ppcre:scan (boundary-regex "contributor-name") (plump:attribute node "class")))
      (plump:render-text node))))
+;;;-
+;;;-(defun blog-author (node path)
+;;;-  (cond
+;;;-    ((and (plump:has-attribute node "class")
+;;;-          ;; Wordpress
+;;;-          (cl-ppcre:scan (boundary-regex "entry-author-name") (plump:attribute node "class")))
+;;;-     (server-debug-print (plump:render-text node))
+;;;-     (plump:render-text node))))

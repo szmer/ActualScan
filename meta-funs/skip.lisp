@@ -7,6 +7,7 @@
       (equalp "form" (plump:tag-name node)))
     (and (plump:has-attribute node "id")
          (or
+           (search "gdpr" (plump:attribute node "id"))
            (equalp "copyright" (plump:attribute node "id"))
            (equalp "preFooter" (plump:attribute node "id"))
            (equalp "footer" (plump:attribute node "id"))))  
@@ -27,6 +28,8 @@
            (cl-ppcre:scan (boundary-regex "anon-user-signature")
                           (plump:attribute node "class"))
            (cl-ppcre:scan (boundary-regex "sitepoll")
+                          (plump:attribute node "class"))
+           (cl-ppcre:scan (boundary-regex "entry-comments")
                           (plump:attribute node "class"))
            (cl-ppcre:scan (boundary-regex "sidebar-article")
                           (plump:attribute node "class"))
