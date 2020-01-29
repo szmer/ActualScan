@@ -17,8 +17,14 @@
                                             ;; deduplication).
                                             "&sort=date_post%20asc"
                                             ;; Set how many rows we want to get.
-                                            "&rows=~A")
-                               port core query *solr-snippets-per-doc* *solr-analyzed-rows-n*))
+                                            "&rows=~A"
+                                            ;; Group by source_type - balance them out
+                                            "&group=true&group.field=source_type&group.limit=~A"
+                                            ;; Give us a single docs field, instead of separating
+                                            ;; the groups
+                                            "&group.main=true")
+                               port core query *solr-snippets-per-doc* *solr-total-row-limit*
+                               *solr-group-row-limit*))
          (response (timed-execution
                        (babel:octets-to-string
                          (drakma:http-request http-query
@@ -34,6 +40,7 @@
                       (error (format nil "No highlighting field in ~A~%" response))))
          (result-tokens)
          (sentence-strings-table (make-hash-table :test #'equalp)))
+    (format t "~A" http-query)
     (timed-execution
       (dolist (json-doc json-docs)
         (let ((document (make-division :document nil "noid" nil

@@ -17,8 +17,11 @@
 
 (defparameter *solr-port* 8983)
 (defparameter *solr-collection* "lookupy")
-(defparameter *solr-analyzed-rows-n* 1000)
-(defparameter *solr-snippets-per-doc* 5)
+(defparameter *solr-total-row-limit* 800)
+;; getting less seems to encourage more site diversity, although it's ambivalent by itself
+(defparameter *solr-group-row-limit* 150)
+;; a higher value can theoretically encourage longer texts (articles etc.)
+(defparameter *solr-snippets-per-doc* 7)
 
 (defparameter *html-path* #p"~/therminsley/lectrix/omnivore/html/")
 
