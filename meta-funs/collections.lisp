@@ -20,7 +20,7 @@
                 ;; <head> because the document is already started
                 :doc-startp #'full-html-doc-startp
                 :date_post #'media-date
-                ;:author #'blog-author
+                :author #'blog-author
                 :meta-burner #'general-meta-burner)
           (list "media"
                 :skip-p #'general-skip-p
@@ -46,7 +46,7 @@
           (cons "media"
                 (alexandria:plist-hash-table
                   ;; media can have some pretty short paragraphs for effect and link a lot
-                  '(:length-low 60 :length-high 120 :max-link-density 0.4)))
+                  '(:length-high 120 :max-link-density 0.4)))
           ;; Empty defaults.
           (cons "test" (make-hash-table))
           (cons nil (make-hash-table)))

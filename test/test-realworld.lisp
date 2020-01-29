@@ -298,6 +298,47 @@
       ;; TODO - ld+json
       nil)))
 
+(deftest x-pennypincherfashion-wordpress ()
+  (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "pennypincherfashion-wordpress.html" "blog"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      (is (= 1 (length parsed-docs)))
+      (is (equalp "Kimberly" (cdr (assoc :author (first parsed-docs)))))
+      (is (equalp "2012:03:10T21:13:00Z" (cdr (assoc :date--post (first parsed-docs)))))
+      (is (search "my husband isn’t a big fan of it"
+                  (cdr (assoc :text (first parsed-docs)))))
+      ;; comments
+      (is (not (search "Thanks for the quick reply"
+                       (cdr (assoc :text (first parsed-docs))))))
+      (is (not (search "I bought a 4 and it probably could be taken"
+                       (cdr (assoc :text (first parsed-docs))))))
+      (is (not (search "Strictly Necessary Cookie should be enabled at all times"
+                       (cdr (assoc :text (first parsed-docs))))))
+      (is (not (search "Penny Pincher Fashion is a part of several affiliate networks"
+                       (cdr (assoc :text (first parsed-docs))))))
+      (is (not (search "Cookie information is stored in your browser and performs functions such as recognising"
+                       (cdr (assoc :text (first parsed-docs))))))
+      (is (not (search "Be the first to comment"
+                       (cdr (assoc :text (first parsed-docs)))))))))
+
+(deftest x-themodestman-wordpress ()
+  (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "themodestman-wordpress.html" "blog"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      (is (= 1 (length parsed-docs)))
+      (is (equalp "Brock" (cdr (assoc :author (first parsed-docs)))))
+      (is (equalp "2020:01:12T13:00:51Z" (cdr (assoc :date--post (first parsed-docs)))))
+      (is (search "jeans that fit and flatter your build"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (search "you can without your jeans pulling tight across your skin"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (search "There are typically three types of rises: low, mid and high"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (not (search "spending time with his wife and family"
+                       (cdr (assoc :text (first parsed-docs))))))
+      (is (not (search "Join the Club"
+                       (cdr (assoc :text (first parsed-docs)))))))))
+
 (deftest x-fashionista ()
   (when speechtractor::*server-running-p*
     (let* ((response (request-test-page "fashionista.html" "media"))
@@ -432,27 +473,4 @@
       (is (not (search "The Best and Worst Looks From the 2020 SAG Awards"
                        (cdr (assoc :text (first parsed-docs))))))
       (is (not (search "Comments are closed"
-                       (cdr (assoc :text (first parsed-docs)))))))))
-
-(deftest x-pennypincherfashion-wordpress ()
-  (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "pennypincherfashion-wordpress.html" "blog"))
-           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
-      (is (= 1 (length parsed-docs)))
-      (is (equalp "Kimberly" (cdr (assoc :author (first parsed-docs)))))
-      (is (equalp "2012:03:10T21:13:00Z" (cdr (assoc :date--post (first parsed-docs)))))
-      (is (search "my husband isn’t a big fan of it"
-                  (cdr (assoc :text (first parsed-docs)))))
-      ;; comments
-      (is (not (search "Thanks for the quick reply"
-                       (cdr (assoc :text (first parsed-docs))))))
-      (is (not (search "I bought a 4 and it probably could be taken"
-                       (cdr (assoc :text (first parsed-docs))))))
-      (is (not (search "Strictly Necessary Cookie should be enabled at all times"
-                       (cdr (assoc :text (first parsed-docs))))))
-      (is (not (search "Penny Pincher Fashion is a part of several affiliate networks"
-                       (cdr (assoc :text (first parsed-docs))))))
-      (is (not (search "Cookie information is stored in your browser and performs functions such as recognising"
-                       (cdr (assoc :text (first parsed-docs))))))
-      (is (not (search "Be the first to comment"
                        (cdr (assoc :text (first parsed-docs)))))))))

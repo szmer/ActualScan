@@ -23,7 +23,7 @@
   '("head" "meta" "script" "style" "iframe" "footer" "nav" "aside"))
 
 (defparameter *max-link-density-default* 0.2)
-(defparameter *length-low-default* 70)
+(defparameter *length-low-default* 60) ; changed from less realistic 70
 (defparameter *length-high-default* 200)
 (defparameter *stopwords-low-default* 0.30)
 (defparameter *stopwords-high-default* 0.32)

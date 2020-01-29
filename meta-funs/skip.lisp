@@ -39,6 +39,10 @@
                           (plump:attribute node "class"))
            (cl-ppcre:scan (boundary-regex "pageNavLinkGroup")
                           (plump:attribute node "class"))
+           (cl-ppcre:scan (boundary-regex "author-box")
+                          (plump:attribute node "class"))
+           (cl-ppcre:scan (boundary-regex "widget-area")
+                          (plump:attribute node "class"))
            (cl-ppcre:scan "(notice|cookie)\\S*(notice|cookie)"
                           (string-downcase (plump:attribute node "class")))
            (cl-ppcre:scan (boundary-regex "login-signup")
