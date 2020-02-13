@@ -52,6 +52,37 @@
       (is (search (format nil "I have to ask which area do you live?~%Seems a lot artists there")
                   (cdr (assoc :text (nth 11 parsed-docs))))))))
 
+(deftest x-headfi-xenforo ()
+  (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "headfi-xenforo.html" "forums"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      (is (= 15 (length parsed-docs)))
+      ;; The basic check for lost posts.
+      (is (eq nil
+              (find-if (lambda (doc) (zerop (length (cdr (assoc :text doc)))))
+                       (remove-if (lambda (doc) (equalp "tninety" (cdr (assoc :author doc))))
+                                  parsed-docs))))
+      ;; Ensure that everything has a permalink.
+      (is (eq nil
+              (find-if (lambda (doc) (null (cdr (assoc :url doc)))) parsed-docs)))
+      (is (equalp "tninety" (cdr (assoc :author (first parsed-docs)))))
+      ;; Ensure no junk at the beginning
+      ;; KLUDGE currently the first post is discarded, too short
+      ;;;-(is (search "Are you going to double amp it?"
+      ;;;-            (cdr (assoc :text (first parsed-docs)))))
+      (is (equalp "threads/sennheiser-hd-600-impressions-thread.538255/page-171#post-9108883"
+                  (cdr (assoc :url (first parsed-docs)))))
+      (is (not (search "Separate names with a comma" (cdr (assoc :text (first parsed-docs))))))
+      (is (equalp "BrokeR" (cdr (assoc :author (second parsed-docs)))))
+      (is (equalp "2013-01-31T11:42:00Z" (cdr (assoc :date--post (second parsed-docs)))))
+      (is (search "I would use the RCA out on the back of my sound card"
+                  (cdr (assoc :text (second parsed-docs)))))
+      (is (equalp "threads/sennheiser-hd-600-impressions-thread.538255/page-171#post-9128062"
+                  (cdr (assoc :url (first (last parsed-docs))))))
+      ;; Omit the cookie notice.
+      (is (not (search "uses cookies to help personalise content" (cdr (assoc :text (car (last parsed-docs)))))))
+      (is (search "I'm conflicted by some people saying they hear little difference" (cdr (assoc :text (car (last parsed-docs)))))))))
+
 (deftest x-styleforum-xenforo ()
   (when speechtractor::*server-running-p*
     (let* ((response (request-test-page "styleforum-xenforo.html" "forums"))
@@ -100,13 +131,13 @@
       (is (eq nil
               (find-if (lambda (doc) (null (cdr (assoc :url doc)))) parsed-docs)))
       (is (equalp "Diana" (cdr (assoc :author (first parsed-docs)))))
-      (is (equalp (speechtractor::date-solr-str "11 months ago")
+      (is (equalp (speechtractor::solr-date-from "11 months ago")
                   (cdr (assoc :date--post (first parsed-docs)))))
       (is (equalp "https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006057"
                   (cdr (assoc :url (first parsed-docs)))))
       (is (first-beginning-p "Today's Angie Challenge entry is a FFBO, featuring my favorite sweater, perfect jeans, and combat boots."))
       (is (equalp "Suz" (cdr (assoc :author (second parsed-docs)))))
-      (is (equalp (speechtractor::date-solr-str "11 months ago")
+      (is (equalp (speechtractor::solr-date-from "11 months ago")
                   (cdr (assoc :date--post (second parsed-docs)))))
       ;; NOTE the space in Diana , is because of text node concatenation. It could potentially not
       ;; add that before a punctuation mark?
@@ -138,7 +169,7 @@
       (is (eq nil
               (find-if (lambda (doc) (null (cdr (assoc :url doc)))) parsed-docs)))
       (is (equalp "RG250" (cdr (assoc :author (first parsed-docs)))))
-      (is (equalp (speechtractor::date-solr-str "7 months ago")
+      (is (equalp (speechtractor::solr-date-from "7 months ago")
                   (cdr (assoc :date--post (first parsed-docs)))))
       (is (equalp "#post83753960"
                   (cdr (assoc :url (first parsed-docs)))))
