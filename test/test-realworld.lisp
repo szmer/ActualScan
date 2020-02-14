@@ -66,7 +66,6 @@
       (is (eq nil
               (find-if (lambda (doc) (null (cdr (assoc :url doc)))) parsed-docs)))
       (is (equalp "tninety" (cdr (assoc :author (first parsed-docs)))))
-      ;; Ensure no junk at the beginning
       ;; KLUDGE currently the first post is discarded, too short
       ;;;-(is (search "Are you going to double amp it?"
       ;;;-            (cdr (assoc :text (first parsed-docs)))))
@@ -82,6 +81,16 @@
       ;; Omit the cookie notice.
       (is (not (search "uses cookies to help personalise content" (cdr (assoc :text (car (last parsed-docs)))))))
       (is (search "I'm conflicted by some people saying they hear little difference" (cdr (assoc :text (car (last parsed-docs)))))))))
+
+(deftest x-headfi-1stpage-xenforo ()
+  (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "headfi-1stpage-xenforo.html" "forums"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      ;; The purpose of this test is checking how we handle junk that may happen in the date field.
+      (is (= 1 (length parsed-docs)))
+      (is (equalp "audiorefinery" (cdr (assoc :author (first parsed-docs)))))
+      (is (equalp "threads/sennheiser-hd-600-like-new.665928/" (cdr (assoc :url (first parsed-docs)))))
+      (is (equalp "2013-05-29T21:37:00Z" (cdr (assoc :date--post (first parsed-docs))))))))
 
 (deftest x-styleforum-xenforo ()
   (when speechtractor::*server-running-p*

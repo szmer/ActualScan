@@ -49,8 +49,11 @@
           (cl-ppcre:scan (boundary-regex "messageUserInfo")
                          (plump:attribute (plump:parent (plump:parent node))
                                         "class")))
-     (server-debug-print (plump:render-text node))
-     (solr-date-from (plump:render-text node)))
+     (let ((text (plump:render-text node)))
+       ;; Throw out the stuff that may appear after the date.
+       (multiple-value-bind (start end)
+         (cl-ppcre:scan "(AM|PM)" text)
+         (solr-date-from (subseq text 0 end)))))
     ;; Xenforo fashionspot
     ((and (plump:has-attribute node "class")
           (cl-ppcre:scan (boundary-regex "datePermalink") (plump:attribute node "class")))
