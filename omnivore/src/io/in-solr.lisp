@@ -5,14 +5,16 @@
   (let* ((http-query (format nil
                                (concatenate 'string
                                             "http://localhost:~A/solr/~A/select?q=~A"
+                                            ;; KLUDGE to test tags
+                                            "%20AND%20tags:entrepreneur"
                                             ;; Get those fields, but no text (only highlights).
                                             "&fl=url,author,title,date_post,date_retr,site_name"
                                             ;; Enable highliting in text.
-                                            "&hl=true&hl.fl=text&hl.method=unified"
+                                            "&hl=true&hl.fl=text"
                                             ;; Limit the size and number of highlights per doc.
                                             "&hl.fragsize=500&hl.snippets=~A"
                                             ;; Disable marking the highlight.
-                                            "&hl.tag.pre=&hl.tag.post="
+                                            "&hl.simple.pre=&hl.simple.post="
                                             ;; Sort oldest first (this is important for sentence
                                             ;; deduplication).
                                             "&sort=date_post%20asc"
@@ -40,7 +42,9 @@
                       (error (format nil "No highlighting field in ~A~%" response))))
          (result-tokens)
          (sentence-strings-table (make-hash-table :test #'equalp)))
-    (format t "~A" http-query)
+    (format t "~A~%" http-query)
+    (when *debug-scoring*
+      (format t "~A documents received~%" (length json-docs)))
     (timed-execution
       (dolist (json-doc json-docs)
         (let ((document (make-division :document nil "noid" nil

@@ -8,12 +8,14 @@ import requests
 # CONFIG desired range of rows here.
 #
 #ids = [1970]
-ids = range(2209, 2325)#2326)
+ids = range(0, 2147)#2326)
 verbose_ids = [2249]
 
 SPEECHTRACTOR_ADDR = 'http://localhost:3756/api/v01/interpret'
 
 VERBOSE = False
+
+output_filename = 'headphones.json'
 
 site_types = {
         'dazeddigital.com': 'media',
@@ -25,6 +27,7 @@ site_types = {
         'askandyaboutclothes.com': 'forums',
         'edcforums.com': 'forums',
         'forums.redflagdeals.com': 'forums',
+        'head-fi.org': 'forums',
         'styleforum.net': 'forums',
         'forums.thefashionspot.com': 'forums',
         'thestudentroom.co.uk': 'forums',
@@ -46,7 +49,28 @@ site_types = {
 ###        'cnet': 'media',
         }
 
-output_filename = 'test_solr.json'
+site_tags = {
+        'dazeddigital.com': ['fashion'],
+        'fashionista.com': ['fashion'],
+        'glamour.com': ['fashion'],
+        'thefashionpolice.net': ['fashion'],
+        'vogue.com': ['fashion'],
+        'wwd.com': ['fashion'],
+        'askandyaboutclothes.com': ['fashion'],
+        'edcforums.com': ['fashion'],
+        'forums.redflagdeals.com': ['fashion'],
+        'head-fi.org': ['hifi'],
+        'styleforum.net': ['fashion'],
+        'forums.thefashionspot.com': ['fashion'],
+        'thestudentroom.co.uk': ['fashion'],
+        'wallstreetoasis.com': ['fashion'],
+        'youlookfab.com': ['fashion'], # NOTE we look at domain, but really its the /welookfab directory!
+        'dieworkwear.com': ['fashion'],
+        'effortlesseverydaystyle.blogspot.com': ['fashion'],
+        'kendieveryday.com': ['fashion'],
+        'pennypincherfashion.com': ['fashion'],
+        'themodestman.com': ['fashion'],
+        }
 
 #
 # Getting and filing documents.
@@ -96,11 +120,17 @@ with open(output_filename, 'w+') as output_file:
                 source_type = stype
                 if VERBOSE:
                     print('Determined source_type: {}.'.format(source_type))
+                tags = site_tags[string]
                 break
         else:
             if VERBOSE:
                 print('Cannot determine source type, skipping.')
             continue
+        if not tags:
+            if VERBOSE:
+                print('Cannot determine site tags, skipping.')
+            continue
+
 
         #
         # Process the HTML index.
@@ -108,7 +138,7 @@ with open(output_filename, 'w+') as output_file:
         with open('/home/szymonrutkowski/therminsley/sitesdb/'+str(page_id)+'/index') as html_file:
 
             payload = { 'html': html_file.read(), 'sourcetype': source_type }
-            interpreted_docs = requests.post(SPEECHTRACTOR_ADDR, data=payload)
+            interpreted_docs = requests.post(SPEECHTRACTOR_ADDR, data=payload, timeout=300)
             ##-print(interpreted_docs.text)
             interpreted_docs = interpreted_docs.json()
 
@@ -123,6 +153,8 @@ with open(output_filename, 'w+') as output_file:
             # Fill missing url fragments in permalinks.
             elif source_type == 'forums':
                 for doc in interpreted_docs:
+                    if not 'url' in doc: # without a permalink, we have to ignore it
+                        continue
                     parsed_permalink = urlparse(doc['url'])
                     if not parsed_permalink.netloc:
                         parsed_permalink = parsed_permalink._replace(netloc=parsed_url.netloc)
@@ -149,6 +181,7 @@ with open(output_filename, 'w+') as output_file:
                     skipped_no_author += 1
                     continue
 
+                doc['tags'] = tags
                 doc['date_retr'] = date_retrieved
                 doc['reason_scraped'] = '0'
                 doc['source_type'] = source_type[0] # we use the first char
