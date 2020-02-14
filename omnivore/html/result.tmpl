@@ -2,7 +2,7 @@
 <html>
    <head>
       <meta charset="utf-8">
-      <link rel="stylesheet" type="text/css" href="css/bulma.css">
+      <link rel="stylesheet" type="text/css" href="css/lkp.css">
       <link rel="stylesheet" type="text/css" href="css/chartist.min.css">
       <script type="text/javascript" src="js/chartist.min.js"></script>
 
@@ -10,47 +10,22 @@
    </head>
 
    <body>
-      <section class="hero is-primary is-bold">
-         <div class="hero-body">
-            <div class="container">
-               <h1 class="title">
-                  Lookupy
-               </h1>
-
-               <!--
-                  <h2 class="subtitle">
-                  </h2>
-               -->
-
-               <form method="GET" action="/result">
-                  <div class="field has-addons">
-                     <div class="control">
-                        <input class="input" type="text" placeholder="" name="q">
-                     </div>
-                     <div class="control">
-                        <input class="button is-info" value="Go" type="submit">
-                     </div>
-                  </div>
-               </form>
-
-            </div>
-         </div>
-      </section>
-
-      <section class="hero is-dark">
-         <div class="hero-body">
-            <div class="container">
-               <h2 class="subtitle">
-                  Reporting on <em><!-- TMPL_VAR query-text --></em>
-               </h2>
-            </div>
-         </div>
-      </section>
-
-      <div class="columns">
-      <!-- TMPL_IF typical -->
+      <div class="columns is-gapless">
          <div class="column">
-            <section class="section">
+
+         <!-- TMPL_IF sites-stats -->
+               <article class="panel is-info">
+                  <p class="panel-heading">
+                  Sites
+                  </p>
+
+                  <div class="ct-chart ct-golden-section"></div>
+
+
+               </article>
+            <!-- /TMPL_IF -->
+
+         <!-- TMPL_IF typical -->
                <article class="panel is-info">
                   <p class="panel-heading">
                   Common opinion
@@ -75,15 +50,52 @@
                      </article>
                   </div>
                   <!-- /TMPL_LOOP -->
-
                </article>
-            </section>
-         </div>
          <!-- /TMPL_IF -->
+         </div>
+
+
+         <div class="column">
+         <!-- Query bar -->
+            <section class="hero is-dark">
+               <div class="hero-body">
+                  <div class="container">
+                     <span class="title">
+                        Report on: <em><!-- TMPL_VAR query-text --></em>
+                     </span>
+                  </div>
+               </div>
+            </section>
+
+      <!-- Lookupy search bar -->
+      <section class="hero">
+         <div class="hero-body">
+            <div class="container">
+               <h1 class="subtitle">
+                  Search further with Lookupy
+               </h1>
+
+               <!--
+                  <h2 class="subtitle">
+                  </h2>
+               -->
+
+               <form method="GET" action="/result">
+                  <div class="field has-addons">
+                     <div class="control">
+                        <input class="input" type="text" placeholder="" name="q">
+                     </div>
+                     <div class="control">
+                        <input class="button is-info" value="Go" type="submit">
+                     </div>
+                  </div>
+               </form>
+
+            </div>
+         </div>
+      </section>
 
       <!-- TMPL_IF phrases -->
-         <div class="column">
-            <section class="section">
                <article class="panel is-info">
                   <p class="panel-heading">
                   Hot phrases
@@ -111,29 +123,13 @@
                   </div>
                   <!-- /TMPL_LOOP -->
                </article>
-            </section>
-         </div>
          <!-- /TMPL_IF -->
+         </div>
 
       <!-- TMPL_IF atypical -->
          <div class="column">
 
-         <!-- TMPL_IF sites-stats -->
-            <section class="section">
-               <article class="panel is-info">
-                  <p class="panel-heading">
-                  Sites
-                  </p>
 
-                  <div class="ct-chart ct-golden-section"></div>
-
-
-               </article>
-            </section>
-            <!-- /TMPL_IF -->
-
-
-            <section class="section">
                <article class="panel is-info">
                   <p class="panel-heading">
                   Obscure posters
@@ -160,7 +156,6 @@
                   <!-- /TMPL_LOOP -->
 
                </article>
-            </section>
          </div>
          <!-- /TMPL_IF -->
       </div>

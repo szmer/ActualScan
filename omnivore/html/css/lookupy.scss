@@ -1,0 +1,10 @@
+@charset "utf-8";
+
+// Make everything tighter.
+$block-spacing: 0rem; // from 1.5
+$panel-radius: 0px;
+//$gap: 12px; // from 32
+$box-shadow: none;
+$panel-shadow: none;
+
+@import "bulma.sass";

@@ -28,7 +28,7 @@
         "/index.html" (merge-pathnames (pathname "index.html") *html-path*))
       hunchentoot:*dispatch-table*)
 (push (hunchentoot:create-static-file-dispatcher-and-handler
-        "/css/bulma.css" (merge-pathnames (pathname "css/bulma.css") *html-path*))
+        "/css/lkp.css" (merge-pathnames (pathname "css/lkp.css") *html-path*))
       hunchentoot:*dispatch-table*)
 (push (hunchentoot:create-static-file-dispatcher-and-handler
         "/css/chartist.min.css" (merge-pathnames (pathname "css/chartist.min.css") *html-path*))
