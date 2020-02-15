@@ -66,7 +66,9 @@
               :sites-stats
               (mapcar (lambda (site-entry) (list :site (car site-entry)
                                                  :frequency (cdr site-entry)))
-                      (getf query-result :sites-stats)))
+                      (getf query-result :sites-stats))
+              :years (getf query-result :years)
+              :year-counts (getf query-result :year-counts))
         :stream string-stream))))
 
 ;;;

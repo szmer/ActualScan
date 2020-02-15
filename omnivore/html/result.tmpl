@@ -19,9 +19,7 @@
                   Sites
                   </p>
 
-                  <div class="ct-chart ct-golden-section"></div>
-
-
+                  <div class="ct-chart-sites ct-golden-section"></div>
                </article>
             <!-- /TMPL_IF -->
 
@@ -96,6 +94,8 @@
       </section>
 
       <!-- TMPL_IF phrases -->
+                  <div class="ct-chart-trend ct-golden-section"></div>
+
                <article class="panel is-info">
                   <p class="panel-heading">
                   Hot phrases
@@ -132,7 +132,7 @@
 
                <article class="panel is-info">
                   <p class="panel-heading">
-                  Obscure posters
+                  Oddball posters
                   </p>
 
                   <!-- TMPL_LOOP atypical -->
@@ -161,18 +161,16 @@
       </div>
 
       <script>
-      var data = {
+      var sitesData = {
         labels: [<!-- TMPL_LOOP sites-stats -->'<!-- TMPL_VAR site -->',<!-- /TMPL_LOOP --> ],
         series: [<!-- TMPL_LOOP sites-stats --><!-- TMPL_VAR frequency -->,<!-- /TMPL_LOOP --> ]
       };
-
-      var options = {
+      var sitesOptions = {
         labelInterpolationFnc: function(value) {
           return value[0]
         }
       };
-
-      var responsiveOptions = [
+      var sitesResponsiveOptions = [
         ['screen and (min-width: 640px)', {
           chartPadding: 30,
           labelOffset: 100,
@@ -186,8 +184,11 @@
           chartPadding: 20
         }]
       ];
+      new Chartist.Pie('.ct-chart-sites', sitesData, sitesOptions, sitesResponsiveOptions);
 
-      new Chartist.Pie('.ct-chart', data, options, responsiveOptions);
-                        </script>
+        years = [<!-- TMPL_LOOP years -->'<!-- TMPL_VAR year -->',<!-- /TMPL_LOOP --> ];
+        yearCounts = [<!-- TMPL_LOOP year-counts --><!-- TMPL_VAR count -->,<!-- /TMPL_LOOP --> ];
+        new Chartist.Line('.ct-chart-trend', {labels: years, series: [yearCounts]}, sitesOptions);
+      </script>
    </body>
 </html>

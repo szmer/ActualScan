@@ -2,6 +2,7 @@
 
 (defun solr-tokens (port core query)
   ;;; One of general KLUDGE s is that there is no corpus object here.
+  "The second value contains statistics got directly from Solr."
   (let* ((http-query (format nil
                                (concatenate 'string
                                             "http://localhost:~A/solr/~A/select?q=~A"
@@ -20,6 +21,10 @@
                                             "&sort=date_post%20asc"
                                             ;; Set how many rows we want to get.
                                             "&rows=~A"
+                                            ;; Faceting - get time information.
+                                            "&facet.range=date_post&facet=true"
+                                            "&facet.range.start=2010-01-01T00:00:00Z&facet.range.end=NOW"
+                                            "&facet.range.gap=%2B1YEAR"
                                             ;; Group by source_type - balance them out
                                             "&group=true&group.field=source_type&group.limit=~A"
                                             ;; Give us a single docs field, instead of separating
@@ -92,6 +97,22 @@
                     (setf (division-divisions sentence) (reverse (division-divisions sentence))))))
               (setf (division-divisions section) (reverse (division-divisions section)))))
           (setf (division-divisions document) (reverse (division-divisions document)))))
-      ;; (for timed-execution)
+      ;; for timed-execution
       :description "conversion")
-    result-tokens))
+    (values
+      result-tokens
+      (let ((result-list (list :years nil :year-counts nil))
+            (year-label-p t))
+        (dolist (item (gethash "counts"
+                               (gethash "date_post"
+                                        (gethash "facet_ranges"
+                                                 (gethash "facet_counts"
+                                                          response-json)))))
+          (if year-label-p
+              (progn (push (list :year (subseq item 0 4)) (getf result-list :years))
+                     (setf year-label-p nil))
+              ;; TODO scale up for the current year
+              (progn (push (list :count item) (getf result-list :year-counts))
+                     (setf year-label-p t))))
+        (mapcar (lambda (item) (if (listp item) (reverse item) item))
+                result-list)))))

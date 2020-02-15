@@ -63,7 +63,7 @@
                   #'> 
                   :key #'cdr))))
 
-(defun sites-stats (tv-sentences &key (max-entries 10) (others-name "others"))
+(defun sites-stats (tv-sentences &key (max-entries 5) (others-name "others"))
   (let ((result (multiple-value-bind (register flush)
                   (make-cumulator)
                   (dolist (sent tv-sentences)
