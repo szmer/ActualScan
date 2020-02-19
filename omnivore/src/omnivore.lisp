@@ -15,6 +15,7 @@
 (defparameter *phrase-freq-threshold* 0.005) ; as ratio of number of sentences available
 (defparameter *phrase-example-count* 3)
 
+(defparameter *solr-address* "solr")
 (defparameter *solr-port* 8983)
 (defparameter *solr-collection* "lookupy")
 (defparameter *solr-total-row-limit* 800)

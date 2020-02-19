@@ -1,13 +1,13 @@
 (in-package :omnivore)
 
-(defun solr-tokens (port core query)
+(defun solr-tokens (address port core query)
   ;;; One of general KLUDGE s is that there is no corpus object here.
   "The second value contains statistics got directly from Solr."
   (let* ((http-query (format nil
                                (concatenate 'string
-                                            "http://localhost:~A/solr/~A/select?q=~A"
+                                            "http://~A:~A/solr/~A/select?q=~A"
                                             ;; KLUDGE to test tags
-                                            "%20AND%20tags:entrepreneur"
+                                            ;-"%20AND%20tags:entrepreneur"
                                             ;; Get those fields, but no text (only highlights).
                                             "&fl=url,author,title,date_post,date_retr,site_name"
                                             ;; Enable highliting in text.
@@ -30,7 +30,7 @@
                                             ;; Give us a single docs field, instead of separating
                                             ;; the groups
                                             "&group.main=true")
-                               port core query *solr-snippets-per-doc* *solr-total-row-limit*
+                               address port core query *solr-snippets-per-doc* *solr-total-row-limit*
                                *solr-group-row-limit*))
          (response (timed-execution
                        (babel:octets-to-string

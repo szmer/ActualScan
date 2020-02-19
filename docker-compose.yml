@@ -2,12 +2,39 @@ version: '3.7'
 
 services:
   omnivore:
-     image: 'daewok/lisp-devel:latest'
+     build:
+        context: .
+        dockerfile: Dockerfile_omnivore
      volumes:
-        # Looking for a way to persist the already installed Quicklisp packages.
-        #- type: 'bind'
-        #source: './dists-cache'
-        # target: '/home/lisp/quicklisp/dists'
-        #          consistency: 'delegated'
-        - ./omnivore:/home/lisp/quicklisp/local-projects/omnivore
-        - ./textviews:/home/lisp/quicklisp/local-projects/textviews
+        # Persist quicklisp in a named volume.
+        - quicklisp:/root/quicklisp:Z
+        - ./lisp-startup:/lisp/startup
+        - ./textviews:/lisp/textviews
+        - ./omnivore:/lisp/omnivore
+     ports:
+        # Map the original 4242 to 2424.
+        - '2424:4242'
+     command: 'sbcl --load /lisp/startup/lisp-startup.lisp'
+     # Make sbcl not exit immediately.
+     tty: true
+
+  solr:
+     build:
+        context: .
+        dockerfile: Dockerfile_solr
+     ports:
+        # Map the original 8983 to 8984.
+        - '8984:8983'
+     stop_grace_period: 30s
+     volumes:
+        # Kinda the documentation's suggestion to persist data.
+        # A named volume is kept persistent by Docker behind the scenes.
+        # (Z should facilitate living with SELinux?)
+        - solrdata:/var/solr/:Z
+        # Allow posting to Solr documents we've prepared with scripts.
+        - ./processing-scripts:/processing-scripts
+
+# Named volumes.
+volumes:
+   quicklisp:
+   solrdata:

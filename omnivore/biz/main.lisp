@@ -27,7 +27,7 @@
 
 (defun query-result-solr! (query)
   (multiple-value-bind (tv-tokens solr-stats)
-    (solr-tokens *solr-port* *solr-collection*
+    (solr-tokens *solr-address* *solr-port* *solr-collection*
                  ;; enclose in url-encoded quotation marks
                  (format nil "text:%22~A%22" (drakma:url-encode query :utf-8)))
     (result-for-tokens tv-tokens solr-stats)))

@@ -1,0 +1,5 @@
+FROM solr:8.4.1
+
+COPY solr-configset server/solr/configsets/lookupy
+
+CMD solr-precreate lookupy server/solr/configsets/lookupy
