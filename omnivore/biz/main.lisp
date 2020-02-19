@@ -19,11 +19,11 @@
             :years (getf solr-stats :years)
             :year-counts (getf solr-stats :year-counts)))))
 
-(defun query-result (query corpus)
-  (let* ((category (make-category :token :attribute-name "raw_text"
-                                  :attribute-value query :criterion :equal))
-         (view (pg-textviews:get-view corpus (list category) :get-documents t)))
-    (result-for-tokens (view-divisions tv-view))))
+;;-(defun query-result (query corpus)
+;;-  (let* ((category (make-category :token :attribute-name "raw_text"
+;;-                                  :attribute-value query :criterion :equal))
+;;-         (view (pg-textviews:get-view corpus (list category) :get-documents t)))
+;;-    (result-for-tokens (view-divisions tv-view))))
 
 (defun query-result-solr! (query)
   (multiple-value-bind (tv-tokens solr-stats)

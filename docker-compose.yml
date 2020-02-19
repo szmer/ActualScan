@@ -1,0 +1,13 @@
+version: '3.7'
+
+services:
+  omnivore:
+     image: 'daewok/lisp-devel:latest'
+     volumes:
+        # Looking for a way to persist the already installed Quicklisp packages.
+        #- type: 'bind'
+        #source: './dists-cache'
+        # target: '/home/lisp/quicklisp/dists'
+        #          consistency: 'delegated'
+        - ./omnivore:/home/lisp/quicklisp/local-projects/omnivore
+        - ./textviews:/home/lisp/quicklisp/local-projects/textviews

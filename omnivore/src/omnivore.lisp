@@ -5,10 +5,10 @@
 (defparameter *debug-scoring* nil)
 
 
-(defparameter *filesystem-db-path* #p"~/therminsley/willowseed/db/")
-(setf pg-textviews:*db-name* "thermdb")
-(setf pg-textviews:*db-username* "therm")
-(setf pg-textviews:*db-password* "RHHvVX6Mverv4sMr8Vcz")
+;;-(defparameter *filesystem-db-path* #p"~/therminsley/willowseed/db/")
+;;-(setf pg-textviews:*db-name* "thermdb")
+;;-(setf pg-textviews:*db-username* "therm")
+;;-(setf pg-textviews:*db-password* "RHHvVX6Mverv4sMr8Vcz")
 
 (setf drakma:*drakma-default-external-format* :utf-8)
 

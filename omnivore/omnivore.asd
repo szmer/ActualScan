@@ -5,7 +5,9 @@
 
   :depends-on ("alexandria" "babel" "cl-conllu" "cl-json" "cl-stopwatch" "cl-strings"
                "drakma" "html-template" "hunchentoot" "plump" "purl" "trivial-types"
-               "xml-emitter" "yason" "textviews" "pg-textviews")
+               "xml-emitter" "yason" "textviews"
+               ;"pg-textviews"
+               )
   :components ((:module "src"
                 :components ((:file "omnivore")
                              (:file "utils" :depends-on ("omnivore"))
