@@ -14,6 +14,8 @@ services:
      ports:
         # Map the original 4242 to 2424.
         - '2424:4242'
+        # Expose Swank.
+        - '4005:4005'
      command: 'sbcl --load /lisp/startup/lisp-startup.lisp'
      # Make sbcl not exit immediately.
      tty: true
