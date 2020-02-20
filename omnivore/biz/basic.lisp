@@ -70,7 +70,7 @@
                     (let ((site-name (read-attribute sent "site_name")))
                       (when site-name (funcall register site-name))))
                   (sort (alexandria:hash-table-alist (funcall flush))
-                        #'> 
+                        #'>
                         :key #'cdr))))
     (if (<= (length result) max-entries)
         result
