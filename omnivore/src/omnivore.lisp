@@ -4,7 +4,6 @@
 (defparameter *debug-times* nil)
 (defparameter *debug-scoring* nil)
 
-
 ;;-(defparameter *filesystem-db-path* #p"~/therminsley/willowseed/db/")
 ;;-(setf pg-textviews:*db-name* "thermdb")
 ;;-(setf pg-textviews:*db-username* "therm")
@@ -23,8 +22,6 @@
 (defparameter *solr-group-row-limit* 500);150)
 ;; a higher value can theoretically encourage longer texts (articles etc.)
 (defparameter *solr-snippets-per-doc* 7)
-
-(defparameter *html-path* #p"~/therminsley/lectrix/omnivore/html/")
 
 ;; Pg-textviews objects.
 ;;

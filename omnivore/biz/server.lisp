@@ -2,7 +2,7 @@
 
 ;;;
 ;;;
-(defun sent-template-representation (sent)
+(defun sent-plist-representation (sent)
   (list :sent-text (raw-text sent)
         :date (if (read-attribute sent "publication-date")
                 ;; KLUDGE poor man's formatting
@@ -20,47 +20,23 @@
 (defparameter *server* nil)
 
 ;;;
-;;; Static stuff.
-(push (hunchentoot:create-static-file-dispatcher-and-handler
-        "/" (merge-pathnames (pathname "index.html") *html-path*))
-      hunchentoot:*dispatch-table*)
-(push (hunchentoot:create-static-file-dispatcher-and-handler
-        "/index.html" (merge-pathnames (pathname "index.html") *html-path*))
-      hunchentoot:*dispatch-table*)
-(push (hunchentoot:create-static-file-dispatcher-and-handler
-        "/css/lkp.css" (merge-pathnames (pathname "css/lkp.css") *html-path*))
-      hunchentoot:*dispatch-table*)
-(push (hunchentoot:create-static-file-dispatcher-and-handler
-        "/css/chartist.min.css" (merge-pathnames (pathname "css/chartist.min.css") *html-path*))
-      hunchentoot:*dispatch-table*)
-(push (hunchentoot:create-static-file-dispatcher-and-handler
-        "/js/chartist.min.js" (merge-pathnames (pathname "js/chartist.min.js") *html-path*))
-      hunchentoot:*dispatch-table*)
-
-;;;
 ;;; Dynamic responders.
 (hunchentoot:define-easy-handler (query-response :uri "/result") (q)
   (setf (hunchentoot:content-type*) "text/html")
-  (let ((query-result (query-result-solr! q))
-        (query-response-template
-          (html-template:create-template-printer
-            (merge-pathnames (pathname "result.tmpl") *html-path*)
-            :force t)))
-    (with-output-to-string (string-stream)
-      (html-template:fill-and-print-template
-        query-response-template
-        (list :query-text q
+  (let ((query-result (query-result-solr! q)))
+    (cl-json:encode-json-to-string
+      (list :query-text q
               :typical
-              (mapcar #'sent-template-representation
+              (mapcar #'sent-plist-representation
                       (getf query-result :typical))
               :atypical
-              (mapcar #'sent-template-representation
+              (mapcar #'sent-plist-representation
                       (getf query-result :atypical))
               :phrases
               (mapcar (lambda (phrase-entry)
                         (list :phrase (cl-strings:join (getf phrase-entry :phrase) :separator " ")
                               :typical
-                              (mapcar #'sent-template-representation
+                              (mapcar #'sent-plist-representation
                                       (getf phrase-entry :typical))))
                       (getf query-result :phrases))
               :sites-stats
@@ -68,8 +44,7 @@
                                                  :frequency (cdr site-entry)))
                       (getf query-result :sites-stats))
               :years (getf query-result :years)
-              :year-counts (getf query-result :year-counts))
-        :stream string-stream))))
+              :year-counts (getf query-result :year-counts)))))
 
 ;;;
 ;;; Start the server.
