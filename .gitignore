@@ -18,3 +18,6 @@ Sessionx.vim
 tags
 # Persistent undo
 [._]*.un~
+
+## Flask instance
+flask_instance/settings.py

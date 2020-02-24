@@ -1,6 +1,20 @@
 version: '3.7'
 
 services:
+  website:
+     build:
+        context: .
+        dockerfile: Dockerfile_website
+     volumes:
+        - flask_instance:/flask_instance:Z
+     ports:
+        - '8000:8000'
+     command: >
+        gunicorn -b 0.0.0.0:8000
+        --access-logfile -
+        --reload
+        "searchfront.app:create_app()"
+
   omnivore:
      build:
         context: .
@@ -38,5 +52,6 @@ services:
 
 # Named volumes.
 volumes:
+   flask_instance:
    quicklisp:
    solrdata:
