@@ -1,12 +1,22 @@
 version: '3.7'
 
 services:
+  postgres:
+     image: 'postgres:12.2'
+     volumes:
+        - pgdata:/var/lib/postgresql/data:Z
+     ports:
+        # Map the original 5432 to 5433.
+        - '5433:5432'
+     env_file:
+        - '.env'
+
   website:
      build:
         context: .
         dockerfile: Dockerfile_website
      volumes:
-        - flask_instance:/flask_instance:Z
+        - ./flask_instance:/flask_instance
         - ./webpack/public:/searchfront/searchfront/static:ro
      ports:
         - '8000:8000'
@@ -27,10 +37,10 @@ services:
         - ./textviews:/lisp/textviews
         - ./omnivore:/lisp/omnivore
      ports:
-        # Map the original 4242 to 2424.
-        - '2424:4242'
+        # Map the original 4242 to 4243.
+        - '4243:4242'
         # Expose Swank.
-        - '4005:4005'
+        - '4006:4005'
      command: 'sbcl --load /lisp/startup/lisp-startup.lisp'
      # Make sbcl not exit immediately.
      tty: true
@@ -42,7 +52,6 @@ services:
      ports:
         # Map the original 8983 to 8984.
         - '8984:8983'
-     stop_grace_period: 10s
      volumes:
         # Kinda the documentation's suggestion to persist data.
         # A named volume is kept persistent by Docker behind the scenes.
@@ -53,6 +62,6 @@ services:
 
 # Named volumes.
 volumes:
-   flask_instance:
+   pgdata:
    quicklisp:
    solrdata:

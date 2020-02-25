@@ -19,6 +19,9 @@ tags
 # Persistent undo
 [._]*.un~
 
+## Docker
+.env
+
 ## Flask instance
 flask_instance/settings.py
 
