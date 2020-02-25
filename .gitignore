@@ -21,3 +21,6 @@ tags
 
 ## Flask instance
 flask_instance/settings.py
+
+## Webpack
+webpack/node_modules

@@ -7,6 +7,7 @@ services:
         dockerfile: Dockerfile_website
      volumes:
         - flask_instance:/flask_instance:Z
+        - ./webpack/public:/searchfront/searchfront/static:ro
      ports:
         - '8000:8000'
      command: >
@@ -41,7 +42,7 @@ services:
      ports:
         # Map the original 8983 to 8984.
         - '8984:8983'
-     stop_grace_period: 30s
+     stop_grace_period: 10s
      volumes:
         # Kinda the documentation's suggestion to persist data.
         # A named volume is kept persistent by Docker behind the scenes.

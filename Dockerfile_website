@@ -10,8 +10,10 @@ WORKDIR $INSTALL_PATH
 
 COPY requirements.txt requirements.txt
 COPY setup.py setup.py
-COPY flask_config flask_config
 RUN pip install -r requirements.txt
 
+COPY flask_config flask_config
+
 COPY searchfront searchfront
+
 RUN pip install --editable .

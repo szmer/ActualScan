@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description"
+          content="{% block meta_description %}{% endblock %}">
+
+    <title>{% block title %}{% endblock %}</title>
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/app.css') }}">
+  </head>
+  <body>
+    {% block header %}{% endblock %}
+
+    <main class="container">
+      <div class="md-margin-top">{% block heading %}{% endblock %}</div>
+      {% block body %}{% endblock %}
+    </main>
+
+    <footer class="footer text-center">
+      <div class="container">
+        <ul class="list-inline">
+          <li class="text-muted">Therminsley &copy; ?</li>
+          {% block footer %}{% endblock %}
+        </ul>
+      </div>
+    </footer>
+
+    <script
+      src="{{ url_for('static', filename='js/app.js') }}">
+    </script>
+  </body>
+</html>
