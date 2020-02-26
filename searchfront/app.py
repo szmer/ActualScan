@@ -3,7 +3,7 @@ from flask_security.utils import encrypt_password
 
 from searchfront.blueprints.page import page
 
-from searchfront.extensions import db, security, user_datastore
+from searchfront.extensions import db, security, user_datastore, admin
 
 def create_app(settings_override=None):
     app = Flask(__name__, instance_path='/flask_instance', instance_relative_config=True)
@@ -24,7 +24,7 @@ def create_app(settings_override=None):
             db.create_all()
 
             # Create the roles.
-            app.logger.info('{}'.format(user_datastore.find_or_create_role(name='admin', description='Administrator')))
+            user_datastore.find_or_create_role(name='admin', description='Administrator')
             user_datastore.find_or_create_role(name='registered', description='Registered user')
             db.session.commit()
 
@@ -41,4 +41,4 @@ def create_app(settings_override=None):
 def extensions(app):
     db.init_app(app)
     security.init_app(app, datastore=user_datastore)
-
+    admin.init_app(app)
