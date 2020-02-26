@@ -1,9 +1,12 @@
 from flask import Flask
 from flask_security.utils import encrypt_password
 
-from searchfront.blueprints.page import page
-
 from searchfront.extensions import db, security, user_datastore, admin
+
+# Import blueprints now as some of them may require setting up extensions beforehand.
+from searchfront.blueprints.page import page
+from searchfront.blueprints.user import AppUser
+from searchfront.blueprints.manager import ManagerAdminView
 
 def create_app(settings_override=None):
     app = Flask(__name__, instance_path='/flask_instance', instance_relative_config=True)
@@ -35,6 +38,8 @@ def create_app(settings_override=None):
             db.session.commit()
             user_datastore.add_role_to_user(app.config['INIT_USER_EMAIL'], 'admin')
             db.session.commit()
+
+    admin.add_view(ManagerAdminView(AppUser, db.session))
 
     return app
 

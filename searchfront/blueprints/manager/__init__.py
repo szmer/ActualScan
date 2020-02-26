@@ -1,1 +1,1 @@
-from searchfront.blueprints.manager.views import ManagerView
+from searchfront.blueprints.manager.views import ManagerIndexView, ManagerAdminView
