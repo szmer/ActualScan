@@ -14,14 +14,19 @@ class TestScanSchedule(object):
                 'GET', body=req_data).getresponse()
         assert del_response.status == 200
 
-        # TODO check if Scrapy and Speechtractor are up
+        # Check if Scrapy and Speechtractor are up.
         scrapyd_response = http.client.HTTPConnection('scrapy:6800/daemonstatus.json').request(
                 'GET').getresponse()
+        assert scrapyd_response.status == 200
         scrapyd_response_json = json.loads(scrapyd_response)
         assert 'status' in scrapyd_response_json
         assert 'running' in scrapyd_response_json
         assert scrapyd_response_json['status'] == 'ok'
         assert scrapyd_response_json['running'] == '1'
+        stractor_response = http.client.HTTPConnection('speechtractor:3756/api/v01/status').request(
+                'GET').getresponse()
+        assert stractor_response.status == 200
+        assert stractor_response.text == 'ok'
 
         # Create the scan job.
         job_id = ScanJob.identifier('ex@example.com', 'Mroziński', ['fun'])

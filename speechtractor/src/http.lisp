@@ -18,6 +18,10 @@
                                             sourcetype))
                            :split-sents t))
 
+(hunchentoot:define-easy-handler (status-01 :uri "/api/v01/status") (html sourcetype)
+  (setf (hunchentoot:content-type*) "text/plain")
+  "ok")
+
 ;;; Start the server.
 (when *server-running-p*
   (setf *server* (make-instance 'hunchentoot:easy-acceptor :port *http-port*))

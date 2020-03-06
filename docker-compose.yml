@@ -16,6 +16,7 @@ services:
         context: .
         dockerfile: Dockerfile_website
      volumes:
+        # The instance settings are also used by Scrapy to get e.g. db credentials.
         - ./flask_instance:/flask_instance
         - ./webpack/public:/searchfront/searchfront/static:ro
      ports:
@@ -30,8 +31,10 @@ services:
      build:
         context: .
         dockerfile: Dockerfile_scrapy
+     volumes:
+        - ./scrapies:/scrapies
      ports:
-        # This is the web interface, not the API.
+        # Scrapyd's web interface.
         - '6801:6800'
      command: scrapyd
 
@@ -50,7 +53,24 @@ services:
         - '4243:4242'
         # Expose Swank.
         - '4006:4005'
-     command: 'sbcl --load /lisp/startup/lisp-startup.lisp'
+     command: 'sbcl --load /lisp/startup/lisp-startup-omnivore.lisp'
+     # Make sbcl not exit immediately.
+     tty: true
+
+  speechtractor:
+     build:
+        context: .
+        dockerfile: Dockerfile_stractor
+     volumes:
+        # Persist quicklisp in a named volume.
+        - quicklisp:/root/quicklisp:Z
+        - ./lisp-startup:/lisp/startup
+        - ./speechtractor:/lisp/speechtractor
+     ports:
+        - '3757:3756'
+        # Expose Swank.
+        - '4007:4005'
+     command: 'sbcl --load /lisp/startup/lisp-startup-stractor.lisp'
      # Make sbcl not exit immediately.
      tty: true
 

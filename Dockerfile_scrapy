@@ -1,0 +1,14 @@
+FROM python:3.7.5-slim-buster
+
+RUN apt-get update && apt-get install -qq -y \
+  build-essential libpq-dev --no-install-recommends
+
+WORKDIR /scrapies
+
+COPY flask_instance /scrapies/genscrap/genscrap/flask_instance
+
+COPY requirements.scrapy.txt requirements.txt
+COPY setup.py setup.py
+RUN pip install -r requirements.txt
+
+RUN bash scrapy_setup.sh
