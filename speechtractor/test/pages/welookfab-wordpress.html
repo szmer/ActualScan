@@ -1,0 +1,2285 @@
+<!DOCTYPE html>
+		<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+		<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+		<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+		<!--[if gt IE 8]><!--> <html class="no-js "> <!--<![endif]-->
+		<head>
+		  <meta charset="utf-8">
+			<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><script type="text/javascript">(window.NREUM||(NREUM={})).loader_config={xpid:"Vg8PVVJQGwECUVRTAwM=",licenseKey:"3a51baadfa",applicationID:"2255142"};window.NREUM||(NREUM={}),__nr_require=function(t,n,e){function r(e){if(!n[e]){var o=n[e]={exports:{}};t[e][0].call(o.exports,function(n){var o=t[e][1][n];return r(o||n)},o,o.exports)}return n[e].exports}if("function"==typeof __nr_require)return __nr_require;for(var o=0;o<e.length;o++)r(e[o]);return r}({1:[function(t,n,e){function r(t){try{s.console&&console.log(t)}catch(n){}}var o,i=t("ee"),a=t(20),s={};try{o=localStorage.getItem("__nr_flags").split(","),console&&"function"==typeof console.log&&(s.console=!0,o.indexOf("dev")!==-1&&(s.dev=!0),o.indexOf("nr_dev")!==-1&&(s.nrDev=!0))}catch(c){}s.nrDev&&i.on("internal-error",function(t){r(t.stack)}),s.dev&&i.on("fn-err",function(t,n,e){r(e.stack)}),s.dev&&(r("NR AGENT IN DEVELOPMENT MODE"),r("flags: "+a(s,function(t,n){return t}).join(", ")))},{}],2:[function(t,n,e){function r(t,n,e,r,s){try{p?p-=1:o(s||new UncaughtException(t,n,e),!0)}catch(f){try{i("ierr",[f,c.now(),!0])}catch(d){}}return"function"==typeof u&&u.apply(this,a(arguments))}function UncaughtException(t,n,e){this.message=t||"Uncaught error with no additional information",this.sourceURL=n,this.line=e}function o(t,n){var e=n?null:c.now();i("err",[t,e])}var i=t("handle"),a=t(21),s=t("ee"),c=t("loader"),f=t("gos"),u=window.onerror,d=!1,l="nr@seenError",p=0;c.features.err=!0,t(1),window.onerror=r;try{throw new Error}catch(h){"stack"in h&&(t(9),t(8),"addEventListener"in window&&t(5),c.xhrWrappable&&t(10),d=!0)}s.on("fn-start",function(t,n,e){d&&(p+=1)}),s.on("fn-err",function(t,n,e){d&&!e[l]&&(f(e,l,function(){return!0}),this.thrown=!0,o(e))}),s.on("fn-end",function(){d&&!this.thrown&&p>0&&(p-=1)}),s.on("internal-error",function(t){i("ierr",[t,c.now(),!0])})},{}],3:[function(t,n,e){t("loader").features.ins=!0},{}],4:[function(t,n,e){function r(t){}if(window.performance&&window.performance.timing&&window.performance.getEntriesByType){var o=t("ee"),i=t("handle"),a=t(9),s=t(8),c="learResourceTimings",f="addEventListener",u="resourcetimingbufferfull",d="bstResource",l="resource",p="-start",h="-end",m="fn"+p,w="fn"+h,v="bstTimer",g="pushState",y=t("loader");y.features.stn=!0,t(7),"addEventListener"in window&&t(5);var x=NREUM.o.EV;o.on(m,function(t,n){var e=t[0];e instanceof x&&(this.bstStart=y.now())}),o.on(w,function(t,n){var e=t[0];e instanceof x&&i("bst",[e,n,this.bstStart,y.now()])}),a.on(m,function(t,n,e){this.bstStart=y.now(),this.bstType=e}),a.on(w,function(t,n){i(v,[n,this.bstStart,y.now(),this.bstType])}),s.on(m,function(){this.bstStart=y.now()}),s.on(w,function(t,n){i(v,[n,this.bstStart,y.now(),"requestAnimationFrame"])}),o.on(g+p,function(t){this.time=y.now(),this.startPath=location.pathname+location.hash}),o.on(g+h,function(t){i("bstHist",[location.pathname+location.hash,this.startPath,this.time])}),f in window.performance&&(window.performance["c"+c]?window.performance[f](u,function(t){i(d,[window.performance.getEntriesByType(l)]),window.performance["c"+c]()},!1):window.performance[f]("webkit"+u,function(t){i(d,[window.performance.getEntriesByType(l)]),window.performance["webkitC"+c]()},!1)),document[f]("scroll",r,{passive:!0}),document[f]("keypress",r,!1),document[f]("click",r,!1)}},{}],5:[function(t,n,e){function r(t){for(var n=t;n&&!n.hasOwnProperty(u);)n=Object.getPrototypeOf(n);n&&o(n)}function o(t){s.inPlace(t,[u,d],"-",i)}function i(t,n){return t[1]}var a=t("ee").get("events"),s=t("wrap-function")(a,!0),c=t("gos"),f=XMLHttpRequest,u="addEventListener",d="removeEventListener";n.exports=a,"getPrototypeOf"in Object?(r(document),r(window),r(f.prototype)):f.prototype.hasOwnProperty(u)&&(o(window),o(f.prototype)),a.on(u+"-start",function(t,n){var e=t[1],r=c(e,"nr@wrapped",function(){function t(){if("function"==typeof e.handleEvent)return e.handleEvent.apply(e,arguments)}var n={object:t,"function":e}[typeof e];return n?s(n,"fn-",null,n.name||"anonymous"):e});this.wrapped=t[1]=r}),a.on(d+"-start",function(t){t[1]=this.wrapped||t[1]})},{}],6:[function(t,n,e){function r(t,n,e){var r=t[n];"function"==typeof r&&(t[n]=function(){var t=i(arguments),n={};o.emit(e+"before-start",[t],n);var a;n[m]&&n[m].dt&&(a=n[m].dt);var s=r.apply(this,t);return o.emit(e+"start",[t,a],s),s.then(function(t){return o.emit(e+"end",[null,t],s),t},function(t){throw o.emit(e+"end",[t],s),t})})}var o=t("ee").get("fetch"),i=t(21),a=t(20);n.exports=o;var s=window,c="fetch-",f=c+"body-",u=["arrayBuffer","blob","json","text","formData"],d=s.Request,l=s.Response,p=s.fetch,h="prototype",m="nr@context";d&&l&&p&&(a(u,function(t,n){r(d[h],n,f),r(l[h],n,f)}),r(s,"fetch",c),o.on(c+"end",function(t,n){var e=this;if(n){var r=n.headers.get("content-length");null!==r&&(e.rxSize=r),o.emit(c+"done",[null,n],e)}else o.emit(c+"done",[t],e)}))},{}],7:[function(t,n,e){var r=t("ee").get("history"),o=t("wrap-function")(r);n.exports=r;var i=window.history&&window.history.constructor&&window.history.constructor.prototype,a=window.history;i&&i.pushState&&i.replaceState&&(a=i),o.inPlace(a,["pushState","replaceState"],"-")},{}],8:[function(t,n,e){var r=t("ee").get("raf"),o=t("wrap-function")(r),i="equestAnimationFrame";n.exports=r,o.inPlace(window,["r"+i,"mozR"+i,"webkitR"+i,"msR"+i],"raf-"),r.on("raf-start",function(t){t[0]=o(t[0],"fn-")})},{}],9:[function(t,n,e){function r(t,n,e){t[0]=a(t[0],"fn-",null,e)}function o(t,n,e){this.method=e,this.timerDuration=isNaN(t[1])?0:+t[1],t[0]=a(t[0],"fn-",this,e)}var i=t("ee").get("timer"),a=t("wrap-function")(i),s="setTimeout",c="setInterval",f="clearTimeout",u="-start",d="-";n.exports=i,a.inPlace(window,[s,"setImmediate"],s+d),a.inPlace(window,[c],c+d),a.inPlace(window,[f,"clearImmediate"],f+d),i.on(c+u,r),i.on(s+u,o)},{}],10:[function(t,n,e){function r(t,n){d.inPlace(n,["onreadystatechange"],"fn-",s)}function o(){var t=this,n=u.context(t);t.readyState>3&&!n.resolved&&(n.resolved=!0,u.emit("xhr-resolved",[],t)),d.inPlace(t,g,"fn-",s)}function i(t){y.push(t),h&&(b?b.then(a):w?w(a):(E=-E,R.data=E))}function a(){for(var t=0;t<y.length;t++)r([],y[t]);y.length&&(y=[])}function s(t,n){return n}function c(t,n){for(var e in t)n[e]=t[e];return n}t(5);var f=t("ee"),u=f.get("xhr"),d=t("wrap-function")(u),l=NREUM.o,p=l.XHR,h=l.MO,m=l.PR,w=l.SI,v="readystatechange",g=["onload","onerror","onabort","onloadstart","onloadend","onprogress","ontimeout"],y=[];n.exports=u;var x=window.XMLHttpRequest=function(t){var n=new p(t);try{u.emit("new-xhr",[n],n),n.addEventListener(v,o,!1)}catch(e){try{u.emit("internal-error",[e])}catch(r){}}return n};if(c(p,x),x.prototype=p.prototype,d.inPlace(x.prototype,["open","send"],"-xhr-",s),u.on("send-xhr-start",function(t,n){r(t,n),i(n)}),u.on("open-xhr-start",r),h){var b=m&&m.resolve();if(!w&&!m){var E=1,R=document.createTextNode(E);new h(a).observe(R,{characterData:!0})}}else f.on("fn-end",function(t){t[0]&&t[0].type===v||a()})},{}],11:[function(t,n,e){function r(){var t=window.NREUM;if(!t.loader_config)return null;var n=(t.loader_config.accountID||"").toString()||null,e=(t.loader_config.agentID||"").toString()||null,r=(t.loader_config.trustKey||"").toString()||null;if(!n||!e)return null;var a=i.generateCatId(),s=i.generateCatId(),c=Date.now(),f=o(a,s,c,n,e,r);return{header:f,guid:a,traceId:s,timestamp:c}}function o(t,n,e,r,o,i){var a="btoa"in window&&"function"==typeof window.btoa;if(!a)return null;var s={v:[0,1],d:{ty:"Browser",ac:r,ap:o,id:t,tr:n,ti:e}};return i&&r!==i&&(s.d.tk=i),btoa(JSON.stringify(s))}var i=t(18);n.exports={generateTracePayload:r,generateTraceHeader:o}},{}],12:[function(t,n,e){function r(t){var n=this.params,e=this.metrics;if(!this.ended){this.ended=!0;for(var r=0;r<p;r++)t.removeEventListener(l[r],this.listener,!1);n.aborted||(e.duration=s.now()-this.startTime,this.loadCaptureCalled||4!==t.readyState?null==n.status&&(n.status=0):a(this,t),e.cbTime=this.cbTime,d.emit("xhr-done",[t],t),c("xhr",[n,e,this.startTime]))}}function o(t,n){var e=t.responseType;if("json"===e&&null!==n)return n;var r="arraybuffer"===e||"blob"===e||"json"===e?t.response:t.responseText;return w(r)}function i(t,n){var e=f(n),r=t.params;r.host=e.hostname+":"+e.port,r.pathname=e.pathname,t.sameOrigin=e.sameOrigin}function a(t,n){t.params.status=n.status;var e=o(n,t.lastSize);if(e&&(t.metrics.rxSize=e),t.sameOrigin){var r=n.getResponseHeader("X-NewRelic-App-Data");r&&(t.params.cat=r.split(", ").pop())}t.loadCaptureCalled=!0}var s=t("loader");if(s.xhrWrappable){var c=t("handle"),f=t(13),u=t(11).generateTracePayload,d=t("ee"),l=["load","error","abort","timeout"],p=l.length,h=t("id"),m=t(16),w=t(15),v=window.XMLHttpRequest;s.features.xhr=!0,t(10),t(6),d.on("new-xhr",function(t){var n=this;n.totalCbs=0,n.called=0,n.cbTime=0,n.end=r,n.ended=!1,n.xhrGuids={},n.lastSize=null,n.loadCaptureCalled=!1,t.addEventListener("load",function(e){a(n,t)},!1),m&&(m>34||m<10)||window.opera||t.addEventListener("progress",function(t){n.lastSize=t.loaded},!1)}),d.on("open-xhr-start",function(t){this.params={method:t[0]},i(this,t[1]),this.metrics={}}),d.on("open-xhr-end",function(t,n){"loader_config"in NREUM&&"xpid"in NREUM.loader_config&&this.sameOrigin&&n.setRequestHeader("X-NewRelic-ID",NREUM.loader_config.xpid);var e=!1;if("init"in NREUM&&"distributed_tracing"in NREUM.init&&(e=!!NREUM.init.distributed_tracing.enabled),e&&this.sameOrigin){var r=u();r&&r.header&&(n.setRequestHeader("newrelic",r.header),this.dt=r)}}),d.on("send-xhr-start",function(t,n){var e=this.metrics,r=t[0],o=this;if(e&&r){var i=w(r);i&&(e.txSize=i)}this.startTime=s.now(),this.listener=function(t){try{"abort"!==t.type||o.loadCaptureCalled||(o.params.aborted=!0),("load"!==t.type||o.called===o.totalCbs&&(o.onloadCalled||"function"!=typeof n.onload))&&o.end(n)}catch(e){try{d.emit("internal-error",[e])}catch(r){}}};for(var a=0;a<p;a++)n.addEventListener(l[a],this.listener,!1)}),d.on("xhr-cb-time",function(t,n,e){this.cbTime+=t,n?this.onloadCalled=!0:this.called+=1,this.called!==this.totalCbs||!this.onloadCalled&&"function"==typeof e.onload||this.end(e)}),d.on("xhr-load-added",function(t,n){var e=""+h(t)+!!n;this.xhrGuids&&!this.xhrGuids[e]&&(this.xhrGuids[e]=!0,this.totalCbs+=1)}),d.on("xhr-load-removed",function(t,n){var e=""+h(t)+!!n;this.xhrGuids&&this.xhrGuids[e]&&(delete this.xhrGuids[e],this.totalCbs-=1)}),d.on("addEventListener-end",function(t,n){n instanceof v&&"load"===t[0]&&d.emit("xhr-load-added",[t[1],t[2]],n)}),d.on("removeEventListener-end",function(t,n){n instanceof v&&"load"===t[0]&&d.emit("xhr-load-removed",[t[1],t[2]],n)}),d.on("fn-start",function(t,n,e){n instanceof v&&("onload"===e&&(this.onload=!0),("load"===(t[0]&&t[0].type)||this.onload)&&(this.xhrCbStart=s.now()))}),d.on("fn-end",function(t,n){this.xhrCbStart&&d.emit("xhr-cb-time",[s.now()-this.xhrCbStart,this.onload,n],n)}),d.on("fetch-before-start",function(t){var n,e=t[1]||{};"string"==typeof t[0]?n=t[0]:t[0]&&t[0].url&&(n=t[0].url),n&&(this.sameOrigin=f(n).sameOrigin);var r=!1;if("init"in NREUM&&"distributed_tracing"in NREUM.init&&(r=!!NREUM.init.distributed_tracing.enabled),r&&this.sameOrigin){var o=u();if(!o||!o.header)return;var i=o.header;if("string"==typeof t[0]){var a={};for(var s in e)a[s]=e[s];a.headers=new Headers(e.headers||{}),a.headers.set("newrelic",i),this.dt=o,t.length>1?t[1]=a:t.push(a)}else t[0]&&t[0].headers&&(t[0].headers.append("newrelic",i),this.dt=o)}})}},{}],13:[function(t,n,e){n.exports=function(t){var n=document.createElement("a"),e=window.location,r={};n.href=t,r.port=n.port;var o=n.href.split("://");!r.port&&o[1]&&(r.port=o[1].split("/")[0].split("@").pop().split(":")[1]),r.port&&"0"!==r.port||(r.port="https"===o[0]?"443":"80"),r.hostname=n.hostname||e.hostname,r.pathname=n.pathname,r.protocol=o[0],"/"!==r.pathname.charAt(0)&&(r.pathname="/"+r.pathname);var i=!n.protocol||":"===n.protocol||n.protocol===e.protocol,a=n.hostname===document.domain&&n.port===e.port;return r.sameOrigin=i&&(!n.hostname||a),r}},{}],14:[function(t,n,e){function r(){}function o(t,n,e){return function(){return i(t,[f.now()].concat(s(arguments)),n?null:this,e),n?void 0:this}}var i=t("handle"),a=t(20),s=t(21),c=t("ee").get("tracer"),f=t("loader"),u=NREUM;"undefined"==typeof window.newrelic&&(newrelic=u);var d=["setPageViewName","setCustomAttribute","setErrorHandler","finished","addToTrace","inlineHit","addRelease"],l="api-",p=l+"ixn-";a(d,function(t,n){u[n]=o(l+n,!0,"api")}),u.addPageAction=o(l+"addPageAction",!0),u.setCurrentRouteName=o(l+"routeName",!0),n.exports=newrelic,u.interaction=function(){return(new r).get()};var h=r.prototype={createTracer:function(t,n){var e={},r=this,o="function"==typeof n;return i(p+"tracer",[f.now(),t,e],r),function(){if(c.emit((o?"":"no-")+"fn-start",[f.now(),r,o],e),o)try{return n.apply(this,arguments)}catch(t){throw c.emit("fn-err",[arguments,this,t],e),t}finally{c.emit("fn-end",[f.now()],e)}}}};a("actionText,setName,setAttribute,save,ignore,onEnd,getContext,end,get".split(","),function(t,n){h[n]=o(p+n)}),newrelic.noticeError=function(t,n){"string"==typeof t&&(t=new Error(t)),i("err",[t,f.now(),!1,n])}},{}],15:[function(t,n,e){n.exports=function(t){if("string"==typeof t&&t.length)return t.length;if("object"==typeof t){if("undefined"!=typeof ArrayBuffer&&t instanceof ArrayBuffer&&t.byteLength)return t.byteLength;if("undefined"!=typeof Blob&&t instanceof Blob&&t.size)return t.size;if(!("undefined"!=typeof FormData&&t instanceof FormData))try{return JSON.stringify(t).length}catch(n){return}}}},{}],16:[function(t,n,e){var r=0,o=navigator.userAgent.match(/Firefox[\/\s](\d+\.\d+)/);o&&(r=+o[1]),n.exports=r},{}],17:[function(t,n,e){function r(t,n){var e=t.getEntries();e.forEach(function(t){"first-paint"===t.name?a("timing",["fp",Math.floor(t.startTime)]):"first-contentful-paint"===t.name&&a("timing",["fcp",Math.floor(t.startTime)])})}function o(t){if(t instanceof c&&!u){var n,e=Math.round(t.timeStamp);n=e>1e12?Date.now()-e:s.now()-e,u=!0,a("timing",["fi",e,{type:t.type,fid:n}])}}if(!("init"in NREUM&&"page_view_timing"in NREUM.init&&"enabled"in NREUM.init.page_view_timing&&NREUM.init.page_view_timing.enabled===!1)){var i,a=t("handle"),s=t("loader"),c=NREUM.o.EV;if("PerformanceObserver"in window&&"function"==typeof window.PerformanceObserver){i=new PerformanceObserver(r);try{i.observe({entryTypes:["paint"]})}catch(f){}}if("addEventListener"in document){var u=!1,d=["click","keydown","mousedown","pointerdown","touchstart"];d.forEach(function(t){document.addEventListener(t,o,!1)})}}},{}],18:[function(t,n,e){function r(){function t(){return n?15&n[e++]:16*Math.random()|0}var n=null,e=0,r=window.crypto||window.msCrypto;r&&r.getRandomValues&&(n=r.getRandomValues(new Uint8Array(31)));for(var o,i="xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx",a="",s=0;s<i.length;s++)o=i[s],"x"===o?a+=t().toString(16):"y"===o?(o=3&t()|8,a+=o.toString(16)):a+=o;return a}function o(){function t(){return n?15&n[e++]:16*Math.random()|0}var n=null,e=0,r=window.crypto||window.msCrypto;r&&r.getRandomValues&&Uint8Array&&(n=r.getRandomValues(new Uint8Array(31)));for(var o=[],i=0;i<16;i++)o.push(t().toString(16));return o.join("")}n.exports={generateUuid:r,generateCatId:o}},{}],19:[function(t,n,e){function r(t,n){if(!o)return!1;if(t!==o)return!1;if(!n)return!0;if(!i)return!1;for(var e=i.split("."),r=n.split("."),a=0;a<r.length;a++)if(r[a]!==e[a])return!1;return!0}var o=null,i=null,a=/Version\/(\S+)\s+Safari/;if(navigator.userAgent){var s=navigator.userAgent,c=s.match(a);c&&s.indexOf("Chrome")===-1&&s.indexOf("Chromium")===-1&&(o="Safari",i=c[1])}n.exports={agent:o,version:i,match:r}},{}],20:[function(t,n,e){function r(t,n){var e=[],r="",i=0;for(r in t)o.call(t,r)&&(e[i]=n(r,t[r]),i+=1);return e}var o=Object.prototype.hasOwnProperty;n.exports=r},{}],21:[function(t,n,e){function r(t,n,e){n||(n=0),"undefined"==typeof e&&(e=t?t.length:0);for(var r=-1,o=e-n||0,i=Array(o<0?0:o);++r<o;)i[r]=t[n+r];return i}n.exports=r},{}],22:[function(t,n,e){n.exports={exists:"undefined"!=typeof window.performance&&window.performance.timing&&"undefined"!=typeof window.performance.timing.navigationStart}},{}],ee:[function(t,n,e){function r(){}function o(t){function n(t){return t&&t instanceof r?t:t?c(t,s,i):i()}function e(e,r,o,i){if(!l.aborted||i){t&&t(e,r,o);for(var a=n(o),s=m(e),c=s.length,f=0;f<c;f++)s[f].apply(a,r);var d=u[y[e]];return d&&d.push([x,e,r,a]),a}}function p(t,n){g[t]=m(t).concat(n)}function h(t,n){var e=g[t];if(e)for(var r=0;r<e.length;r++)e[r]===n&&e.splice(r,1)}function m(t){return g[t]||[]}function w(t){return d[t]=d[t]||o(e)}function v(t,n){f(t,function(t,e){n=n||"feature",y[e]=n,n in u||(u[n]=[])})}var g={},y={},x={on:p,addEventListener:p,removeEventListener:h,emit:e,get:w,listeners:m,context:n,buffer:v,abort:a,aborted:!1};return x}function i(){return new r}function a(){(u.api||u.feature)&&(l.aborted=!0,u=l.backlog={})}var s="nr@context",c=t("gos"),f=t(20),u={},d={},l=n.exports=o();l.backlog=u},{}],gos:[function(t,n,e){function r(t,n,e){if(o.call(t,n))return t[n];var r=e();if(Object.defineProperty&&Object.keys)try{return Object.defineProperty(t,n,{value:r,writable:!0,enumerable:!1}),r}catch(i){}return t[n]=r,r}var o=Object.prototype.hasOwnProperty;n.exports=r},{}],handle:[function(t,n,e){function r(t,n,e,r){o.buffer([t],r),o.emit(t,n,e)}var o=t("ee").get("handle");n.exports=r,r.ee=o},{}],id:[function(t,n,e){function r(t){var n=typeof t;return!t||"object"!==n&&"function"!==n?-1:t===window?0:a(t,i,function(){return o++})}var o=1,i="nr@id",a=t("gos");n.exports=r},{}],loader:[function(t,n,e){function r(){if(!E++){var t=b.info=NREUM.info,n=p.getElementsByTagName("script")[0];if(setTimeout(u.abort,3e4),!(t&&t.licenseKey&&t.applicationID&&n))return u.abort();f(y,function(n,e){t[n]||(t[n]=e)}),c("mark",["onload",a()+b.offset],null,"api");var e=p.createElement("script");e.src="https://"+t.agent,n.parentNode.insertBefore(e,n)}}function o(){"complete"===p.readyState&&i()}function i(){c("mark",["domContent",a()+b.offset],null,"api")}function a(){return R.exists&&performance.now?Math.round(performance.now()):(s=Math.max((new Date).getTime(),s))-b.offset}var s=(new Date).getTime(),c=t("handle"),f=t(20),u=t("ee"),d=t(19),l=window,p=l.document,h="addEventListener",m="attachEvent",w=l.XMLHttpRequest,v=w&&w.prototype;NREUM.o={ST:setTimeout,SI:l.setImmediate,CT:clearTimeout,XHR:w,REQ:l.Request,EV:l.Event,PR:l.Promise,MO:l.MutationObserver};var g=""+location,y={beacon:"bam.nr-data.net",errorBeacon:"bam.nr-data.net",agent:"js-agent.newrelic.com/nr-1153.min.js"},x=w&&v&&v[h]&&!/CriOS/.test(navigator.userAgent),b=n.exports={offset:s,now:a,origin:g,features:{},xhrWrappable:x,userAgent:d};t(14),t(17),p[h]?(p[h]("DOMContentLoaded",i,!1),l[h]("load",r,!1)):(p[m]("onreadystatechange",o),l[m]("onload",r)),c("mark",["firstbyte",s],null,"api");var E=0,R=t(22)},{}],"wrap-function":[function(t,n,e){function r(t){return!(t&&t instanceof Function&&t.apply&&!t[a])}var o=t("ee"),i=t(21),a="nr@original",s=Object.prototype.hasOwnProperty,c=!1;n.exports=function(t,n){function e(t,n,e,o){function nrWrapper(){var r,a,s,c;try{a=this,r=i(arguments),s="function"==typeof e?e(r,a):e||{}}catch(f){l([f,"",[r,a,o],s])}u(n+"start",[r,a,o],s);try{return c=t.apply(a,r)}catch(d){throw u(n+"err",[r,a,d],s),d}finally{u(n+"end",[r,a,c],s)}}return r(t)?t:(n||(n=""),nrWrapper[a]=t,d(t,nrWrapper),nrWrapper)}function f(t,n,o,i){o||(o="");var a,s,c,f="-"===o.charAt(0);for(c=0;c<n.length;c++)s=n[c],a=t[s],r(a)||(t[s]=e(a,f?s+o:o,i,s))}function u(e,r,o){if(!c||n){var i=c;c=!0;try{t.emit(e,r,o,n)}catch(a){l([a,e,r,o])}c=i}}function d(t,n){if(Object.defineProperty&&Object.keys)try{var e=Object.keys(t);return e.forEach(function(e){Object.defineProperty(n,e,{get:function(){return t[e]},set:function(n){return t[e]=n,n}})}),n}catch(r){l([r])}for(var o in t)s.call(t,o)&&(n[o]=t[o]);return n}function l(n){try{t.emit("internal-error",n)}catch(e){}}return t||(t=o),e.inPlace=f,e.flag=a,e}},{}]},{},["loader",2,12,4,3]);</script>
+						
+		  <title>Angie Challenge Day 1: FFBO (handknit sweater, jeans, combat boots) - YouLookFab Forum</title>
+			
+			<link href="https://plus.google.com/+Youlookfab" rel="publisher" />
+
+				<meta name="google-site-verification" content="PBGj2qKFZGcOJfRkw9WZ2-qfowHBMvS6AOAhQhFdtsE" />
+	<meta name="alexaVerifyID" content="DuclDbkYvErqwT6ED45_nZBsPU4" />	
+	<script type="text/javascript">var bb_ajaxurl = "https://youlookfab.com/welookfab/bb-admin/admin-ajax.php";</script>
+<script type="text/javascript">var ajaxurl = "https://youlookfab.com/wp-admin/admin-ajax.php";</script>
+<link rel="alternate" type="application/rss+xml" title="YouLookFab Forum &raquo; Topic: Angie Challenge Day 1: FFBO (handknit sweater, jeans, combat boots)" href="https://youlookfab.com/welookfab/rss/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots" /><link rel="EditURI" type="application/rsd+xml" title="RSD" href="https://youlookfab.com/welookfab/xmlrpc.php?rsd" />
+		<link rel="shortcut icon" href="https://youlookfab.com/fab-theme/youlookfab7.5/images/favicon.ico?v=?v=youlookfab7.5-1234" type="image/x-icon" />
+		<link rel="apple-touch-icon" href="https://youlookfab.com/fab-theme/youlookfab7.5/images/touch-icon-180x180.png?v=?v=youlookfab7.5-1234">
+		<meta name="apple-mobile-web-app-title" content="YouLookFab">
+		
+		<link rel="stylesheet" href="https://youlookfab.com/fab-theme/youlookfab7.5/styles/css/forum.css?v=youlookfab7.5-1234">		
+					<meta name="description" content="Angie Challenge Day 1: FFBO (handknit sweater, jeans, combat boots)">	
+		
+				
+			<meta name="keywords" content="What I Wore, fashion, style, trends, what to wear, keep or return, outfits, discussion">
+					
+				
+			<meta name = "pinterest" content = "nopin" description = "Sorry, user photos can't be pinned" />
+				
+					
+				<script src="https://youlookfab.com/fab-theme/youlookfab7.5/scripts/lib/modernizr/modernizr-2.6.2.min.js"></script>
+				</head>
+		<body class=" forum topic no-background logged-out">
+			
+								
+			<!--[if lt IE 8]>
+      	<div class="site-error">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">activate Google Chrome Frame</a> to improve your experience.</div>
+			<![endif]-->
+			<noscript>
+				<div class="site-error">
+					Please <a href="http://enable-javascript.com/" target="_blank">enable Javascript</a> in your browser to get the full YLF experience.
+				</div>
+			</noscript>
+		
+									
+								
+
+				
+					<div id="container">
+					
+						<div id="header">
+									<div id="titlebar">
+			<div class="stretchy-content-area">
+						<table class="titlebar-nav">
+			<tr>
+				<td class="blog title-tab">
+					<a href="https://youlookfab.com/">
+						<span aria-hidden="true" class="icon icon-blog"></span>
+						<span class="tab-text">Blog</span>
+					</a>
+				</td>
+				<td class="forum title-tab">
+					<a href="https://youlookfab.com/welookfab/">
+						<span aria-hidden="true" class="icon icon-forum"></span>
+						<span class="tab-text">Forum</span>
+					</a>
+				</td>
+									<td class="finds title-tab">
+						<a href="https://youlookfab.com/finds/">
+							<span aria-hidden="true" class="icon icon-finds"></span>
+							<span class="tab-text">Finds</span>
+						</a>
+					</td>
+							</tr>
+		</table>
+		<div class="titlebar-right">
+							<div class="titlebar-search">
+							<form action="https://youlookfab.com/search/" id="cse-search-box" title="Search the Blog">
+		  <div>
+		    <input type="text" name="t" size="30" />
+		    <input type="hidden" name="p" value="forum"  />
+		    <input type="submit" value="&#xe012;" title="Search" />
+		  </div>
+		</form>
+						</div>
+						
+	<div class="modal-popup click-popup login-button fg-content">
+				
+		<div class="open-popup"><span  class = "titlebar-login" >Log In</span></div>
+		<div class="popup-background" style="display: none;"> 			<div class="popup-window">
+				<div class="popup-arrow"></div>
+				<div class="popup-inner">
+					<div class="popup-content">
+								<div class="popup-header">
+			<h1 class="big-logo"><a href="https://youlookfab.com"></a></h1>
+		</div>
+			
+	
+	<form class="login" name="login-form" action="https://youlookfab.com/login/" method="post">
+		
+					<label for="log">Username</label>
+			  <input type="text" name="log" placeholder="Username">
+		
+					<label for="pwd">Password</label>
+		    <input type="password" name="pwd" placeholder="Password">
+
+		<label class="remember">
+			<input name="rememberme" type="checkbox" class="rememberme" value="forever" />
+			Remember Me		</label>
+
+		<input type="submit" name="wp-submit" class="wp-submit" value="Log In" />
+
+		<div class="clear"></div>
+	
+		<input type="hidden" name="redirect_to" value="/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots" />		
+	</form>
+
+		
+	<div class="popup-footer signup">	
+		<p class="fg-explanation">Not a member? <a href="https://youlookfab.com/signup/">Sign up</a> to chat about style and share outfits with a friendly community.</p>		
+	</div>
+	
+						</div>
+											<div class="close-popup">&times;</div>
+									</div>
+			</div>
+			<div class="clear"></div>
+		</div>
+			</div>
+
+	 
+		</div>
+						<div class="clear"></div>
+			</div>
+		</div>
+											
+		<div id="masthead" class="body-part">
+			<div class="content-area">
+				<div   ><h1  class = "small-logo" ><a     href="https://youlookfab.com"   ><div class="for-subscriber" title="Thank you for being a Patron"><span aria-hidden="true" class="icon icon-heart"></span></div></a></h1></div>				<div class="clear"></div>
+			</div>
+		</div>
+								</div>
+
+						<div id="main" class="body-part">
+						
+								
+		<div id="menubar">
+			<div class="stretchy-content-area">
+					
+
+		<div class="menubar menu-left">
+									
+			<div class="menu-selector">
+				<a class="latest " href="https://youlookfab.com/welookfab/">
+					<span aria-hidden="true" class="icon icon-home"></span>				</a>
+				<a class="last urgent " href="https://youlookfab.com/welookfab/forum/realtime">Urgent</a>
+			</div>
+
+						
+		</div>
+
+		
+						<div class="clear"></div>
+			</div>
+			<div class="clear"></div>
+		</div>
+				
+							<div id="page">
+								
+						
+<section class="post top-post">
+	<div class="content-area">
+
+		
+			<div class="right-column content-column sidebar">
+
+									
+		<div class="content-block">					
+				
+		<div id="categories">
+			<h3>Category</h3>
+			<div class="category-selector">
+				<ul>
+					<li>
+						<a class="selected" href="https://youlookfab.com/welookfab/forum/what-you-wore-today">What I Wore</a>
+					</li>
+				</ul>
+			</div>
+		</div>
+				</div>
+		
+		<div class="content-block">					
+					</div>
+		
+		<div class="content-block">
+						<div class="sidebar-panel">
+				<p class="fg-post" align="center"><small>Product links on YLF sometimes contain affiliate codes. If you follow one of these links and make a purchase, YLF might earn a commission. <a href="/backstage/about/how-we-make-money/">Read more about how YLF makes money.</a></small></p>
+			</div>
+				</div>
+							
+		
+			</div>
+	
+			
+		<article class="topic left-column content-column fg-content">
+						
+					<div class="welcome-header">
+			<div class="left-block-secondary content-block fg-excerpt">
+				<p><span class="heading">Welcome!</span> Read about what to wear and how to wear it on the YLF <a href="https://youlookfab.com/blog/">Blog</a>. Join the YLF <a href="https://youlookfab.com/welookfab/">Forum</a> to ask specific questions or just chat about fashion and personal style. Or check out the curated list of things we love in YLF <a href="https://youlookfab.com/finds/">Finds</a>.</p>
+			</div>
+
+			<div class="latest-features-small left-block-primary content-block">
+				<div class="snippet-feature-shortcuts">
+			<a class="latest-feature latest-outfit-feature" href="https://youlookfab.com/outfits" style="background: url(https://youlookfab.com/files/2016/12/madison-lights-thumb-front.jpg) center; background-size: cover;">
+								
+				<span class="feature-type">Outfits</span>
+			</a>
+
+			
+			<a class="latest-feature latest-ensemble-feature" href="https://youlookfab.com/ensembles" style="background: url(https://youlookfab.com/files/2018/03/tonal-column-thumb-front.jpg) center; background-size: cover;">
+								
+				<span class="feature-type">Ensembles</span>
+			</a>
+
+			
+			<a class="latest-feature latest-trend-feature" href="https://youlookfab.com/trends" style="background: url(https://youlookfab.com/files/2019/12/statement-headbands-thumb-front.jpg) center; background-size: cover;">
+								
+				<span class="feature-type">Trends</span>
+			</a>
+
+			
+			<a class="latest-feature latest-advice-feature" href="https://youlookfab.com/style-advice" style="background: url(https://youlookfab.com/files/2014/10/shirts-knitwear-thumb-front.jpg) center; background-size: cover;">
+								
+				<span class="feature-type">Advice</span>
+			</a>
+
+			<div class="clear"></div></div>			</div>
+			<div class="clear"></div>
+		</div>
+						<a id="post-2006057"></a>
+				<header class="topic-header left-block-secondary content-block">
+						
+		<h2 class="post-title">Angie Challenge Day 1: FFBO (handknit sweater, jeans, combat boots)</h2>
+				
+		<div class="topic-author responsive-user-info">
+				
+	<div class="user-info">
+	
+					<div class="user-avatar-small">
+				<a href="https://youlookfab.com/member/akabori/"><img data-original="https://youlookfab.com/upload/avatars/a8187e92d98a12b7d9c431902de3367e860-bpthumb.jpg" class="avatar-thumb lazy-image" id="" src="https://youlookfab.com/fab-theme/youlookfab7.5/images/lazy-placeholder.png"  /><noscript><img src="https://youlookfab.com/upload/avatars/a8187e92d98a12b7d9c431902de3367e860-bpthumb.jpg" class="avatar-thumb" id=""  title="Diana" alt="Diana" /></noscript></a>			</div>
+				
+				
+		<a class="user-name" href="https://youlookfab.com/member/akabori/">Diana</a>		
+				
+		
+			<div class="user-reputation">
+				<a class="level-text" href="https://youlookfab.com/backstage/member-profiles/member-levels">Veteran</a>	
+	<div class="reputation-badges-tiny">	
+	
+	<a class="badges" href="https://youlookfab.com/backstage/member-profiles/member-roles">
+	
+		<div class="badge pundit permanent-only" title="Pundit"></div>
+	
+	
+		<div class="badge writer " title="Writer"></div>
+	
+	
+		<div class="badge catalyst permanent-only" title="Catalyst"></div>
+	
+	
+		<div class="badge helper permanent-only" title="Helper"></div>
+	
+	
+		<div class="badge comedian permanent-only" title="Comedian"></div>
+	
+	
+		<div class="badge therapist permanent-only" title="Therapist"></div>
+	
+	
+		<div class="badge wiseowl permanent-only" title="Wiseowl"></div>
+	
+	
+		<div class="badge cheerleader permanent-only" title="Cheerleader"></div>
+	
+	
+		<div class="badge solver permanent-only" title="Solver"></div>
+	
+	
+		<div class="badge nomad permanent-only" title="Nomad"></div>
+	
+	
+		<div class="badge speedy permanent-only" title="Speedy"></div>
+	
+	
+		<div class="badge photog permanent-only" title="Photog"></div>
+	
+		
+	</a>
+	<div style="clear: both;"></div>
+	</div>
+	
+				</div>
+	
+						
+				
+		<div class="clear"></div>
+	</div>
+	
+				<div class="clear"></div>
+		</div>
+		
+						</header>
+
+				<div class="left-block-primary content-block">
+					<div class="post-content">
+								<div class="reply-text fg-post">
+						<p>Today's Angie Challenge entry is a FFBO, featuring my favorite sweater, perfect jeans, and combat boots.  </p>
+<p>Why this outfit is very "me":<br />--The handknit sweater obviously.  This cream cabled one is probably my favorite out of all of them; it's certainly the one I wear the most.<br />--Jeans.  I wear jeans several times a week, except in the summer.  They're perfect for my life and work.  Not to brag, but although I find it difficult to find jeans that fit, once I do get the perfect fitting ones I think they tend to look great on me.  These Rag and Bone jeans from NAS a couple of years ago are some of my favorites.<br />--black midcalf combat boots.  Possibly my favorite style of shoe. I love mid calf boots (still show some leg but tall enough that pants don't bag and bunch), but they are hard to find. These are new (to replace some old, dead ones that I tossed when I moved).  See find below.<br />--piles of handknit outerwear (hat, gloves, scarf).  I don't wear puffers but all this wool keeps me plenty warm!  </p>
+<p>Bonus outfit (#5) is from last week that I never posted.  It features the same sweater with crazy Liberty print teal pants and teal combat boots.    Teal is my favorite color and I love crazy pants and Liberty prints in particular.  Unfortunately I think these Liberty jeans are on their last legs as the material is wearing very thin in some places.   <span aria-hidden="true" class="emoticon emoticon-sad icon-emoticon-sad "></span> 
+</p>
+		</div>		
+				<div class="post-image-uploads">
+							<div class="post-images invisible-images">
+					<p><strong>This post has 5 photos</strong>. Photos uploaded by this member are only visible to other logged in members.</p>
+
+					<p>If you aren't a member, but would like to participate, please consider <a href="https://youlookfab.com/signup/">signing up</a>. It only takes a minute and we'd love to have you.</p>
+				</div>
+						</div>
+		<div  class = "finds-group-container finds-product-card-group finds-group-card-medium" ><div class="finds-loading"><div class="spinner"></div></div><div class="finds-group finds-group-loading">		<div class="finds-item " id="109373">
+					<div class="finds-item-content">
+			<div class="finds-product finds-product-card  noncollected finds-stage-1 finds-product-109373 collector-product" id="" data-product-id="109373">		
+		<div class="finds-product-image">
+			<a class="finds-product-link" href="https://www.amazon.com/dp/B079QDVVYM"  onclick="clicky.log('http://109373.youlookfab.attachments.find','Womens Tall Crave Boot');" target="_blank">
+				<img class="product-image" data-original="https://youlookfab.com/upload/products/d5c58d88d6eb0321fcee98abc0ac5e6b871-mini.jpg" src="https://youlookfab.com/upload/products/d5c58d88d6eb0321fcee98abc0ac5e6b871-place.png">
+				<div class="finds-product-link-overlay"></div>
+								
+				
+		<div class="product-text-overlay-outer">
+			<div class="product-text-overlay-inner">
+				<div class="product-text">
+					<div  class = "product-store" >Amazon</div><div  class = "not-small product-title" >Naot Footwear Women's Tall Crave Boot</div>				</div>
+			</div>
+		</div>
+		
+					</a>
+			
+								
+							<a class="finds-product-info-link" target="_blank" href="https://youlookfab.com/finds/item/?product=109373">
+					<span aria-hidden="true" class="icon icon-info"></span>				</a>
+				<div class="finds-product-info">
+					<span aria-hidden="true" class="icon icon-info"></span>					<span class="description-text"><span class="not-small">View </span>Info</span>
+				</div>
+						
+							<div class="finds-product-picked ">
+					<span aria-hidden="true" class="icon icon-checkmark"></span><span class="description-text not-small">Top Pick</span>
+				</div>
+						
+						
+								<div class="finds-collect-count">
+						<div data-id="109373">
+							<span class="button-text"><span  class = "finds-number-count number-count description-text" >4</span><span aria-hidden="true" class="icon icon-heart"></span></span>
+						</div>
+					</div>
+							</div>
+		
+		</div>		</div>
+				</div>
+		<div  class = "clear" ></div></div></div>		
+		<div class="post-meta fg-meta">
+					<div class="post-time">
+			<a href="https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006057">
+				<span aria-hidden="true" class="icon icon-time"></span> 11 months ago			</a>
+					</div>
+			
+			<div class="clear"></div>
+		</div>
+		
+							</div>
+
+					<div class="topic-info fg-meta">
+								
+		<div class="topic-category">
+			<span aria-hidden="true" class="icon icon-category"></span>
+			<a     href="https://youlookfab.com/welookfab/forum/what-you-wore-today"   >What I Wore</a>		</div>
+		
+			
+			<div class="topic-activity">
+					
+				<p class="fg-comment-count"><span aria-hidden="true" class="icon icon-comments"></span> 21 <span class="comment-units">replies</span></p>
+				<span aria-hidden="true" class="icon icon-comment"></span>	<a     href="https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006846"   >Latest reply</a> was from Diana		
+			</div>
+	
+									<div class="clear"></div>
+					</div>
+										
+				</div>
+				
+				<footer class="topic-footer left-block-secondary content-block">
+									</footer>
+
+				<div style="clear: both;"></div>	
+	
+						</article>
+	
+		<div id="comments" class="replies left-column content-column fg-content">
+					<a id="post-2006062"></a>
+		<div id="position-2" class="reply" >
+
+			<div class="reply-author responsive-user-info responsive-user-info left-block-secondary content-block">
+					
+	<div class="user-info">
+	
+					<div class="user-avatar-small">
+				<a href="https://youlookfab.com/member/susanolding/"><img data-original="https://youlookfab.com/upload/avatars/5ce552358f9f8d0ec96b330d65738646958-bpthumb.jpg" class="avatar-thumb lazy-image" id="" src="https://youlookfab.com/fab-theme/youlookfab7.5/images/lazy-placeholder.png"  /><noscript><img src="https://youlookfab.com/upload/avatars/5ce552358f9f8d0ec96b330d65738646958-bpthumb.jpg" class="avatar-thumb" id=""  title="Suz" alt="Suz" /></noscript></a>			</div>
+				
+				
+		<a class="user-name" href="https://youlookfab.com/member/susanolding/">Suz</a>		
+				<div class="user-website">
+			<span class="website">(<a href="http://www.susanolding.com" rel="external nofollow">website</a>)</span>
+		</div>
+				
+		
+			<div class="user-reputation">
+				<a class="level-text" href="https://youlookfab.com/backstage/member-profiles/member-levels">Veteran</a>	
+	<div class="reputation-badges-tiny">	
+	
+	<a class="badges" href="https://youlookfab.com/backstage/member-profiles/member-roles">
+	
+		<div class="badge pundit " title="Pundit"></div>
+	
+	
+		<div class="badge writer " title="Writer"></div>
+	
+	
+		<div class="badge catalyst " title="Catalyst"></div>
+	
+	
+		<div class="badge helper permanent-only" title="Helper"></div>
+	
+	
+		<div class="badge comedian permanent-only" title="Comedian"></div>
+	
+	
+		<div class="badge therapist " title="Therapist"></div>
+	
+	
+		<div class="badge wiseowl " title="Wiseowl"></div>
+	
+	
+		<div class="badge cheerleader " title="Cheerleader"></div>
+	
+	
+		<div class="badge solver " title="Solver"></div>
+	
+	
+		<div class="badge nomad permanent-only" title="Nomad"></div>
+	
+	
+		<div class="badge speedy permanent-only" title="Speedy"></div>
+	
+	
+		<div class="badge photog permanent-only" title="Photog"></div>
+	
+		
+	</a>
+	<div style="clear: both;"></div>
+	</div>
+	
+				</div>
+	
+						
+				
+		<div class="clear"></div>
+	</div>
+	
+				</div>
+
+			<div class="reply-content left-block-primary content-block">
+						<div class="reply-text fg-post">
+						<p><b>Diana</b>, you look amazing. SOOOOO cozy all bundled up. Of course your first "me" outfit had to include one of your beautiful hand knits! That sweater is so texturally rich. Love both outfits on you. 
+</p>
+		</div>		
+				<div class="post-image-uploads">
+					</div>
+				
+		<div class="post-meta fg-meta">
+					<div class="post-time">
+			<a href="https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006062">
+				<span aria-hidden="true" class="icon icon-time"></span> 11 months ago			</a>
+					</div>
+			
+			<div class="clear"></div>
+		</div>
+		
+					</div>
+
+			<div class="clear"></div>	
+
+		</div>
+
+				<a id="post-2006063"></a>
+		<div id="position-3" class="reply" >
+
+			<div class="reply-author responsive-user-info responsive-user-info left-block-secondary content-block">
+					
+	<div class="user-info">
+	
+					<div class="user-avatar-small">
+				<a href="https://youlookfab.com/member/kathy11/"><img data-original="https://youlookfab.com/upload/avatars/5213198b625680394ff100e93bbab8b6849-bpthumb.jpg" class="avatar-thumb lazy-image" id="" src="https://youlookfab.com/fab-theme/youlookfab7.5/images/lazy-placeholder.png"  /><noscript><img src="https://youlookfab.com/upload/avatars/5213198b625680394ff100e93bbab8b6849-bpthumb.jpg" class="avatar-thumb" id=""  title="Cardiff girl" alt="Cardiff girl" /></noscript></a>			</div>
+				
+				
+		<a class="user-name" href="https://youlookfab.com/member/kathy11/">Cardiff girl</a>		
+				
+		
+			<div class="user-reputation">
+				<a class="level-text" href="https://youlookfab.com/backstage/member-profiles/member-levels">Veteran</a>	
+	<div class="reputation-badges-tiny">	
+	
+	<a class="badges" href="https://youlookfab.com/backstage/member-profiles/member-roles">
+	
+		<div class="badge pundit permanent-only" title="Pundit"></div>
+	
+	
+		<div class="badge catalyst permanent-only" title="Catalyst"></div>
+	
+	
+		<div class="badge helper " title="Helper"></div>
+	
+	
+		<div class="badge comedian " title="Comedian"></div>
+	
+	
+		<div class="badge therapist " title="Therapist"></div>
+	
+	
+		<div class="badge wiseowl " title="Wiseowl"></div>
+	
+	
+		<div class="badge cheerleader " title="Cheerleader"></div>
+	
+	
+		<div class="badge solver " title="Solver"></div>
+	
+		
+	</a>
+	<div style="clear: both;"></div>
+	</div>
+	
+				</div>
+	
+						
+				
+		<div class="clear"></div>
+	</div>
+	
+				</div>
+
+			<div class="reply-content left-block-primary content-block">
+						<div class="reply-text fg-post">
+						<p>You look great,l love those boots and as always your handknits are impressive.
+</p>
+		</div>		
+				<div class="post-image-uploads">
+					</div>
+				
+		<div class="post-meta fg-meta">
+					<div class="post-time">
+			<a href="https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006063">
+				<span aria-hidden="true" class="icon icon-time"></span> 11 months ago			</a>
+					</div>
+			
+			<div class="clear"></div>
+		</div>
+		
+					</div>
+
+			<div class="clear"></div>	
+
+		</div>
+
+				<a id="post-2006064"></a>
+		<div id="position-4" class="reply" >
+
+			<div class="reply-author responsive-user-info responsive-user-info left-block-secondary content-block">
+					
+	<div class="user-info">
+	
+					<div class="user-avatar-small">
+				<a href="https://youlookfab.com/member/jdrozd/"><img data-original="https://youlookfab.com/upload/avatars/9ec947ec039918278ae8a2369c775278374-bpthumb.jpg" class="avatar-thumb lazy-image" id="" src="https://youlookfab.com/fab-theme/youlookfab7.5/images/lazy-placeholder.png"  /><noscript><img src="https://youlookfab.com/upload/avatars/9ec947ec039918278ae8a2369c775278374-bpthumb.jpg" class="avatar-thumb" id=""  title="JAileen" alt="JAileen" /></noscript></a>			</div>
+				
+				
+		<a class="user-name" href="https://youlookfab.com/member/jdrozd/">JAileen</a>		
+				
+		
+			<div class="user-reputation">
+				<a class="level-text" href="https://youlookfab.com/backstage/member-profiles/member-levels">Veteran</a>	
+	<div class="reputation-badges-tiny">	
+	
+	<a class="badges" href="https://youlookfab.com/backstage/member-profiles/member-roles">
+	
+		<div class="badge pundit permanent-only" title="Pundit"></div>
+	
+	
+		<div class="badge catalyst " title="Catalyst"></div>
+	
+	
+		<div class="badge helper permanent-only" title="Helper"></div>
+	
+	
+		<div class="badge comedian permanent-only" title="Comedian"></div>
+	
+	
+		<div class="badge therapist " title="Therapist"></div>
+	
+	
+		<div class="badge wiseowl " title="Wiseowl"></div>
+	
+	
+		<div class="badge cheerleader " title="Cheerleader"></div>
+	
+	
+		<div class="badge solver " title="Solver"></div>
+	
+	
+		<div class="badge photog " title="Photog"></div>
+	
+		
+	</a>
+	<div style="clear: both;"></div>
+	</div>
+	
+				</div>
+	
+						
+				
+		<div class="clear"></div>
+	</div>
+	
+				</div>
+
+			<div class="reply-content left-block-primary content-block">
+						<div class="reply-text fg-post">
+						<p>Yes, this is really you.  Beautiful sweater.  Your boots are interesting.  Oh - Naot - I love their sandals.  I’d love to get a better view of your gloves.
+</p>
+		</div>		
+				<div class="post-image-uploads">
+					</div>
+				
+		<div class="post-meta fg-meta">
+					<div class="post-time">
+			<a href="https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006064">
+				<span aria-hidden="true" class="icon icon-time"></span> 11 months ago			</a>
+					</div>
+			
+			<div class="clear"></div>
+		</div>
+		
+					</div>
+
+			<div class="clear"></div>	
+
+		</div>
+
+				<a id="post-2006073"></a>
+		<div id="position-5" class="reply" >
+
+			<div class="reply-author responsive-user-info responsive-user-info left-block-secondary content-block">
+					
+	<div class="user-info">
+	
+					<div class="user-avatar-small">
+				<a href="https://youlookfab.com/member/akabori/"><img data-original="https://youlookfab.com/upload/avatars/a8187e92d98a12b7d9c431902de3367e860-bpthumb.jpg" class="avatar-thumb lazy-image" id="" src="https://youlookfab.com/fab-theme/youlookfab7.5/images/lazy-placeholder.png"  /><noscript><img src="https://youlookfab.com/upload/avatars/a8187e92d98a12b7d9c431902de3367e860-bpthumb.jpg" class="avatar-thumb" id=""  title="Diana" alt="Diana" /></noscript></a>			</div>
+				
+				
+		<a class="user-name" href="https://youlookfab.com/member/akabori/">Diana</a>		
+				
+		
+			<div class="user-reputation">
+				<a class="level-text" href="https://youlookfab.com/backstage/member-profiles/member-levels">Veteran</a>	
+	<div class="reputation-badges-tiny">	
+	
+	<a class="badges" href="https://youlookfab.com/backstage/member-profiles/member-roles">
+	
+		<div class="badge pundit permanent-only" title="Pundit"></div>
+	
+	
+		<div class="badge writer " title="Writer"></div>
+	
+	
+		<div class="badge catalyst permanent-only" title="Catalyst"></div>
+	
+	
+		<div class="badge helper permanent-only" title="Helper"></div>
+	
+	
+		<div class="badge comedian permanent-only" title="Comedian"></div>
+	
+	
+		<div class="badge therapist permanent-only" title="Therapist"></div>
+	
+	
+		<div class="badge wiseowl permanent-only" title="Wiseowl"></div>
+	
+	
+		<div class="badge cheerleader permanent-only" title="Cheerleader"></div>
+	
+	
+		<div class="badge solver permanent-only" title="Solver"></div>
+	
+	
+		<div class="badge nomad permanent-only" title="Nomad"></div>
+	
+	
+		<div class="badge speedy permanent-only" title="Speedy"></div>
+	
+	
+		<div class="badge photog permanent-only" title="Photog"></div>
+	
+		
+	</a>
+	<div style="clear: both;"></div>
+	</div>
+	
+				</div>
+	
+						
+				
+		<div class="clear"></div>
+	</div>
+	
+				</div>
+
+			<div class="reply-content left-block-primary content-block">
+						<div class="reply-text fg-post">
+						<p>Ha, Jaileen, I do love Naot sandals too but the boots are actually Taos.  I don't know why the find is saying Naot!  
+</p>
+		</div>		
+				<div class="post-image-uploads">
+					</div>
+				
+		<div class="post-meta fg-meta">
+					<div class="post-time">
+			<a href="https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006073">
+				<span aria-hidden="true" class="icon icon-time"></span> 11 months ago			</a>
+					</div>
+			
+			<div class="clear"></div>
+		</div>
+		
+					</div>
+
+			<div class="clear"></div>	
+
+		</div>
+
+				<a id="post-2006079"></a>
+		<div id="position-6" class="reply" >
+
+			<div class="reply-author responsive-user-info responsive-user-info left-block-secondary content-block">
+					
+	<div class="user-info">
+	
+					<div class="user-avatar-small">
+				<a href="https://youlookfab.com/member/akabori/"><img data-original="https://youlookfab.com/upload/avatars/a8187e92d98a12b7d9c431902de3367e860-bpthumb.jpg" class="avatar-thumb lazy-image" id="" src="https://youlookfab.com/fab-theme/youlookfab7.5/images/lazy-placeholder.png"  /><noscript><img src="https://youlookfab.com/upload/avatars/a8187e92d98a12b7d9c431902de3367e860-bpthumb.jpg" class="avatar-thumb" id=""  title="Diana" alt="Diana" /></noscript></a>			</div>
+				
+				
+		<a class="user-name" href="https://youlookfab.com/member/akabori/">Diana</a>		
+				
+		
+			<div class="user-reputation">
+				<a class="level-text" href="https://youlookfab.com/backstage/member-profiles/member-levels">Veteran</a>	
+	<div class="reputation-badges-tiny">	
+	
+	<a class="badges" href="https://youlookfab.com/backstage/member-profiles/member-roles">
+	
+		<div class="badge pundit permanent-only" title="Pundit"></div>
+	
+	
+		<div class="badge writer " title="Writer"></div>
+	
+	
+		<div class="badge catalyst permanent-only" title="Catalyst"></div>
+	
+	
+		<div class="badge helper permanent-only" title="Helper"></div>
+	
+	
+		<div class="badge comedian permanent-only" title="Comedian"></div>
+	
+	
+		<div class="badge therapist permanent-only" title="Therapist"></div>
+	
+	
+		<div class="badge wiseowl permanent-only" title="Wiseowl"></div>
+	
+	
+		<div class="badge cheerleader permanent-only" title="Cheerleader"></div>
+	
+	
+		<div class="badge solver permanent-only" title="Solver"></div>
+	
+	
+		<div class="badge nomad permanent-only" title="Nomad"></div>
+	
+	
+		<div class="badge speedy permanent-only" title="Speedy"></div>
+	
+	
+		<div class="badge photog permanent-only" title="Photog"></div>
+	
+		
+	</a>
+	<div style="clear: both;"></div>
+	</div>
+	
+				</div>
+	
+						
+				
+		<div class="clear"></div>
+	</div>
+	
+				</div>
+
+			<div class="reply-content left-block-primary content-block">
+						<div class="reply-text fg-post">
+						<p>Here are the mittens. They’re more green irl. I knit them ages ago. They are not really the most comfortable as they are sliiightly too small (and being stranded don’t stretch as much as normal knitting) so I don’t wear them super often, but I still like them.<br />
+The pattern is called Vinterblomster if you’re interested.
+</p>
+		</div>		
+				<div class="post-image-uploads">
+							<div class="post-images invisible-images">
+					<p><strong>This post has 1 photo</strong>. Photos uploaded by this member are only visible to other logged in members.</p>
+
+					<p>If you aren't a member, but would like to participate, please consider <a href="https://youlookfab.com/signup/">signing up</a>. It only takes a minute and we'd love to have you.</p>
+				</div>
+						</div>
+				
+		<div class="post-meta fg-meta">
+					<div class="post-time">
+			<a href="https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006079">
+				<span aria-hidden="true" class="icon icon-time"></span> 11 months ago			</a>
+					</div>
+			
+			<div class="clear"></div>
+		</div>
+		
+					</div>
+
+			<div class="clear"></div>	
+
+		</div>
+
+				<a id="post-2006082"></a>
+		<div id="position-7" class="reply" >
+
+			<div class="reply-author responsive-user-info responsive-user-info left-block-secondary content-block">
+					
+	<div class="user-info">
+	
+					<div class="user-avatar-small">
+				<a href="https://youlookfab.com/member/taylor/"><img data-original="https://youlookfab.com/upload/avatars/18462007_0425codynatalie0121869a81ad52f815dee6fc46d64d2cc095-bpthumb.jpg" class="avatar-thumb lazy-image" id="" src="https://youlookfab.com/fab-theme/youlookfab7.5/images/lazy-placeholder.png"  /><noscript><img src="https://youlookfab.com/upload/avatars/18462007_0425codynatalie0121869a81ad52f815dee6fc46d64d2cc095-bpthumb.jpg" class="avatar-thumb" id=""  title="taylor" alt="taylor" /></noscript></a>			</div>
+				
+				
+		<a class="user-name" href="https://youlookfab.com/member/taylor/">taylor</a>		
+				
+		
+			<div class="user-reputation">
+				<a class="level-text" href="https://youlookfab.com/backstage/member-profiles/member-levels">Veteran</a>	
+	<div class="reputation-badges-tiny">	
+	
+	<a class="badges" href="https://youlookfab.com/backstage/member-profiles/member-roles">
+	
+		<div class="badge pundit permanent-only" title="Pundit"></div>
+	
+	
+		<div class="badge catalyst permanent-only" title="Catalyst"></div>
+	
+	
+		<div class="badge helper permanent-only" title="Helper"></div>
+	
+	
+		<div class="badge comedian permanent-only" title="Comedian"></div>
+	
+	
+		<div class="badge therapist " title="Therapist"></div>
+	
+	
+		<div class="badge wiseowl " title="Wiseowl"></div>
+	
+	
+		<div class="badge cheerleader " title="Cheerleader"></div>
+	
+	
+		<div class="badge solver " title="Solver"></div>
+	
+		
+	</a>
+	<div style="clear: both;"></div>
+	</div>
+	
+				</div>
+	
+						
+				
+		<div class="clear"></div>
+	</div>
+	
+				</div>
+
+			<div class="reply-content left-block-primary content-block">
+						<div class="reply-text fg-post">
+						<p>FFBO  with our favorite items are really what gets us through...<br />
+YLF...as always
+</p>
+		</div>		
+				<div class="post-image-uploads">
+					</div>
+				
+		<div class="post-meta fg-meta">
+					<div class="post-time">
+			<a href="https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006082">
+				<span aria-hidden="true" class="icon icon-time"></span> 11 months ago			</a>
+					</div>
+			
+			<div class="clear"></div>
+		</div>
+		
+					</div>
+
+			<div class="clear"></div>	
+
+		</div>
+
+				<a id="post-2006107"></a>
+		<div id="position-8" class="reply" >
+
+			<div class="reply-author responsive-user-info responsive-user-info left-block-secondary content-block">
+					
+	<div class="user-info">
+	
+					<div class="user-avatar-small">
+				<a href="https://youlookfab.com/member/joy/"><img data-original="https://youlookfab.com/upload/avatars/8fa77afa8e20eb9ef69994a820666a97475-bpthumb.jpg" class="avatar-thumb lazy-image" id="" src="https://youlookfab.com/fab-theme/youlookfab7.5/images/lazy-placeholder.png"  /><noscript><img src="https://youlookfab.com/upload/avatars/8fa77afa8e20eb9ef69994a820666a97475-bpthumb.jpg" class="avatar-thumb" id=""  title="Joy" alt="Joy" /></noscript></a>			</div>
+				
+				
+		<a class="user-name" href="https://youlookfab.com/member/joy/">Joy</a>		
+				
+		
+			<div class="user-reputation">
+				<a class="level-text" href="https://youlookfab.com/backstage/member-profiles/member-levels">Veteran</a>	
+	<div class="reputation-badges-tiny">	
+	
+	<a class="badges" href="https://youlookfab.com/backstage/member-profiles/member-roles">
+	
+		<div class="badge pundit permanent-only" title="Pundit"></div>
+	
+	
+		<div class="badge writer " title="Writer"></div>
+	
+	
+		<div class="badge catalyst permanent-only" title="Catalyst"></div>
+	
+	
+		<div class="badge helper permanent-only" title="Helper"></div>
+	
+	
+		<div class="badge comedian permanent-only" title="Comedian"></div>
+	
+	
+		<div class="badge therapist " title="Therapist"></div>
+	
+	
+		<div class="badge wiseowl " title="Wiseowl"></div>
+	
+	
+		<div class="badge cheerleader " title="Cheerleader"></div>
+	
+	
+		<div class="badge solver " title="Solver"></div>
+	
+	
+		<div class="badge critic permanent-only" title="Critic"></div>
+	
+	
+		<div class="badge nomad permanent-only" title="Nomad"></div>
+	
+	
+		<div class="badge speedy permanent-only" title="Speedy"></div>
+	
+	
+		<div class="badge photog permanent-only" title="Photog"></div>
+	
+		
+	</a>
+	<div style="clear: both;"></div>
+	</div>
+	
+				</div>
+	
+						
+				
+		<div class="clear"></div>
+	</div>
+	
+				</div>
+
+			<div class="reply-content left-block-primary content-block">
+						<div class="reply-text fg-post">
+						<p>Gorgeous.  It warms me just to see your beautiful hand knits.
+</p>
+		</div>		
+				<div class="post-image-uploads">
+					</div>
+				
+		<div class="post-meta fg-meta">
+					<div class="post-time">
+			<a href="https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006107">
+				<span aria-hidden="true" class="icon icon-time"></span> 11 months ago			</a>
+					</div>
+			
+			<div class="clear"></div>
+		</div>
+		
+					</div>
+
+			<div class="clear"></div>	
+
+		</div>
+
+				<a id="post-2006111"></a>
+		<div id="position-9" class="reply" >
+
+			<div class="reply-author responsive-user-info responsive-user-info left-block-secondary content-block">
+					
+	<div class="user-info">
+	
+					<div class="user-avatar-small">
+				<a href="https://youlookfab.com/member/barbara18/"><img data-original="https://youlookfab.com/fab-theme/youlookfab7.5/avatars/default7-bpthumb.jpg" class="avatar-thumb lazy-image" id="" src="https://youlookfab.com/fab-theme/youlookfab7.5/images/lazy-placeholder.png"  /><noscript><img src="https://youlookfab.com/fab-theme/youlookfab7.5/avatars/default7-bpthumb.jpg" class="avatar-thumb" id=""  title="Barbara Diane" alt="Barbara Diane" /></noscript></a>			</div>
+				
+				
+		<a class="user-name" href="https://youlookfab.com/member/barbara18/">Barbara Diane</a>		
+				
+		
+			<div class="user-reputation">
+				<a class="level-text" href="https://youlookfab.com/backstage/member-profiles/member-levels">Veteran</a>	
+	<div class="reputation-badges-tiny">	
+	
+	<a class="badges" href="https://youlookfab.com/backstage/member-profiles/member-roles">
+	
+		<div class="badge pundit permanent-only" title="Pundit"></div>
+	
+	
+		<div class="badge helper permanent-only" title="Helper"></div>
+	
+	
+		<div class="badge comedian permanent-only" title="Comedian"></div>
+	
+	
+		<div class="badge therapist " title="Therapist"></div>
+	
+	
+		<div class="badge wiseowl " title="Wiseowl"></div>
+	
+	
+		<div class="badge cheerleader " title="Cheerleader"></div>
+	
+	
+		<div class="badge solver permanent-only" title="Solver"></div>
+	
+		
+	</a>
+	<div style="clear: both;"></div>
+	</div>
+	
+				</div>
+	
+						
+				
+		<div class="clear"></div>
+	</div>
+	
+				</div>
+
+			<div class="reply-content left-block-primary content-block">
+						<div class="reply-text fg-post">
+						<p>I am so glad you share your hand knitted items with us. I love seeing them and am always amazed and impressed.
+</p>
+		</div>		
+				<div class="post-image-uploads">
+					</div>
+				
+		<div class="post-meta fg-meta">
+					<div class="post-time">
+			<a href="https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006111">
+				<span aria-hidden="true" class="icon icon-time"></span> 11 months ago			</a>
+					</div>
+			
+			<div class="clear"></div>
+		</div>
+		
+					</div>
+
+			<div class="clear"></div>	
+
+		</div>
+
+				<a id="post-2006120"></a>
+		<div id="position-10" class="reply" >
+
+			<div class="reply-author responsive-user-info responsive-user-info left-block-secondary content-block">
+					
+	<div class="user-info">
+	
+					<div class="user-avatar-small">
+				<a href="https://youlookfab.com/member/slavy/"><img data-original="https://youlookfab.com/upload/avatars/65370b3cfed6d8400d759c3e0c60f389093d-bpthumb.jpg" class="avatar-thumb lazy-image" id="" src="https://youlookfab.com/fab-theme/youlookfab7.5/images/lazy-placeholder.png"  /><noscript><img src="https://youlookfab.com/upload/avatars/65370b3cfed6d8400d759c3e0c60f389093d-bpthumb.jpg" class="avatar-thumb" id=""  title="Sara L." alt="Sara L." /></noscript></a>			</div>
+				
+				
+		<a class="user-name" href="https://youlookfab.com/member/slavy/">Sara L.</a>		
+				
+		
+			<div class="user-reputation">
+				<a class="level-text" href="https://youlookfab.com/backstage/member-profiles/member-levels">Veteran</a>	
+	<div class="reputation-badges-tiny">	
+	
+	<a class="badges" href="https://youlookfab.com/backstage/member-profiles/member-roles">
+	
+		<div class="badge pundit permanent-only" title="Pundit"></div>
+	
+	
+		<div class="badge catalyst permanent-only" title="Catalyst"></div>
+	
+	
+		<div class="badge helper permanent-only" title="Helper"></div>
+	
+	
+		<div class="badge comedian permanent-only" title="Comedian"></div>
+	
+	
+		<div class="badge therapist permanent-only" title="Therapist"></div>
+	
+	
+		<div class="badge wiseowl permanent-only" title="Wiseowl"></div>
+	
+	
+		<div class="badge cheerleader " title="Cheerleader"></div>
+	
+	
+		<div class="badge solver permanent-only" title="Solver"></div>
+	
+	
+		<div class="badge photog permanent-only" title="Photog"></div>
+	
+		
+	</a>
+	<div style="clear: both;"></div>
+	</div>
+	
+				</div>
+	
+						
+				
+		<div class="clear"></div>
+	</div>
+	
+				</div>
+
+			<div class="reply-content left-block-primary content-block">
+						<div class="reply-text fg-post">
+						<p>Great sweater!  I would wear it almost every day if I made something like that.  Your boots are perfect as well.
+</p>
+		</div>		
+				<div class="post-image-uploads">
+					</div>
+				
+		<div class="post-meta fg-meta">
+					<div class="post-time">
+			<a href="https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006120">
+				<span aria-hidden="true" class="icon icon-time"></span> 11 months ago			</a>
+					</div>
+			
+			<div class="clear"></div>
+		</div>
+		
+					</div>
+
+			<div class="clear"></div>	
+
+		</div>
+
+				<a id="post-2006131"></a>
+		<div id="position-11" class="reply" >
+
+			<div class="reply-author responsive-user-info responsive-user-info left-block-secondary content-block">
+					
+	<div class="user-info">
+	
+					<div class="user-avatar-small">
+				<a href="https://youlookfab.com/member/bonnieg101/"><img data-original="https://youlookfab.com/upload/avatars/03326707f2071c53af003d0ab7ea9a2b868-bpthumb.jpg" class="avatar-thumb lazy-image" id="" src="https://youlookfab.com/fab-theme/youlookfab7.5/images/lazy-placeholder.png"  /><noscript><img src="https://youlookfab.com/upload/avatars/03326707f2071c53af003d0ab7ea9a2b868-bpthumb.jpg" class="avatar-thumb" id=""  title="bonnie" alt="bonnie" /></noscript></a>			</div>
+				
+				
+		<a class="user-name" href="https://youlookfab.com/member/bonnieg101/">bonnie</a>		
+				
+		
+			<div class="user-reputation">
+				<a class="level-text" href="https://youlookfab.com/backstage/member-profiles/member-levels">Veteran</a>	
+	<div class="reputation-badges-tiny">	
+	
+	<a class="badges" href="https://youlookfab.com/backstage/member-profiles/member-roles">
+	
+		<div class="badge pundit permanent-only" title="Pundit"></div>
+	
+	
+		<div class="badge catalyst permanent-only" title="Catalyst"></div>
+	
+	
+		<div class="badge helper permanent-only" title="Helper"></div>
+	
+	
+		<div class="badge therapist " title="Therapist"></div>
+	
+	
+		<div class="badge wiseowl permanent-only" title="Wiseowl"></div>
+	
+	
+		<div class="badge cheerleader " title="Cheerleader"></div>
+	
+	
+		<div class="badge solver " title="Solver"></div>
+	
+	
+		<div class="badge photog permanent-only" title="Photog"></div>
+	
+		
+	</a>
+	<div style="clear: both;"></div>
+	</div>
+	
+				</div>
+	
+						
+				
+		<div class="clear"></div>
+	</div>
+	
+				</div>
+
+			<div class="reply-content left-block-primary content-block">
+						<div class="reply-text fg-post">
+						<p>Love all of your hand knits but this one may be my favorite, too. I'm still looking for my perfect jeans, 
+</p>
+		</div>		
+				<div class="post-image-uploads">
+					</div>
+				
+		<div class="post-meta fg-meta">
+					<div class="post-time">
+			<a href="https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006131">
+				<span aria-hidden="true" class="icon icon-time"></span> 11 months ago			</a>
+					</div>
+			
+			<div class="clear"></div>
+		</div>
+		
+					</div>
+
+			<div class="clear"></div>	
+
+		</div>
+
+				<a id="post-2006137"></a>
+		<div id="position-12" class="reply" >
+
+			<div class="reply-author responsive-user-info responsive-user-info left-block-secondary content-block">
+					
+	<div class="user-info">
+	
+					<div class="user-avatar-small">
+				<a href="https://youlookfab.com/member/angie/"><img data-original="https://youlookfab.com/upload/avatars/45d11da0c876e687e44845a5e6481c47703-bpthumb.jpg" class="avatar-thumb lazy-image" id="" src="https://youlookfab.com/fab-theme/youlookfab7.5/images/lazy-placeholder.png"  /><noscript><img src="https://youlookfab.com/upload/avatars/45d11da0c876e687e44845a5e6481c47703-bpthumb.jpg" class="avatar-thumb" id=""  title="Angie" alt="Angie" /></noscript></a>			</div>
+				
+				
+		<a class="user-name" href="https://youlookfab.com/member/angie/">Angie</a>		
+				<div class="user-website">
+			<span class="website">(<a href="http://youlookfab.com" rel="external nofollow">website</a>)</span>
+		</div>
+				
+		
+			<div class="user-reputation">
+				<a class="level-text" href="https://youlookfab.com/backstage/member-profiles/member-levels">Fashion Stylist</a>	
+	<div class="reputation-badges-tiny">	
+	
+	<a class="badges" href="https://youlookfab.com/backstage/member-profiles/member-roles">
+	
+		<div class="badge pundit " title="Pundit"></div>
+	
+	
+		<div class="badge writer " title="Writer"></div>
+	
+	
+		<div class="badge catalyst permanent-only" title="Catalyst"></div>
+	
+	
+		<div class="badge helper " title="Helper"></div>
+	
+	
+		<div class="badge comedian " title="Comedian"></div>
+	
+	
+		<div class="badge therapist " title="Therapist"></div>
+	
+	
+		<div class="badge wiseowl " title="Wiseowl"></div>
+	
+	
+		<div class="badge cheerleader " title="Cheerleader"></div>
+	
+	
+		<div class="badge solver " title="Solver"></div>
+	
+	
+		<div class="badge nomad permanent-only" title="Nomad"></div>
+	
+	
+		<div class="badge speedy permanent-only" title="Speedy"></div>
+	
+	
+		<div class="badge photog " title="Photog"></div>
+	
+		
+	</a>
+	<div style="clear: both;"></div>
+	</div>
+	
+				</div>
+	
+						
+				
+		<div class="clear"></div>
+	</div>
+	
+				</div>
+
+			<div class="reply-content left-block-primary content-block">
+						<div class="reply-text fg-post">
+						<p>KILLER</p>
+<p>All wrapped up in adorable textured hand knits is SOOOO <b>Diana.</b> And OF COURSE, Queen Teal had to wear a little teal....<b></b></p>
+		</div>		
+				<div class="post-image-uploads">
+					</div>
+				
+		<div class="post-meta fg-meta">
+					<div class="post-time">
+			<a href="https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006137">
+				<span aria-hidden="true" class="icon icon-time"></span> 11 months ago			</a>
+					</div>
+			
+			<div class="clear"></div>
+		</div>
+		
+					</div>
+
+			<div class="clear"></div>	
+
+		</div>
+
+				<a id="post-2006145"></a>
+		<div id="position-13" class="reply" >
+
+			<div class="reply-author responsive-user-info responsive-user-info left-block-secondary content-block">
+					
+	<div class="user-info">
+	
+					<div class="user-avatar-small">
+				<a href="https://youlookfab.com/member/wayvc3/"><img data-original="https://youlookfab.com/upload/avatars/d00a04066c3f4b8b521b60eb25e3ea20515-bpthumb.jpg" class="avatar-thumb lazy-image" id="" src="https://youlookfab.com/fab-theme/youlookfab7.5/images/lazy-placeholder.png"  /><noscript><img src="https://youlookfab.com/upload/avatars/d00a04066c3f4b8b521b60eb25e3ea20515-bpthumb.jpg" class="avatar-thumb" id=""  title="ChristelJ" alt="ChristelJ" /></noscript></a>			</div>
+				
+				
+		<a class="user-name" href="https://youlookfab.com/member/wayvc3/">ChristelJ</a>		
+				
+		
+			<div class="user-reputation">
+				<a class="level-text" href="https://youlookfab.com/backstage/member-profiles/member-levels">Veteran</a>	
+	<div class="reputation-badges-tiny">	
+	
+	<a class="badges" href="https://youlookfab.com/backstage/member-profiles/member-roles">
+	
+		<div class="badge therapist permanent-only" title="Therapist"></div>
+	
+	
+		<div class="badge wiseowl permanent-only" title="Wiseowl"></div>
+	
+	
+		<div class="badge cheerleader permanent-only" title="Cheerleader"></div>
+	
+		
+	</a>
+	<div style="clear: both;"></div>
+	</div>
+	
+				</div>
+	
+						
+				
+		<div class="clear"></div>
+	</div>
+	
+				</div>
+
+			<div class="reply-content left-block-primary content-block">
+						<div class="reply-text fg-post">
+						<p>That sweater is just marvelous. The jeans and boots look sleek and hip on you. The accessories are great too. Hooray for wool! I'm a fan of your creative style.</p>
+		</div>		
+				<div class="post-image-uploads">
+					</div>
+				
+		<div class="post-meta fg-meta">
+					<div class="post-time">
+			<a href="https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006145">
+				<span aria-hidden="true" class="icon icon-time"></span> 11 months ago			</a>
+					</div>
+			
+			<div class="clear"></div>
+		</div>
+		
+					</div>
+
+			<div class="clear"></div>	
+
+		</div>
+
+				<a id="post-2006155"></a>
+		<div id="position-14" class="reply" >
+
+			<div class="reply-author responsive-user-info responsive-user-info left-block-secondary content-block">
+					
+	<div class="user-info">
+	
+					<div class="user-avatar-small">
+				<a href="https://youlookfab.com/member/bellacville/"><img data-original="https://youlookfab.com/upload/avatars/8e0babd48f3c30e55bf3cd9a4d502cd0391-bpthumb.jpg" class="avatar-thumb lazy-image" id="" src="https://youlookfab.com/fab-theme/youlookfab7.5/images/lazy-placeholder.png"  /><noscript><img src="https://youlookfab.com/upload/avatars/8e0babd48f3c30e55bf3cd9a4d502cd0391-bpthumb.jpg" class="avatar-thumb" id=""  title="bella" alt="bella" /></noscript></a>			</div>
+				
+				
+		<a class="user-name" href="https://youlookfab.com/member/bellacville/">bella</a>		
+				<div class="user-website">
+			<span class="website">(<a href="http://www.bella-remixes.blogspot.com/" rel="external nofollow">website</a>)</span>
+		</div>
+				
+		
+			<div class="user-reputation">
+				<a class="level-text" href="https://youlookfab.com/backstage/member-profiles/member-levels">Veteran</a>	
+	<div class="reputation-badges-tiny">	
+	
+	<a class="badges" href="https://youlookfab.com/backstage/member-profiles/member-roles">
+	
+		<div class="badge pundit permanent-only" title="Pundit"></div>
+	
+	
+		<div class="badge catalyst permanent-only" title="Catalyst"></div>
+	
+	
+		<div class="badge helper permanent-only" title="Helper"></div>
+	
+	
+		<div class="badge therapist permanent-only" title="Therapist"></div>
+	
+	
+		<div class="badge wiseowl permanent-only" title="Wiseowl"></div>
+	
+	
+		<div class="badge cheerleader permanent-only" title="Cheerleader"></div>
+	
+	
+		<div class="badge solver permanent-only" title="Solver"></div>
+	
+	
+		<div class="badge photog permanent-only" title="Photog"></div>
+	
+		
+	</a>
+	<div style="clear: both;"></div>
+	</div>
+	
+				</div>
+	
+						
+				
+		<div class="clear"></div>
+	</div>
+	
+				</div>
+
+			<div class="reply-content left-block-primary content-block">
+						<div class="reply-text fg-post">
+						<p>Diane, you are absolutely right about midcalf boots. I've only purchased one this season, I think they are even better than knee lengths ones on my figure. Balances the hips nicely, but not too restrictive. I should have listened to you earlier.  <span aria-hidden="true" class="emoticon emoticon-smile icon-emoticon-smile "></span>  
+</p>
+		</div>		
+				<div class="post-image-uploads">
+					</div>
+				
+		<div class="post-meta fg-meta">
+					<div class="post-time">
+			<a href="https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006155">
+				<span aria-hidden="true" class="icon icon-time"></span> 11 months ago			</a>
+					</div>
+			
+			<div class="clear"></div>
+		</div>
+		
+					</div>
+
+			<div class="clear"></div>	
+
+		</div>
+
+				<a id="post-2006170"></a>
+		<div id="position-15" class="reply" >
+
+			<div class="reply-author responsive-user-info responsive-user-info left-block-secondary content-block">
+					
+	<div class="user-info">
+	
+					<div class="user-avatar-small">
+				<a href="https://youlookfab.com/member/jdrozd/"><img data-original="https://youlookfab.com/upload/avatars/9ec947ec039918278ae8a2369c775278374-bpthumb.jpg" class="avatar-thumb lazy-image" id="" src="https://youlookfab.com/fab-theme/youlookfab7.5/images/lazy-placeholder.png"  /><noscript><img src="https://youlookfab.com/upload/avatars/9ec947ec039918278ae8a2369c775278374-bpthumb.jpg" class="avatar-thumb" id=""  title="JAileen" alt="JAileen" /></noscript></a>			</div>
+				
+				
+		<a class="user-name" href="https://youlookfab.com/member/jdrozd/">JAileen</a>		
+				
+		
+			<div class="user-reputation">
+				<a class="level-text" href="https://youlookfab.com/backstage/member-profiles/member-levels">Veteran</a>	
+	<div class="reputation-badges-tiny">	
+	
+	<a class="badges" href="https://youlookfab.com/backstage/member-profiles/member-roles">
+	
+		<div class="badge pundit permanent-only" title="Pundit"></div>
+	
+	
+		<div class="badge catalyst " title="Catalyst"></div>
+	
+	
+		<div class="badge helper permanent-only" title="Helper"></div>
+	
+	
+		<div class="badge comedian permanent-only" title="Comedian"></div>
+	
+	
+		<div class="badge therapist " title="Therapist"></div>
+	
+	
+		<div class="badge wiseowl " title="Wiseowl"></div>
+	
+	
+		<div class="badge cheerleader " title="Cheerleader"></div>
+	
+	
+		<div class="badge solver " title="Solver"></div>
+	
+	
+		<div class="badge photog " title="Photog"></div>
+	
+		
+	</a>
+	<div style="clear: both;"></div>
+	</div>
+	
+				</div>
+	
+						
+				
+		<div class="clear"></div>
+	</div>
+	
+				</div>
+
+			<div class="reply-content left-block-primary content-block">
+						<div class="reply-text fg-post">
+						<p>Beautiful mittens, too.
+</p>
+		</div>		
+				<div class="post-image-uploads">
+					</div>
+				
+		<div class="post-meta fg-meta">
+					<div class="post-time">
+			<a href="https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006170">
+				<span aria-hidden="true" class="icon icon-time"></span> 11 months ago			</a>
+					</div>
+			
+			<div class="clear"></div>
+		</div>
+		
+					</div>
+
+			<div class="clear"></div>	
+
+		</div>
+
+				<a id="post-2006171"></a>
+		<div id="position-16" class="reply" >
+
+			<div class="reply-author responsive-user-info responsive-user-info left-block-secondary content-block">
+					
+	<div class="user-info">
+	
+					<div class="user-avatar-small">
+				<a href="https://youlookfab.com/member/rachylou/"><img data-original="https://youlookfab.com/upload/avatars/685738b49a5413253573bfd258a90d18b16f-bpthumb.jpg" class="avatar-thumb lazy-image" id="" src="https://youlookfab.com/fab-theme/youlookfab7.5/images/lazy-placeholder.png"  /><noscript><img src="https://youlookfab.com/upload/avatars/685738b49a5413253573bfd258a90d18b16f-bpthumb.jpg" class="avatar-thumb" id=""  title="rachylou" alt="rachylou" /></noscript></a>			</div>
+				
+				
+		<a class="user-name" href="https://youlookfab.com/member/rachylou/">rachylou</a>		
+				
+		
+			<div class="user-reputation">
+				<a class="level-text" href="https://youlookfab.com/backstage/member-profiles/member-levels">Veteran</a>	
+	<div class="reputation-badges-tiny">	
+	
+	<a class="badges" href="https://youlookfab.com/backstage/member-profiles/member-roles">
+	
+		<div class="badge pundit " title="Pundit"></div>
+	
+	
+		<div class="badge writer " title="Writer"></div>
+	
+	
+		<div class="badge catalyst " title="Catalyst"></div>
+	
+	
+		<div class="badge helper " title="Helper"></div>
+	
+	
+		<div class="badge comedian " title="Comedian"></div>
+	
+	
+		<div class="badge therapist " title="Therapist"></div>
+	
+	
+		<div class="badge wiseowl " title="Wiseowl"></div>
+	
+	
+		<div class="badge cheerleader " title="Cheerleader"></div>
+	
+	
+		<div class="badge solver " title="Solver"></div>
+	
+	
+		<div class="badge nomad permanent-only" title="Nomad"></div>
+	
+	
+		<div class="badge photog permanent-only" title="Photog"></div>
+	
+		
+	</a>
+	<div style="clear: both;"></div>
+	</div>
+	
+				</div>
+	
+						
+				
+		<div class="clear"></div>
+	</div>
+	
+				</div>
+
+			<div class="reply-content left-block-primary content-block">
+						<div class="reply-text fg-post">
+						<p>Love it! Total Diana  <span aria-hidden="true" class="emoticon emoticon-smile icon-emoticon-smile "></span> 
+</p>
+		</div>		
+				<div class="post-image-uploads">
+					</div>
+				
+		<div class="post-meta fg-meta">
+					<div class="post-time">
+			<a href="https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006171">
+				<span aria-hidden="true" class="icon icon-time"></span> 11 months ago			</a>
+					</div>
+			
+			<div class="clear"></div>
+		</div>
+		
+					</div>
+
+			<div class="clear"></div>	
+
+		</div>
+
+				<a id="post-2006225"></a>
+		<div id="position-17" class="reply" >
+
+			<div class="reply-author responsive-user-info responsive-user-info left-block-secondary content-block">
+					
+	<div class="user-info">
+	
+					<div class="user-avatar-small">
+				<a href="https://youlookfab.com/member/knowmymethods/"><img data-original="https://youlookfab.com/upload/avatars/cc3a0ced042ac8504c83d136fd076723867-bpthumb.jpg" class="avatar-thumb lazy-image" id="" src="https://youlookfab.com/fab-theme/youlookfab7.5/images/lazy-placeholder.png"  /><noscript><img src="https://youlookfab.com/upload/avatars/cc3a0ced042ac8504c83d136fd076723867-bpthumb.jpg" class="avatar-thumb" id=""  title="KMM" alt="KMM" /></noscript></a>			</div>
+				
+				
+		<a class="user-name" href="https://youlookfab.com/member/knowmymethods/">KMM</a>		
+				
+		
+			<div class="user-reputation">
+				<a class="level-text" href="https://youlookfab.com/backstage/member-profiles/member-levels">Active Member</a>			</div>
+	
+						
+				
+		<div class="clear"></div>
+	</div>
+	
+				</div>
+
+			<div class="reply-content left-block-primary content-block">
+						<div class="reply-text fg-post">
+						<p>I love your boots!  Also, you're an inspiration re: team wear for handknits.  I find that I keep mine tucked away for "special occasions" that never seem to arrive. Maybe I just need to pair mine with combat boots to get things rolling!</p>
+		</div>		
+				<div class="post-image-uploads">
+					</div>
+				
+		<div class="post-meta fg-meta">
+					<div class="post-time">
+			<a href="https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006225">
+				<span aria-hidden="true" class="icon icon-time"></span> 11 months ago			</a>
+					</div>
+			
+			<div class="clear"></div>
+		</div>
+		
+					</div>
+
+			<div class="clear"></div>	
+
+		</div>
+
+				<a id="post-2006232"></a>
+		<div id="position-18" class="reply" >
+
+			<div class="reply-author responsive-user-info responsive-user-info left-block-secondary content-block">
+					
+	<div class="user-info">
+	
+					<div class="user-avatar-small">
+				<a href="https://youlookfab.com/member/anchie/"><img data-original="https://youlookfab.com/upload/avatars/34c7ec61d3fe451ff6c94b8cb0d8c030974-bpthumb.jpg" class="avatar-thumb lazy-image" id="" src="https://youlookfab.com/fab-theme/youlookfab7.5/images/lazy-placeholder.png"  /><noscript><img src="https://youlookfab.com/upload/avatars/34c7ec61d3fe451ff6c94b8cb0d8c030974-bpthumb.jpg" class="avatar-thumb" id=""  title="anchie" alt="anchie" /></noscript></a>			</div>
+				
+				
+		<a class="user-name" href="https://youlookfab.com/member/anchie/">anchie</a>		
+				
+		
+			<div class="user-reputation">
+				<a class="level-text" href="https://youlookfab.com/backstage/member-profiles/member-levels">Veteran</a>	
+	<div class="reputation-badges-tiny">	
+	
+	<a class="badges" href="https://youlookfab.com/backstage/member-profiles/member-roles">
+	
+		<div class="badge catalyst permanent-only" title="Catalyst"></div>
+	
+	
+		<div class="badge comedian permanent-only" title="Comedian"></div>
+	
+	
+		<div class="badge therapist permanent-only" title="Therapist"></div>
+	
+	
+		<div class="badge wiseowl permanent-only" title="Wiseowl"></div>
+	
+	
+		<div class="badge cheerleader permanent-only" title="Cheerleader"></div>
+	
+	
+		<div class="badge solver permanent-only" title="Solver"></div>
+	
+		
+	</a>
+	<div style="clear: both;"></div>
+	</div>
+	
+				</div>
+	
+						
+				
+		<div class="clear"></div>
+	</div>
+	
+				</div>
+
+			<div class="reply-content left-block-primary content-block">
+						<div class="reply-text fg-post">
+						<p>Of course , I was sure it will feature handknits, very Diana, fab as always. Sorry to hear about teal libery jeans, they look great on you.
+</p>
+		</div>		
+				<div class="post-image-uploads">
+					</div>
+				
+		<div class="post-meta fg-meta">
+					<div class="post-time">
+			<a href="https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006232">
+				<span aria-hidden="true" class="icon icon-time"></span> 11 months ago			</a>
+					</div>
+			
+			<div class="clear"></div>
+		</div>
+		
+					</div>
+
+			<div class="clear"></div>	
+
+		</div>
+
+				<a id="post-2006386"></a>
+		<div id="position-19" class="reply" >
+
+			<div class="reply-author responsive-user-info responsive-user-info left-block-secondary content-block">
+					
+	<div class="user-info">
+	
+					<div class="user-avatar-small">
+				<a href="https://youlookfab.com/member/ceee/"><img data-original="https://youlookfab.com/upload/avatars/0c5058426855531af6cbf5096dcd0c5b245-bpthumb.jpg" class="avatar-thumb lazy-image" id="" src="https://youlookfab.com/fab-theme/youlookfab7.5/images/lazy-placeholder.png"  /><noscript><img src="https://youlookfab.com/upload/avatars/0c5058426855531af6cbf5096dcd0c5b245-bpthumb.jpg" class="avatar-thumb" id=""  title="Cee" alt="Cee" /></noscript></a>			</div>
+				
+				
+		<a class="user-name" href="https://youlookfab.com/member/ceee/">Cee</a>		
+				
+		
+			<div class="user-reputation">
+				<a class="level-text" href="https://youlookfab.com/backstage/member-profiles/member-levels">Veteran</a>	
+	<div class="reputation-badges-tiny">	
+	
+	<a class="badges" href="https://youlookfab.com/backstage/member-profiles/member-roles">
+	
+		<div class="badge comedian " title="Comedian"></div>
+	
+	
+		<div class="badge therapist " title="Therapist"></div>
+	
+	
+		<div class="badge wiseowl permanent-only" title="Wiseowl"></div>
+	
+	
+		<div class="badge cheerleader " title="Cheerleader"></div>
+	
+	
+		<div class="badge solver permanent-only" title="Solver"></div>
+	
+		
+	</a>
+	<div style="clear: both;"></div>
+	</div>
+	
+				</div>
+	
+						
+				
+		<div class="clear"></div>
+	</div>
+	
+				</div>
+
+			<div class="reply-content left-block-primary content-block">
+						<div class="reply-text fg-post">
+						<p>You can't go wrong  <span aria-hidden="true" class="emoticon emoticon-smile icon-emoticon-smile "></span> 
+</p>
+		</div>		
+				<div class="post-image-uploads">
+					</div>
+				
+		<div class="post-meta fg-meta">
+					<div class="post-time">
+			<a href="https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006386">
+				<span aria-hidden="true" class="icon icon-time"></span> 11 months ago			</a>
+					</div>
+			
+			<div class="clear"></div>
+		</div>
+		
+					</div>
+
+			<div class="clear"></div>	
+
+		</div>
+
+				<a id="post-2006405"></a>
+		<div id="position-20" class="reply" >
+
+			<div class="reply-author responsive-user-info responsive-user-info left-block-secondary content-block">
+					
+	<div class="user-info">
+	
+					<div class="user-avatar-small">
+				<a href="https://youlookfab.com/member/karen13/"><img data-original="https://youlookfab.com/upload/avatars/46ba439251003bd069b3ccca3467832d465-bpthumb.jpg" class="avatar-thumb lazy-image" id="" src="https://youlookfab.com/fab-theme/youlookfab7.5/images/lazy-placeholder.png"  /><noscript><img src="https://youlookfab.com/upload/avatars/46ba439251003bd069b3ccca3467832d465-bpthumb.jpg" class="avatar-thumb" id=""  title="karen13" alt="karen13" /></noscript></a>			</div>
+				
+				
+		<a class="user-name" href="https://youlookfab.com/member/karen13/">karen13</a>		
+				
+		
+			<div class="user-reputation">
+				<a class="level-text" href="https://youlookfab.com/backstage/member-profiles/member-levels">Veteran</a>	
+	<div class="reputation-badges-tiny">	
+	
+	<a class="badges" href="https://youlookfab.com/backstage/member-profiles/member-roles">
+	
+		<div class="badge therapist " title="Therapist"></div>
+	
+	
+		<div class="badge wiseowl " title="Wiseowl"></div>
+	
+	
+		<div class="badge cheerleader " title="Cheerleader"></div>
+	
+	
+		<div class="badge solver " title="Solver"></div>
+	
+	
+		<div class="badge photog permanent-only" title="Photog"></div>
+	
+		
+	</a>
+	<div style="clear: both;"></div>
+	</div>
+	
+				</div>
+	
+						
+				
+		<div class="clear"></div>
+	</div>
+	
+				</div>
+
+			<div class="reply-content left-block-primary content-block">
+						<div class="reply-text fg-post">
+						<p>Of course you are wrapped in gorgeous hand knits that I want so badly!  These are both you. I love those liberty print jeans. Are they past rescue with iron on reinforcement from the inside?
+</p>
+		</div>		
+				<div class="post-image-uploads">
+					</div>
+				
+		<div class="post-meta fg-meta">
+					<div class="post-time">
+			<a href="https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006405">
+				<span aria-hidden="true" class="icon icon-time"></span> 11 months ago			</a>
+					</div>
+			
+			<div class="clear"></div>
+		</div>
+		
+					</div>
+
+			<div class="clear"></div>	
+
+		</div>
+
+				<a id="post-2006409"></a>
+		<div id="position-21" class="reply" >
+
+			<div class="reply-author responsive-user-info responsive-user-info left-block-secondary content-block">
+					
+	<div class="user-info">
+	
+					<div class="user-avatar-small">
+				<a href="https://youlookfab.com/member/sarahd8/"><img data-original="https://youlookfab.com/fab-theme/youlookfab7.5/avatars/default3-bpthumb.jpg" class="avatar-thumb lazy-image" id="" src="https://youlookfab.com/fab-theme/youlookfab7.5/images/lazy-placeholder.png"  /><noscript><img src="https://youlookfab.com/fab-theme/youlookfab7.5/avatars/default3-bpthumb.jpg" class="avatar-thumb" id=""  title="SarahD8" alt="SarahD8" /></noscript></a>			</div>
+				
+				
+		<a class="user-name" href="https://youlookfab.com/member/sarahd8/">SarahD8</a>		
+				
+		
+			<div class="user-reputation">
+				<a class="level-text" href="https://youlookfab.com/backstage/member-profiles/member-levels">Veteran</a>	
+	<div class="reputation-badges-tiny">	
+	
+	<a class="badges" href="https://youlookfab.com/backstage/member-profiles/member-roles">
+	
+		<div class="badge catalyst permanent-only" title="Catalyst"></div>
+	
+	
+		<div class="badge comedian permanent-only" title="Comedian"></div>
+	
+	
+		<div class="badge therapist " title="Therapist"></div>
+	
+	
+		<div class="badge wiseowl " title="Wiseowl"></div>
+	
+	
+		<div class="badge cheerleader permanent-only" title="Cheerleader"></div>
+	
+	
+		<div class="badge solver " title="Solver"></div>
+	
+	
+		<div class="badge photog permanent-only" title="Photog"></div>
+	
+		
+	</a>
+	<div style="clear: both;"></div>
+	</div>
+	
+				</div>
+	
+						
+				
+		<div class="clear"></div>
+	</div>
+	
+				</div>
+
+			<div class="reply-content left-block-primary content-block">
+						<div class="reply-text fg-post">
+						<p>I love these looks! Mixing various pieces of patterned and textured knitwear is SO appealing, even better that you are able to indulge this hobby by featuring your own handiwork.</p>
+<p>And, of course, you had me at Liberty print. The teal with cream is so fresh looking.
+</p>
+		</div>		
+				<div class="post-image-uploads">
+					</div>
+				
+		<div class="post-meta fg-meta">
+					<div class="post-time">
+			<a href="https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006409">
+				<span aria-hidden="true" class="icon icon-time"></span> 11 months ago			</a>
+					</div>
+			
+			<div class="clear"></div>
+		</div>
+		
+					</div>
+
+			<div class="clear"></div>	
+
+		</div>
+
+				<a id="post-2006846"></a>
+		<div id="position-22" class="reply" >
+
+			<div class="reply-author responsive-user-info responsive-user-info left-block-secondary content-block">
+					
+	<div class="user-info">
+	
+					<div class="user-avatar-small">
+				<a href="https://youlookfab.com/member/akabori/"><img data-original="https://youlookfab.com/upload/avatars/a8187e92d98a12b7d9c431902de3367e860-bpthumb.jpg" class="avatar-thumb lazy-image" id="" src="https://youlookfab.com/fab-theme/youlookfab7.5/images/lazy-placeholder.png"  /><noscript><img src="https://youlookfab.com/upload/avatars/a8187e92d98a12b7d9c431902de3367e860-bpthumb.jpg" class="avatar-thumb" id=""  title="Diana" alt="Diana" /></noscript></a>			</div>
+				
+				
+		<a class="user-name" href="https://youlookfab.com/member/akabori/">Diana</a>		
+				
+		
+			<div class="user-reputation">
+				<a class="level-text" href="https://youlookfab.com/backstage/member-profiles/member-levels">Veteran</a>	
+	<div class="reputation-badges-tiny">	
+	
+	<a class="badges" href="https://youlookfab.com/backstage/member-profiles/member-roles">
+	
+		<div class="badge pundit permanent-only" title="Pundit"></div>
+	
+	
+		<div class="badge writer " title="Writer"></div>
+	
+	
+		<div class="badge catalyst permanent-only" title="Catalyst"></div>
+	
+	
+		<div class="badge helper permanent-only" title="Helper"></div>
+	
+	
+		<div class="badge comedian permanent-only" title="Comedian"></div>
+	
+	
+		<div class="badge therapist permanent-only" title="Therapist"></div>
+	
+	
+		<div class="badge wiseowl permanent-only" title="Wiseowl"></div>
+	
+	
+		<div class="badge cheerleader permanent-only" title="Cheerleader"></div>
+	
+	
+		<div class="badge solver permanent-only" title="Solver"></div>
+	
+	
+		<div class="badge nomad permanent-only" title="Nomad"></div>
+	
+	
+		<div class="badge speedy permanent-only" title="Speedy"></div>
+	
+	
+		<div class="badge photog permanent-only" title="Photog"></div>
+	
+		
+	</a>
+	<div style="clear: both;"></div>
+	</div>
+	
+				</div>
+	
+						
+				
+		<div class="clear"></div>
+	</div>
+	
+				</div>
+
+			<div class="reply-content left-block-primary content-block">
+						<div class="reply-text fg-post">
+						<p>Thanks, everyone!</p>
+<p>KMM: I almost never purchase sweaters at retail any more (pretty much only super fine gauge ones and I have one that was a gift), so that's one way that I make sure I wear my hand knits.  Plus they fit better!</p>
+<p>Karen: Unfortunately the Liberty jeans can't be patched.  They're (kind of weirdly) printed on white denim rather than a dark background, so the white is showing through quite badly on the thinning spots.  
+</p>
+		</div>		
+				<div class="post-image-uploads">
+					</div>
+				
+		<div class="post-meta fg-meta">
+					<div class="post-time">
+			<a href="https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006846">
+				<span aria-hidden="true" class="icon icon-time"></span> 11 months ago			</a>
+					</div>
+			
+			<div class="clear"></div>
+		</div>
+		
+					</div>
+
+			<div class="clear"></div>	
+
+		</div>
+
+				</div>
+
+				<div id="respond">
+							
+				<div class="login-signup left-column content-column fg-content">	
+					
+		<div id="invitation">
+			<div class="left-block-primary content-block">
+					
+	
+	<form class="login" name="login-form" action="https://youlookfab.com/login/" method="post">
+					<p class="fg-explanation">You need to be logged in in order to reply.</p>
+		
+			  <input type="text" name="log" placeholder="Username">
+		
+		    <input type="password" name="pwd" placeholder="Password">
+
+		<label class="remember">
+			<input name="rememberme" type="checkbox" class="rememberme" value="forever" />
+			Remember Me		</label>
+
+		<input type="submit" name="wp-submit" class="wp-submit" value="Log In" />
+
+		<div class="clear"></div>
+	
+		<input type="hidden" name="redirect_to" value="/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#respond" />		
+	</form>
+
+					<br>
+					
+	<div class=" signup">	
+		<p class="fg-explanation">Not a member? <a href="https://youlookfab.com/signup/">Sign up</a> to chat about style and share outfits with a friendly community.</p>		
+	</div>
+	
+				</div>
+			<div class="clear"></div>
+		</div>
+
+						
+				</div>
+				
+						</div>
+			
+				<div class="clear"></div>
+		<div id="back-to-top" class="all-columns content-column">
+			<a class="top-link fg-button" href="#container">Back to Top</a>
+		</div>
+		
+		<div style="clear: both;"></div>
+	
+	</div>
+</section>
+
+							
+							<div class="clear"></div>
+						
+						</div> <!-- #page -->
+						<div class="clear"></div>
+					</div> <!-- #main -->
+
+											
+		<div id="footer-reserve"></div>
+		<div id="footer" class="body-part">
+						
+			<section class="public-footer">
+				<div class="stretchy-content-area">
+					<div class="content-block footer-menu">
+								<div class="social-home">
+			<a class="pinterest" href="http://pinterest.com/youlookfab/">
+				<span aria-hidden="true" class="icon icon-pinterest"></span>
+			</a>
+			<a class="facebook" href="http://www.facebook.com/youlookfab">
+				<span aria-hidden="true" class="icon icon-facebook"></span>
+			</a>
+			<a class="twitter" href="http://www.twitter.com/youlookfab">
+				<span aria-hidden="true" class="icon icon-twitter"></span>
+			</a>
+			<a class="tumblr" href="http://tumblr.youlookfab.com">
+				<span aria-hidden="true" class="icon icon-tumblr"></span>
+			</a>
+			<a class="email" href="http://eepurl.com/gfDw">
+				<span aria-hidden="true" class="icon icon-email"></span>
+			</a>
+			<div class="clear"></div>
+		</div>
+								<ul id="footer-links" class="hlist">
+							<li><a href="https://youlookfab.com/advertising/">Advertising</a></li>
+							<li><a href="https://youlookfab.com/contact-us/">Contact Us</a></li>
+							<li><a href="https://youlookfab.com/backstage/about/">About</a></li>
+							<li><a href="https://youlookfab.com/backstage/about/terms-of-service/">Terms of Service</a></li>
+							<li><a href="https://youlookfab.com/backstage/about/privacy/">Privacy Policy</a></li>
+						</ul>
+						<div class="clear"></div>
+					</div>
+					<div id="copyright-notice">
+						&copy; 2020 YOULOOKFAB, LLC. All Rights Reserved.
+					</div>
+				</div>				
+			</section>
+			
+						
+			
+							
+									
+		</div>
+							<div class="clear"></div>
+
+				</div> <!-- #container -->
+					
+						
+			<div id="end-of-body">
+						<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+	  <script>window.jQuery || document.write('<script src="https://youlookfab.com/fab-theme/youlookfab7.5/scripts/lib/jquery/jquery-1.8.3.min.js"><\/script>')</script>
+		<script src="https://youlookfab.com/fab-theme/youlookfab7.5/scripts/js/forum-topic.js?v=youlookfab7.5-1234"></script>					<script>
+						jQuery("img.lazy-image").show().lazyload({
+							// skip_invisible : false
+						});
+					</script>					
+					<script src="https://youlookfab.com/fab-theme/youlookfab7.5/scripts/js/lightbox-prettyphoto.js?v=youlookfab7.5-1234"></script>	
+			<script>
+		   var _gaq=[['_setAccount','UA-2589684-1'],['_trackPageview'],['_trackPageLoadTime']];
+		   (function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+		   g.src=('https:'==location.protocol?'//ssl':'//www')+'.google-analytics.com/ga.js';
+		   s.parentNode.insertBefore(g,s)}(document,'script'));
+		</script>		
+			<script type="text/javascript" src="//edge.quantserve.com/quant.js"></script>
+	<script type="text/javascript">_qacct="p-ee83LYLh_oY6o";quantserve();</script>
+	<noscript>
+	<a href="http://www.quantcast.com/p-ee83LYLh_oY6o" target="_blank"><img src="//pixel.quantserve.com/pixel/p-ee83LYLh_oY6o.gif" style="display: none;" border="0" height="1" width="1" alt="Quantcast"/></a>
+	</noscript>
+		
+		
+	<script src="//static.getclicky.com/js" type="text/javascript"></script>
+	<script type="text/javascript">try{ clicky.init(158129); }catch(e){}</script>
+	<noscript><p><img alt="Clicky" width="1" height="1" src="//in.getclicky.com/158129ns.gif" /></p></noscript>
+			<script type="text/javascript" src="//s.skimresources.com/js/2954X595283.skimlinks.js"></script>
+			
+	<script type="text/javascript">
+	(function (w, d, load) {
+	 var script, 
+	 first = d.getElementsByTagName('SCRIPT')[0],  
+	 n = load.length, 
+	 i = 0,
+	 go = function () {
+	   for (i = 0; i < n; i = i + 1) {
+	     script = d.createElement('SCRIPT');
+	     script.type = 'text/javascript';
+	     script.async = true;
+	     script.src = load[i];
+	     first.parentNode.insertBefore(script, first);
+	   }
+	 }
+	 if (w.attachEvent) {
+	   w.attachEvent('onload', go);
+	 } else {
+	   w.addEventListener('load', go, false);
+	 }
+	}(window, document, 
+	 ['//assets.pinterest.com/js/pinit.js']	));    
+	</script>
+	
+				</div>
+		
+		<script type="text/javascript">window.NREUM||(NREUM={});NREUM.info={"beacon":"bam.nr-data.net","licenseKey":"3a51baadfa","applicationID":"2255142","transactionName":"blZXbRcHCEVXVE1YVlccYEsMSRFTWlhWWl9YURpNChYPVRhHUUE=","queueTime":0,"applicationTime":266,"atts":"QhFUG18dG0s=","errorBeacon":"bam.nr-data.net","agent":""}</script></body>
+		</html>
+		
