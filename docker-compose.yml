@@ -26,6 +26,15 @@ services:
         --reload
         "searchfront.app:create_app()"
 
+  scrapy:
+     build:
+        context: .
+        dockerfile: Dockerfile_scrapy
+     ports:
+        # This is the web interface, not the API.
+        - '6801:6800'
+     command: scrapyd
+
   omnivore:
      build:
         context: .

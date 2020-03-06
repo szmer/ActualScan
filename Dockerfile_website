@@ -5,7 +5,6 @@ RUN apt-get update && apt-get install -qq -y \
 
 ENV INSTALL_PATH /searchfront
 RUN mkdir -p $INSTALL_PATH
-
 WORKDIR $INSTALL_PATH
 
 COPY requirements.txt requirements.txt

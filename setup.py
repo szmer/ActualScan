@@ -1,5 +1,7 @@
 from setuptools import setup
 
+# Note this is currently used by both the website and scrapy container.
+
 setup(
     name='Searchfront',
     version='0.1',
