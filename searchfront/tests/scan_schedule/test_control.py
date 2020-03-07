@@ -2,6 +2,8 @@ import http.client
 import json
 from time import sleep
 
+from searchfront.scrapy_process import scrapyp
+
 from searchfront.blueprints.scan_schedule.models import ScanJob, ScrapRequest
 from searchfront.blueprints.scan_schedule.control import (request_scan, start_scan,
         scan_progress_info)
@@ -15,14 +17,7 @@ class TestScanSchedule(object):
         assert del_response.status == 200
 
         # Check if Scrapy and Speechtractor are up.
-        scrapyd_response = http.client.HTTPConnection('scrapy:6800/daemonstatus.json').request(
-                'GET').getresponse()
-        assert scrapyd_response.status == 200
-        scrapyd_response_json = json.loads(scrapyd_response)
-        assert 'status' in scrapyd_response_json
-        assert 'running' in scrapyd_response_json
-        assert scrapyd_response_json['status'] == 'ok'
-        assert scrapyd_response_json['running'] == '1'
+        assert scrapyp.poll() is None
         stractor_response = http.client.HTTPConnection('speechtractor:3756/api/v01/status').request(
                 'GET').getresponse()
         assert stractor_response.status == 200

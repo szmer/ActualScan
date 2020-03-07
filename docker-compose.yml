@@ -16,8 +16,9 @@ services:
         context: .
         dockerfile: Dockerfile_website
      volumes:
-        # The instance settings are also used by Scrapy to get e.g. db credentials.
         - ./flask_instance:/flask_instance
+        - ./scrapies:/scrapies
+        - ./flask_instance:/scrapies/genscrap/genscrap/flask_instance
         - ./webpack/public:/searchfront/searchfront/static:ro
      ports:
         - '8000:8000'
@@ -26,17 +27,8 @@ services:
         --access-logfile -
         --reload
         "searchfront.app:create_app()"
-
-  scrapy:
-     build:
-        context: .
-        dockerfile: Dockerfile_scrapy
-     volumes:
-        - ./scrapies:/scrapies
-     ports:
-        # Scrapyd's web interface.
-        - '6801:6800'
-     command: scrapyd
+     env_file:
+        - '.env'
 
   omnivore:
      build:

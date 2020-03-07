@@ -2,11 +2,14 @@ from flask import Flask
 from flask_security.utils import encrypt_password
 
 from searchfront.extensions import db, security, user_datastore, admin
+from searchfront.scrapy_process import scrapyp
 
 # Import blueprints now as some of them may require setting up extensions beforehand.
 from searchfront.blueprints.page import page
 from searchfront.blueprints.user import AppUser
 from searchfront.blueprints.manager import ManagerAdminView
+from searchfront.blueprints.site.models import Site
+from searchfront.blueprints.scan_schedule.models import ScrapRequest
 
 def create_app(settings_override=None):
     app = Flask(__name__, instance_path='/flask_instance', instance_relative_config=True)
@@ -38,6 +41,14 @@ def create_app(settings_override=None):
             db.session.commit()
             user_datastore.add_role_to_user(app.config['INIT_USER_EMAIL'], 'admin')
             db.session.commit()
+
+    @app.before_first_request
+    def init_scrapy():
+        scrapyp.run()
+        if scrapyp.process.poll() is None:
+            app.logger.info('The scrapy process is running on start of the flask app.')
+        if scrapyp.process.poll() is not None:
+            app.logger.warning('Scrapy process is not running on start of the flask app.')
 
     admin.add_view(ManagerAdminView(AppUser, db.session))
 

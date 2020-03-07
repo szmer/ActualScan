@@ -53,7 +53,7 @@ class ScrapRequest(db.Model):
     source_type = db.Column(db.String(32))
     job_id = db.Column(db.String, db.ForeignKey('scan_job.id'), nullable=False)
     # (job field defined as a backref)
-    status = db.column(db.String(32), nullable=False)
+    status = db.Column(db.String(32), nullable=False)
     status_changed = db.Column(db.DateTime(timezone=True), nullable=False)
     save_copies = db.Column(db.Boolean(), nullable=False, default=False)
     failure_comment = db.Column(db.String(2048))
