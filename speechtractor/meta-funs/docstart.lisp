@@ -4,7 +4,6 @@
   (equalp "html" (plump:tag-name node)))
 
 (defun forums-doc-startp (node path)
-  (declare (ignore path))
   (or
     (and (plump:has-attribute node "class")
          (or
@@ -32,3 +31,10 @@
       (typep node 'plump:child-node)
       (plump:has-attribute (plump:parent node) "id")
       (equalp "postsContainer" (plump:attribute (plump:parent node) "id")))))
+
+(defun searchpage-doc-startp (node path)
+  (or
+    (and (plump:has-attribute node "class")
+         (or
+           ;; Wordpress search
+           (cl-ppcre:scan (boundary-regex "post") (plump:attribute node "class"))))))

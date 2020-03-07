@@ -140,12 +140,14 @@
       (is (eq nil
               (find-if (lambda (doc) (null (cdr (assoc :url doc)))) parsed-docs)))
       (is (equalp "Diana" (cdr (assoc :author (first parsed-docs)))))
+      ;; ??? TODO weird of-by-minute date mismatch happening here
       (is (equalp (speechtractor::solr-date-from "11 months ago")
                   (cdr (assoc :date--post (first parsed-docs)))))
       (is (equalp "https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006057"
                   (cdr (assoc :url (first parsed-docs)))))
       (is (first-beginning-p "Today's Angie Challenge entry is a FFBO, featuring my favorite sweater, perfect jeans, and combat boots."))
       (is (equalp "Suz" (cdr (assoc :author (second parsed-docs)))))
+      ;; ??? TODO weird of-by-minute date mismatch happening here
       (is (equalp (speechtractor::solr-date-from "11 months ago")
                   (cdr (assoc :date--post (second parsed-docs)))))
       ;; NOTE the space in Diana , is because of text node concatenation. It could potentially not
@@ -556,3 +558,16 @@
                        (cdr (assoc :text (first parsed-docs))))))
       (is (not (search "Comments are closed"
                        (cdr (assoc :text (first parsed-docs)))))))))
+
+(deftest x-szmr-wordpress-search ()
+  (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "szmr-wordpress-search.html" "searchpage"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      (is (= 2 (length parsed-docs)))
+      ;; Here we really only care about URLs.
+      (is (eq nil
+              (find-if (lambda (doc) (null (cdr (assoc :url doc)))) parsed-docs)))
+      (is (equalp "https://szymonrutkowski.pl/blog/2015/11/27/pogodzeni-w-znaczeniu-jak-cos-zrozumiec-po-polsku-cz-2/"
+                  (cdr (assoc :url (first parsed-docs)))))
+      (is (equalp "https://szymonrutkowski.pl/blog/2015/05/19/urok-zakurzonych-teorii-jak-cos-zrozumiec-po-polsku-cz-1/"
+                  (cdr (assoc :url (car (last parsed-docs)))))))))

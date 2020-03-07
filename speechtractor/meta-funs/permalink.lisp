@@ -29,7 +29,7 @@
           (plump:has-attribute node "href"))
      (plump:attribute node "href"))
     ;; thestudentroom
-    ((and 
+    ((and
         (plump:has-attribute node "class")
         (plump:has-attribute node "id")
         ;; thestudentroom
@@ -51,3 +51,13 @@
         (cl-ppcre:scan (boundary-regex "comment") (plump:attribute node "class")))
      ;; technically this uniquely links to the post
      (concatenate 'string "#" (plump:attribute node "id")))))
+
+(defun searchpage-permalink (node path)
+  (cond
+    ;; Wordpress search
+    ((and (equalp "a" (plump:tag-name node))
+          (plump:has-attribute node "rel")
+          (equalp (plump:attribute node "rel") "bookmark")
+          ;; The parent should be a h2.
+          (equalp (first (last path 2)) "h2"))
+     (plump:attribute node "href"))))

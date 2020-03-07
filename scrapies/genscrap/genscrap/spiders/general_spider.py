@@ -81,6 +81,7 @@ class GeneralSpider(scrapy.Spider):
                     stractor_response.status) 
             pg_session.commit()
         else:
+            # TODO correct permalink and such!!!
             solr_addr = 'http://solr:8983/solr/lookupy/update'
             solr_response = http.client.HTTPConnection(solr_addr).request(
                 'GET', body=stractor_response.text).getresponse()

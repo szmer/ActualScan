@@ -11,4 +11,4 @@ COPY requirements.scrapy.txt requirements.txt
 COPY setup.py setup.py
 RUN pip install -r requirements.txt
 
-RUN bash scrapy_setup.sh
+#RUN bash /scrapies/scrapy_setup.sh

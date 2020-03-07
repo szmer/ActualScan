@@ -30,6 +30,10 @@
                 :date_post #'media-date
                 :author #'media-author
                 :meta-burner #'general-meta-burner)
+          (list "searchpage"
+                :skip-p #'general-skip-p
+                :doc-startp #'searchpage-doc-startp
+                :url #'searchpage-permalink)
           ;; Empty defaults.
           (list "test"
                 :author (lambda (node path)
@@ -49,6 +53,10 @@
                 (alexandria:plist-hash-table
                   ;; media can have some pretty short paragraphs for effect and link a lot
                   '(:length-high 120 :max-link-density 0.4)))
+          (cons "searchpage"
+                ;; relaxed parameters for forums.
+                (alexandria:plist-hash-table
+                 '(:stopwords-low 0.17 :stopwords-high 0.22 :length-low 40 :length-high 40)))
           ;; Empty defaults.
           (cons "test" (make-hash-table))
           (cons nil (make-hash-table)))
