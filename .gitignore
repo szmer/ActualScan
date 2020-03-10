@@ -24,6 +24,10 @@ tags
 
 ## Flask instance
 flask_instance/settings.py
+scrapies/genscrap/genscrap/flask_instance
 
 ## Webpack
 webpack/node_modules
+
+## Pycache
+*__pycache__*

@@ -12,7 +12,8 @@ from searchfront.blueprints.site.models import Site
 from searchfront.blueprints.scan_schedule.models import ScrapRequest
 
 def create_app(settings_override=None):
-    app = Flask(__name__, instance_path='/flask_instance', instance_relative_config=True)
+    app = Flask(__name__, instance_path='/searchfront/flask_instance',
+            instance_relative_config=True)
 
     app.config.from_object('flask_config.settings')
     # Overwrite with the settings from the instance_path set above
@@ -42,6 +43,7 @@ def create_app(settings_override=None):
             user_datastore.add_role_to_user(app.config['INIT_USER_EMAIL'], 'admin')
             db.session.commit()
 
+    # note that Scrapy needs to have the control classes already present in Postgres
     @app.before_first_request
     def init_scrapy():
         scrapyp.run()

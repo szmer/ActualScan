@@ -14,18 +14,20 @@ def request_scan(user_id, query_phrase, query_tags):
 
 def start_scan(scan_job):
     phrase_tokens = scan_job.query_phrase.split()
-    tag_strs = scan_job.query_tags.split()
+    # TODO test for the situation with no coherent/findable tags
+    tag_strs = scan_job.query_tags.split(',')
     tags = Tag.query.filter(Tag.name.in_(tag_strs))
     sites_queried = set()
-    requests = []
     for tag in tags:
         for site in tag.sites:
-            sites_queried.add(site) # a site can belong to multiple tags
-            search_url = site.search_url(phrase_tokens)
-            requests.append(ScrapRequest(url=search_url, is_search=True, job_id=scan_job.id,
-                status='waiting', status_changed=datetime.now(timezone.utc)),
-                save_copies=scan_job.save_copies)
-    db.session.add(requests)
+            if not site in sites_queried:
+                sites_queried.add(site) # a site can belong to multiple tags
+                search_url = site.search_url_for(phrase_tokens)
+                req = ScrapRequest(url=search_url, is_search=True, job_id=scan_job.id,
+                    status='waiting', status_changed=datetime.now(timezone.utc),
+                    save_copies=scan_job.save_copies)
+                db.session.add(req)
+                db.session.commit()
     scan_job.bump()
     scan_job.status = 'working'
     db.session.commit()

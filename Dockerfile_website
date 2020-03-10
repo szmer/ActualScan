@@ -16,3 +16,5 @@ COPY flask_config flask_config
 COPY searchfront searchfront
 
 RUN pip install --editable .
+
+WORKDIR /

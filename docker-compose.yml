@@ -16,8 +16,8 @@ services:
         context: .
         dockerfile: Dockerfile_website
      volumes:
-        - ./flask_instance:/flask_instance
-        - ./scrapies:/scrapies
+        - ./flask_instance:/searchfront/flask_instance
+        - ./scrapies:/searchfront/scrapies
         - ./flask_instance:/scrapies/genscrap/genscrap/flask_instance
         - ./webpack/public:/searchfront/searchfront/static:ro
      ports:

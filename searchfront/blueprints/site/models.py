@@ -29,11 +29,12 @@ class Site(db.Model):
         mock_idx1 = self.search_url.index(self.MOCK_STR1)
         mock_idx2 = self.search_url.index(self.MOCK_STR2)
         search_format = (self.search_url[:mock_idx1+len(self.MOCK_STR1)]
-                + self.search_url[mock_idx2+len(self.MOCK_STR2):]).replace(self.MOCK_STR1, {})
+                + self.search_url[mock_idx2+len(self.MOCK_STR2):]).replace(self.MOCK_STR1, '{}')
         next_token_format = self.search_url[mock_idx2:mock_idx2+len(self.MOCK_STR2)].replace(
                 self.MOCK_STR2, '{}')
         if len(tokens) <= 1:
-            # Technically there shouldn't be zero tokens, but we shouldn't crash with this problem now.
+            # Technically there shouldn't be zero tokens, but we shouldn't crash with this problem
+            # now.
             return search_format.format(tokens[0] if tokens else '')
         else:
             for i in range(len(tokens)-1):

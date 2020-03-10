@@ -7,16 +7,20 @@
 
 (hunchentoot:define-easy-handler (interpret-01 :uri "/api/v01/interpret") (html sourcetype)
   (setf (hunchentoot:content-type*) "text/json")
-  (html-document-data-json html (gethash sourcetype *source-type-meta-funs*
-                                         ;; apparently we cannot put an error call here directly
-                                         ;; b/c it would be evaluated.
-                                         (format nil "no meta-funs for sourcetype ~S"
-                                                 sourcetype))
-                           :classification-settings
-                           (gethash sourcetype *source-type-classification-settings*
-                                    (format nil "no classif. settings for sourcetype ~S"
-                                            sourcetype))
-                           :split-sents t))
+  (if (not (and html sourcetype))
+      (progn
+        (setf (hunchentoot:return-code*) hunchentoot:+http-bad-request+)
+        (format nil "Cannot interpret content: html: ~A sourcetype: ~A" html sourcetype))
+      (html-document-data-json html (gethash sourcetype *source-type-meta-funs*
+                                             ;; apparently we cannot put an error call here directly
+                                             ;; b/c it would be evaluated.
+                                             (format nil "no meta-funs for sourcetype ~S"
+                                                     sourcetype))
+                               :classification-settings
+                               (gethash sourcetype *source-type-classification-settings*
+                                        (format nil "no classif. settings for sourcetype ~S"
+                                                sourcetype))
+                               :split-sents t)))
 
 (hunchentoot:define-easy-handler (status-01 :uri "/api/v01/status") (html sourcetype)
   (setf (hunchentoot:content-type*) "text/plain")
