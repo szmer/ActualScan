@@ -3,7 +3,7 @@ import http.client
 import json
 from logging import warning
 import os, os.path
-import time
+from urllib.parse import urlparse
 
 import simpleflock
 
@@ -16,6 +16,9 @@ from genscrap.flask_instance.settings import SQLALCHEMY_DATABASE_URI
 from genscrap.lib import now_timestamp, write_to_file, WebPage, stractor_reading
 
 FILEDB_PATH = ''
+# Note it's the original port, not the one mapped by docker-compose.
+SOLR_NETLOC = 'solr:8983'
+SOLR_PING_URL = 'http://solr:8983/solr/lookupy/admin/ping'
 
 #
 # Postgres connection & ORM setup.
@@ -37,23 +40,7 @@ class GeneralSpider(scrapy.Spider):
     # We want to catch them to notify the DB of failure.
     handle_httpstatus_list = [400, 401, 402, 403, 404, 405, 406, 407, 408, 409, 410, 411, 412, 413,
             414, 415, 416, 417, 500, 501, 502, 503, 504, 505]
-
-    def start_requests(self):
-        # NOTE NOTE allowing an endless loop here means that scrapy never continues to do subsequent
-        # requests
-        #while True:
-        scrap_requests_waiting = list(pg_session.query(ScrapRequest).filter_by(status='waiting'))
-        for scrap_request in scrap_requests_waiting:
-            scrap_request.status = 'ran'
-            meta = {attr: getattr(scrap_request, attr)
-                        for attr
-                        in ['id', 'job_id', 'is_search', 'source_type', 'save_copies']}
-            #scrap_request.failure_comment = str(meta)
-            pg_session.commit()
-            yield scrapy.Request(url=scrap_request.url, callback=self.parse, meta=meta,
-                    errback=self.fail)
-           # else:
-        #        time.sleep(0.2)
+    start_urls = [SOLR_PING_URL]
 
     def fail(self, failure):
         self.logger.error(repr(failure))
@@ -63,6 +50,7 @@ class GeneralSpider(scrapy.Spider):
             pg_session.commit()
 
     def parse(self, response):
+        # Notify of failures if needed.
         if response.status != 200:
             db_request = pg_session.query(ScrapRequest).get(response.meta['id'])
             db_request.status = 'failed'
@@ -70,13 +58,29 @@ class GeneralSpider(scrapy.Spider):
             pg_session.commit()
             return
 
+        # Solr dummy monitoring requests - we want to search Postgres for new requests.
+        ####warning(urlparse(response.url))
+        if urlparse(response.url).netloc == SOLR_NETLOC:
+            scrap_requests_waiting = list(pg_session.query(ScrapRequest).filter_by(status='waiting'))
+            for scrap_request in scrap_requests_waiting:
+                scrap_request.status = 'ran'
+                meta = {attr: getattr(scrap_request, attr)
+                            for attr
+                            in ['id', 'job_id', 'is_search', 'source_type', 'save_copies']}
+                #scrap_request.failure_comment = str(meta)
+                pg_session.commit()
+                yield scrapy.Request(url=scrap_request.url, callback=self.parse, meta=meta,
+                        errback=self.fail)
+            yield scrapy.Request(url=SOLR_PING_URL, callback=self.parse, errback=self.fail)
+            return
+
+        # Normal scraping requests.
         if response.meta['is_search']:
             source_type = 'searchpage'
         else:
             source_type = response.meta['source_type']
-
         stractor_output = stractor_reading(response.text, source_type)
-        warning(stractor_output)
+        ###warning(stractor_output)
         if isinstance(stractor_output, int):
             db_request = pg_session.query(ScrapRequest).get(response.meta['id'])
             db_request.status = 'failed'
@@ -91,6 +95,7 @@ class GeneralSpider(scrapy.Spider):
                     scrap_request = ScrapRequest(url=found_page['url'], is_search=False,
                             job_id=response.meta['job_id'], status='waiting',
                             status_changed=datetime.now(timezone.utc),
+                            source_type=response.meta['source_type'],
                             save_copies=response.meta['save_copies'])
                     pg_session.add(scrap_request)
                     pg_session.commit()
@@ -101,7 +106,8 @@ class GeneralSpider(scrapy.Spider):
         else:
             # TODO correct permalink and such!!!
             solr_conn = http.client.HTTPConnection('solr', port=8983, timeout=10)
-            solr_conn.request('GET', '/solr/lookupy/update', body=stractor_output)
+            solr_conn.request('GET', '/solr/lookupy/update', body=stractor_output,
+                headers={'Content-type': 'application/json'})
             solr_response = solr_conn.getresponse()
             if solr_response.status != 200:
                 db_request = pg_session.query(ScrapRequest).get(response.meta['id'])
