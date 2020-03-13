@@ -81,11 +81,17 @@
   (cond ((and (plump:has-attribute node "itemprop")
               (equalp "datePublished" (plump:attribute node "itemprop")))
          ;; It's already in the RFC format, so local-time will handle it better than chronicity
-         (solr-date-str (or 
+         (solr-date-str (or
                           (local-time:parse-timestring ; on Blogspot
                             (plump:attribute node "title") :fail-on-error nil)
                           (local-time:parse-timestring
-                            (plump:attribute node "datetime") :fail-on-error nil))))
+                           (plump:attribute node "datetime") :fail-on-error nil))))
+        ;; Wordpress entry.
+        ((and (equalp "time" (plump:tag-name node))
+              (plump:has-attribute node "class")
+              (cl-ppcre:scan "entry-date" (plump:attribute node "class")))
+         (solr-date-str
+          (local-time:parse-timestring (plump:attribute node "datetime") :fail-on-error nil)))
         ;; This is in Glamour - probably better to extract this from somewhere in the JSON metadata
         ;; soup (the actual class is content-header__publish-date)
         ((and (equalp "time" (plump:tag-name node))

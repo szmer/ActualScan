@@ -25,8 +25,9 @@ def start_scan(scan_job):
                 search_url = site.search_url_for(phrase_tokens)
                 req = ScrapRequest(url=search_url, is_search=True, job_id=scan_job.id,
                     status='waiting', status_changed=datetime.now(timezone.utc),
-                    source_type=site.source_type,
-                    save_copies=scan_job.save_copies)
+                    source_type=site.source_type, site_name=site.site_name,
+                    site_url=site.homepage_url,
+                    query_tags=scan_job.query_tags, save_copies=scan_job.save_copies)
                 db.session.add(req)
                 db.session.commit()
     scan_job.bump()

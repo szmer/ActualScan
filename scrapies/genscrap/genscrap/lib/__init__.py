@@ -1,8 +1,28 @@
 import datetime
+from datetime import timezone
 import http.client
 from logging import warning
 import time
 import urllib
+from urllib.parse import urlparse
+
+def date_fmt(time_obj):
+    return time_obj.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+def timestamp_now():
+    return date_fmt(datetime.datetime.now(tz=timezone.utc))
+
+def full_url(part, site_url):
+    """
+    If the url lacks the domain or scheme part, fill it in using the site url.
+    """
+    part_parsed = urlparse(part)
+    if part_parsed.netloc and part_parsed.scheme:
+        return part
+    site_url_parsed = urlparse(site_url)
+    part_parsed = part_parsed._replace(netloc=site_url_parsed.netloc)
+    part_parsed = part_parsed._replace(scheme=site_url_parsed.scheme)
+    return part_parsed.geturl()
 
 #
 # Page filing.

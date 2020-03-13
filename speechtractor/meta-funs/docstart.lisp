@@ -34,7 +34,9 @@
 
 (defun searchpage-doc-startp (node path)
   (or
-    (and (plump:has-attribute node "class")
-         (or
-           ;; Wordpress search
-           (cl-ppcre:scan (boundary-regex "post") (plump:attribute node "class"))))))
+   (and (plump:has-attribute node "itemtype")
+        (equalp "http://schema.org/CreativeWork" (plump:attribute node "itemtype")))
+   (and (plump:has-attribute node "class")
+        (or
+         ;; Wordpress search
+         (cl-ppcre:scan (boundary-regex "post") (plump:attribute node "class"))))))

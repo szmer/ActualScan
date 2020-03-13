@@ -14,6 +14,7 @@ from searchfront.extensions import db
 #
 ### Possible request statuses:
 #    waiting
+#    scheduled (in Scrapy)
 #    Scrapy shouldn't report back against there was a failure, so "ran" doesn't guarantee success.
 #    ran
 #    failed
@@ -51,6 +52,9 @@ class ScrapRequest(db.Model):
     is_search = db.Column(db.Boolean(), nullable=False)
     # Copied from the Site row to avoid the need for joins.
     source_type = db.Column(db.String(32))
+    site_name = db.Column(db.String(512), nullable=False)
+    site_url = db.Column(db.String(8192), nullable=False)
+    query_tags = db.Column(db.String(8192), nullable=False)
     job_id = db.Column(db.String, db.ForeignKey('scan_job.id'), nullable=False)
     # (job field defined as a backref)
     status = db.Column(db.String(32), nullable=False)

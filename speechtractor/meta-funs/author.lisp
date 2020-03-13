@@ -42,7 +42,10 @@
   (cond
     ;; Wordpress
     ((and (plump:has-attribute node "class")
-          (cl-ppcre:scan (boundary-regex "entry-author-name") (plump:attribute node "class")))
+          (or (cl-ppcre:scan (boundary-regex "entry-author-name") (plump:attribute node "class"))
+              ;; Toscrap test - causes errors because they have invalid HTML
+              ;;-(cl-ppcre:scan (boundary-regex "author-title") (plump:attribute node "class"))
+              ))
      (plump:render-text node))
     ;; Blogspot
     ((and (equalp "a" (plump:tag-name node))

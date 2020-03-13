@@ -42,11 +42,12 @@ def db(app):
     else:
         tag_games = existing_tags[0]
 
+    # TODO remove the site afterwards
     existing_sites = list(Site.query.filter_by(homepage_url='https://szymonrutkowski.pl/blog'))
     if len(existing_sites) == 0:
-        site = Site(homepage_url='https://szymonrutkowski.pl/blog',
-                search_url='https://szymonrutkowski.pl/blog/?s=|||fat|||+|||cat|||&submit=Search',
-                source_type='blog',
+        site = Site(homepage_url='http://quotes.toscrape.com',
+                search_url='http://quotes.toscrape.com/tag/|||fat|||+|||cat|||/page/1',
+                source_type='blog', site_name='quotes.toscrape.com',
                 tags=[tag_fun, tag_games])
         _db.session.add(site)
         _db.session.commit()

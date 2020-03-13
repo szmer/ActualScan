@@ -13,6 +13,7 @@ class Tag(db.Model):
 class Site(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     homepage_url = db.Column(db.String(8192), nullable=False)
+    site_name = db.Column(db.String(512), nullable=False)
     # An url with search for "fat cat", represented as |||fat||| |||cat|||
     search_url = db.Column(db.String(8192), nullable=False)
     source_type = db.Column(db.String(32), nullable=False)

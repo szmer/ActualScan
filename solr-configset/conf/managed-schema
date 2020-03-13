@@ -1032,8 +1032,9 @@
 
      <!--
         Reason we scraped this, e.g. a product (this should be referenced with an outside database).
+        Currently, a scan job id.
         -->
-     <field name="reason_scraped" type="pint" indexed="true" stored="true" required="true"/>
+     <field name="reason_scraped" type="string" indexed="true" stored="true" required="true"/>
      <!--
         Source type - should be one character for convention (b - blog, f - forum, m - media, s - social).
         -->

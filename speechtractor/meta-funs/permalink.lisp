@@ -60,4 +60,8 @@
           (equalp (plump:attribute node "rel") "bookmark")
           ;; The parent should be a h2.
           (equalp (first (last path 2)) "h2"))
+     (plump:attribute node "href"))
+    ;; Toscrape test
+    ((and (equalp "a" (plump:tag-name node))
+          (equalp "(about)" (plump:render-text node)))
      (plump:attribute node "href"))))

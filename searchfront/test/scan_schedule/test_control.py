@@ -11,7 +11,7 @@ from searchfront.blueprints.scan_schedule.control import (request_scan, start_sc
 class TestScanSchedule(object):
     def test_perform_scan(self, app, db, scrapyp):
         # Clean up entries from the test domain in Solr.
-        req_data = '{"delete": {"query": "site_name:szymonrutkowski.pl*"}}'
+        req_data = '{"delete": {"query": "site_name:quotes.toscrape.com"}, "commit": {}}'
         del_conn = http.client.HTTPConnection('solr', port=8983)
         del_conn.request('GET', '/solr/lookupy/update', body=req_data,
                 headers={'Content-type': 'application/json'})
@@ -27,13 +27,13 @@ class TestScanSchedule(object):
         assert stractor_response.read() == b'ok'
 
         # Create the scan job.
-        job_id = ScanJob.identifier('ex@example.com', 'Mroziński', ['fun'])
+        job_id = ScanJob.identifier('ex@example.com', 'inspirational', ['fun'])
         existing_jobs = list(ScanJob.query.filter_by(id=job_id))
         if len(existing_jobs) != 0:
             db.session.delete(existing_jobs[0])
             db.session.commit()
         prescan_time = datetime.now(timezone.utc)
-        request_scan('ex@example.com', 'Mroziński', 'fun')
+        request_scan('ex@example.com', 'inspirational', 'fun')
 
         # Ensure that the job is present, was just created and is inspectable.
         existing_jobs = list(ScanJob.query.filter_by(id=job_id))
@@ -50,8 +50,8 @@ class TestScanSchedule(object):
 
         # Check the completion.
         query_str = '/solr/lookupy/select?q=' + urllib.parse.quote(
-                'text:Mroziński AND site_name:szymonrutkowski.pl*')
-        for i in range(20*2): # wait up to 20 sec
+                'site_name:quotes.toscrape.com')
+        for i in range(120*2): # wait up to 120 sec
             sleep(0.5)
             ####-assert scrapyp.process.poll() is None
             get_conn = http.client.HTTPConnection('solr', port=8983)

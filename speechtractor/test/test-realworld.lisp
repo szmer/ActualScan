@@ -559,15 +559,24 @@
       (is (not (search "Comments are closed"
                        (cdr (assoc :text (first parsed-docs)))))))))
 
-(deftest x-szmr-wordpress-search ()
+(deftest x-quotestoscrape-search ()
   (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "szmr-wordpress-search.html" "searchpage"))
+    (let* ((response (request-test-page "quotestoscrape-search.html" "searchpage"))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
-      (is (= 2 (length parsed-docs)))
+      (is (= 10 (length parsed-docs)))
       ;; Here we really only care about URLs.
       (is (eq nil
               (find-if (lambda (doc) (null (cdr (assoc :url doc)))) parsed-docs)))
-      (is (equalp "https://szymonrutkowski.pl/blog/2015/11/27/pogodzeni-w-znaczeniu-jak-cos-zrozumiec-po-polsku-cz-2/"
+      (is (equalp "/author/Albert-Einstein"
                   (cdr (assoc :url (first parsed-docs)))))
-      (is (equalp "https://szymonrutkowski.pl/blog/2015/05/19/urok-zakurzonych-teorii-jak-cos-zrozumiec-po-polsku-cz-1/"
+      (is (equalp "/author/Helen-Keller"
                   (cdr (assoc :url (car (last parsed-docs)))))))))
+
+(deftest x-quotestoscrape-author ()
+  (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "quotestoscrape-author.html" "blog"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      (is (= 1 (length parsed-docs)))
+      ;;-(is (equalp "Albert Einstein" (cdr (assoc :author (first parsed-docs)))))
+      (is (search "In 1879, Albert Einstein was born in Ulm, Germany"
+                  (cdr (assoc :text (first parsed-docs))))))))

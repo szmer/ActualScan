@@ -13,7 +13,9 @@ BOT_NAME = 'genscrap'
 
 SPIDER_MODULES = ['genscrap.spiders']
 NEWSPIDER_MODULE = 'genscrap.spiders'
-
+# disables scrapy-level deduplication
+DUPEFILTER_CLASS = 'scrapy.dupefilters.BaseDupeFilter'
+HTTPCACHE_ENABLED=0
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 USER_AGENT = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)'+
@@ -74,7 +76,7 @@ DEFAULT_REQUEST_HEADERS = {
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
-AUTOTHROTTLE_ENABLED = True
+AUTOTHROTTLE_ENABLED = False
 # The initial download delay
 AUTOTHROTTLE_START_DELAY = 5
 # The maximum download delay to be set in case of high latencies
