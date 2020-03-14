@@ -2,7 +2,6 @@ import datetime
 from datetime import timezone
 import http.client
 from logging import warning
-import time
 import urllib
 from urllib.parse import urlparse
 
@@ -27,22 +26,9 @@ def full_url(part, site_url):
 #
 # Page filing.
 #
-utc_offset_sec = time.altzone if time.localtime().tm_isdst else time.timezone
-utc_offset = datetime.timedelta(seconds=-utc_offset_sec)
-def now_timestamp():
-    return datetime.datetime.now().replace(tzinfo=datetime.timezone(offset=utc_offset)).isoformat()
-
 def write_to_file(path, content):
     with open(path, 'w+') as out_file:
         print(content, file=out_file)
-
-class WebPage():
-    def __init__(self, url, text, timestamp, tags, comment):
-        self.url = url
-        self.text = text
-        self.timestamp = timestamp
-        self.tags = tags
-        self.comment = comment
 
 #
 # API communications. 

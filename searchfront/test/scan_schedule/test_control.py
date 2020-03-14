@@ -51,6 +51,7 @@ class TestScanSchedule(object):
         # Check the completion.
         query_str = '/solr/lookupy/select?q=' + urllib.parse.quote(
                 'site_name:quotes.toscrape.com')
+        # NOTE we currently need a long time due to toscrap.com redirections.
         for i in range(120*2): # wait up to 120 sec
             sleep(0.5)
             ####-assert scrapyp.process.poll() is None
