@@ -1,1 +1,1 @@
-from searchfront.blueprints.site.models import Site
+from searchfront.blueprints.site.models import Site, Tag

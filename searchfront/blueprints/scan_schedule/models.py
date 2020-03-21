@@ -18,24 +18,38 @@ from searchfront.extensions import db
 #    Scrapy shouldn't report back against there was a failure, so "ran" doesn't guarantee success.
 #    ran
 #    failed
+#    cancelled
 
 class ScanJob(db.Model):
     # Id should be formed from the user identification and the query (possibly hashed).
     id = db.Column(db.String(512), primary_key=True)
     status = db.Column(db.String(32), nullable=False)
+    # The difference is that last checked indicates that there is user interest for the scan job,
+    # and the status_changed fields stores when the status actually changed recently.
     last_checked = db.Column(db.DateTime(timezone=True), nullable=False)
+    status_changed = db.Column(db.DateTime(timezone=True), nullable=False)
     query_phrase =  db.Column(db.String(512), nullable=False)
     # Just separate tags with commas in the string. It's written and read mostly once, so we don't
     # bother with native Postgres arrays.
     # NOTE we currently *require* tags in scan jobs
     query_tags = db.Column(db.String(8192), nullable=False)
-    requests = db.relationship('ScrapRequest', backref=db.backref('job', lazy=True), lazy=True)
+    requests = db.relationship('ScrapeRequest', backref=db.backref('job', lazy=True), lazy=True)
     # This controls whether scrapy should also save raw copies of html to disk. Setting spread to
     # requests.
     save_copies = db.Column(db.Boolean(), nullable=False, default=False)
 
+    def __init__(self):
+        self.last_checked = datetime.now(timezone.utc)
+        self.status_changed = datetime.now(timezone.utc)
+        super().__init__()
+
     def bump(self):
         self.last_checked = datetime.now(timezone.utc)
+
+    def change_status(self, status):
+        self.status = status
+        self.last_checked = datetime.now(timezone.utc)
+        self.status_changed = datetime.now(timezone.utc)
 
     @staticmethod
     def identifier(user_id, phrase, tags):
@@ -44,7 +58,7 @@ class ScanJob(db.Model):
         return '{}@@{}@@{}'.format(user_id, phrase, tags)
 
 # TODO address re-crawl/update requests
-class ScrapRequest(db.Model):
+class ScrapeRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     # Most browsers cut URLs above ~2000 chars, below is the max address bar value for Android.
     url = db.Column(db.String(8192), nullable=False)
@@ -62,5 +76,6 @@ class ScrapRequest(db.Model):
     save_copies = db.Column(db.Boolean(), nullable=False, default=False)
     failure_comment = db.Column(db.String(2048))
 
-    def bump(self):
+    def change_status(self, status):
+        self.status = status
         self.status_changed = datetime.now(timezone.utc)

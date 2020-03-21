@@ -8,8 +8,9 @@ from searchfront.scrapy_process import scrapyp
 from searchfront.blueprints.page import page
 from searchfront.blueprints.user import AppUser
 from searchfront.blueprints.manager import ManagerAdminView
-from searchfront.blueprints.site.models import Site
-from searchfront.blueprints.scan_schedule.models import ScrapRequest
+from searchfront.blueprints.live_config import LiveConfigValue
+from searchfront.blueprints.site import Site
+from searchfront.blueprints.scan_schedule import ScrapeRequest
 
 def create_app(settings_override=None):
     app = Flask(__name__, instance_path='/searchfront/flask_instance',
@@ -29,6 +30,14 @@ def create_app(settings_override=None):
     def init_db():
         with app.app_context():
             db.create_all()
+
+            existing_config_rows = list(db.session.query(LiveConfigValue).all())
+            existing_config_keys = [val.key for val in existing_config_rows]
+            for key, value in app.config['LIVECONFIG_START_VALUES']:
+                if not key in existing_config_keys:
+                    new_config_row = LiveConfigValue(key=key, value=value)
+                    db.session.add(new_config_row)
+                    db.session.commit()
 
             # Create the roles.
             user_datastore.find_or_create_role(name='admin', description='Administrator')

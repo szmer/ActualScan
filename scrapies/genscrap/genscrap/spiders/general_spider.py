@@ -28,7 +28,7 @@ pg_engine = create_engine(SQLALCHEMY_DATABASE_URI)
 # Reflect the tables.
 AutomapBase.prepare(pg_engine, reflect=True)
 
-ScrapRequest = AutomapBase.classes.scrap_request
+ScrapeRequest = AutomapBase.classes.scrap_request
 pg_session = Session(pg_engine)
 
 #
@@ -77,7 +77,7 @@ class GeneralSpider(scrapy.Spider):
 
     def solr_update(self, req_body, req_id=None):
         """
-        Send req_body as payload to Solr, optionally updating the req_id ScrapRequest on failure.
+        Send req_body as payload to Solr, optionally updating the req_id ScrapeRequest on failure.
         Return a boolean indicating success or failure.
         """
         self.logger.debug('Sent to Solr: {}'.format(req_body))
@@ -87,7 +87,7 @@ class GeneralSpider(scrapy.Spider):
         self.logger.debug('Solr response: {}'.format(solr_response.status))
         if solr_response.status != 200:
             if req_id is not None:
-                db_request = pg_session.query(ScrapRequest).get(req_id)
+                db_request = pg_session.query(ScrapeRequest).get(req_id)
                 db_request.status = 'failed'
                 db_request.failure_comment = 'Could not reach Solr, status code {}'.format(
                         solr_response.status) 
@@ -100,7 +100,7 @@ class GeneralSpider(scrapy.Spider):
         Scrapy parse function for Solr dummy monitoring requests - we want to search Postgres for
         new requests.
         """
-        scrap_requests_waiting = list(pg_session.query(ScrapRequest).filter_by(
+        scrap_requests_waiting = list(pg_session.query(ScrapeRequest).filter_by(
             status='waiting'))
         requests_done = False
         for scrap_request in scrap_requests_waiting:
@@ -124,7 +124,7 @@ class GeneralSpider(scrapy.Spider):
         stractor_output = stractor_reading(html_text, source_type)
         # Speechtractor failures.
         if isinstance(stractor_output, int):
-            db_request = pg_session.query(ScrapRequest).get(request_id)
+            db_request = pg_session.query(ScrapeRequest).get(request_id)
             db_request.status = 'failed'
             db_request.failure_comment = 'Could not reach Speechtractor, status code {}'.format(
                     stractor_output) 
@@ -136,7 +136,7 @@ class GeneralSpider(scrapy.Spider):
         If status is not HTTP 200 (OK), mark the request of the id as failed. Return a boolean
         indicating if the status is OK.
         """
-        db_request = pg_session.query(ScrapRequest).get(request_id)
+        db_request = pg_session.query(ScrapeRequest).get(request_id)
         db_request.status_changed = datetime.now(timezone.utc)
         # Notify of failures if needed.
         if status != 200:
@@ -160,7 +160,7 @@ class GeneralSpider(scrapy.Spider):
             return
 
         # Check if a new monitoring request is necessary.
-        scrap_requests_waiting_count = pg_session.query(ScrapRequest).filter_by(
+        scrap_requests_waiting_count = pg_session.query(ScrapeRequest).filter_by(
             status='waiting').count()
         if scrap_requests_waiting_count == 0:
             yield scrapy.Request(url=SOLR_PING_URL, callback=self.monitoring_parse,
@@ -180,7 +180,7 @@ class GeneralSpider(scrapy.Spider):
             # may cause JSONDecodeError
             for found_page in stractor_response_json:
                 if 'url' in found_page:
-                    scrap_request = ScrapRequest(url=found_page['url'], is_search=False,
+                    scrap_request = ScrapeRequest(url=found_page['url'], is_search=False,
                             job_id=response.meta['job_id'], status='waiting',
                             status_changed=datetime.now(timezone.utc),
                             source_type=response.meta['source_type'],

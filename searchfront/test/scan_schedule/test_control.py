@@ -4,11 +4,13 @@ import json
 from time import sleep
 import urllib.parse
 
-from searchfront.blueprints.scan_schedule.models import ScanJob, ScrapRequest
-from searchfront.blueprints.scan_schedule.control import (request_scan, start_scan,
-        scan_progress_info)
+from searchfront.blueprints.scan_schedule.models import ScanJob, ScrapeRequest
+from searchfront.blueprints.scan_schedule.control import (request_scan, terminate_scan,
+        scan_progress_info, do_scan_management)
 
 class TestScanSchedule(object):
+    # NOTE NOTE This test assumes that we are using a test database. Particularly no legitimate
+    # scan jobs are present and no stray do_scan_management calls will be made.
     def test_perform_scan(self, app, db, scrapyp):
         # Clean up entries from the test domain in Solr.
         req_data = '{"delete": {"query": "site_name:quotes.toscrape.com"}, "commit": {}}'
@@ -28,27 +30,29 @@ class TestScanSchedule(object):
 
         # Create the scan job.
         job_id = ScanJob.identifier('ex@example.com', 'inspirational', ['fun'])
-        existing_jobs = list(ScanJob.query.filter_by(id=job_id))
-        if len(existing_jobs) != 0:
-            db.session.delete(existing_jobs[0])
-            db.session.commit()
+        # Remove the previous one if exists.
+        ###-ScrapeRequest.query.filter_by(job_id=job_id).delete() # note the constructed id persists
+        existing_job = ScanJob.query.get(job_id)
+        if existing_job:
+            terminate_scan(existing_job)
         prescan_time = datetime.now(timezone.utc)
         request_scan('ex@example.com', 'inspirational', 'fun')
 
         # Ensure that the job is present, was just created and is inspectable.
-        existing_jobs = list(ScanJob.query.filter_by(id=job_id))
-        assert len(existing_jobs) == 1
-        assert existing_jobs[0].last_checked >= prescan_time
-        job = existing_jobs[0]
+        job = ScanJob.query.get(job_id)
+        assert job.last_checked >= prescan_time
         progress_info = scan_progress_info(job)
         assert 'phase' in progress_info
         assert progress_info['phase'] == 'waiting'
 
-        # We just manually start the requested scan.
-        ScrapRequest.query.filter_by(job_id=job.id).delete() # note the constructed id persists
-        start_scan(job)
+        # This should start the scan.
+        scheduling_info = do_scan_management()
+        assert 'spare_capacity' in scheduling_info
 
         # Check the completion.
+        progress_info = scan_progress_info(job)
+        assert 'phase' in progress_info
+        assert progress_info['phase'] == 'working'
         query_str = '/solr/lookupy/select?q=' + urllib.parse.quote(
                 'site_name:quotes.toscrape.com')
         # NOTE we currently need a long time due to toscrap.com redirections.
@@ -68,7 +72,7 @@ class TestScanSchedule(object):
         assert len(get_response_json['response']['docs']) > 0
 
         # Find the done requests in the DB.
-        requests = list(ScrapRequest.query.filter_by(job_id=job.id))
+        requests = list(ScrapeRequest.query.filter_by(job_id=job.id))
         assert len(requests) >= 3
         assert len([req for req in requests if req.status == 'ran']) >= 2
         assert len([req for req in requests if req.is_search == True]) == 1
