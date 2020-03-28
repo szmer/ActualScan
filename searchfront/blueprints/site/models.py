@@ -4,6 +4,10 @@ sites_tags = db.Table('sites_tags',
         db.Column('site_id', db.Integer(), db.ForeignKey('site.id')),
         db.Column('tag_id', db.Integer(), db.ForeignKey('tag.id')))
 
+### Possible site types:
+#    web
+#    reddit
+
 class Tag(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(256), nullable=False)
@@ -13,10 +17,13 @@ class Tag(db.Model):
 class Site(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     homepage_url = db.Column(db.String(8192), nullable=False)
+    # Homepage url w/o protocol and www, or /r/subreddit
     site_name = db.Column(db.String(512), nullable=False)
     # An url with search for "fat cat", represented as |||fat||| |||cat|||
-    search_url = db.Column(db.String(8192), nullable=False)
+    # For Reddit, the subreddit name without /r/
+    search_pointer = db.Column(db.String(8192), nullable=False)
     source_type = db.Column(db.String(32), nullable=False)
+    site_type = db.Column(db.String(32), nullable=False)
     tags = db.relationship('Tag', secondary=sites_tags,
             backref=db.backref('sites', lazy=True))
 
@@ -27,11 +34,11 @@ class Site(db.Model):
         """
         An url that should search for tokens on the site.
         """
-        mock_idx1 = self.search_url.index(self.MOCK_STR1)
-        mock_idx2 = self.search_url.index(self.MOCK_STR2)
-        search_format = (self.search_url[:mock_idx1+len(self.MOCK_STR1)]
-                + self.search_url[mock_idx2+len(self.MOCK_STR2):]).replace(self.MOCK_STR1, '{}')
-        next_token_format = self.search_url[mock_idx2:mock_idx2+len(self.MOCK_STR2)].replace(
+        mock_idx1 = self.search_pointer.index(self.MOCK_STR1)
+        mock_idx2 = self.search_pointer.index(self.MOCK_STR2)
+        search_format = (self.search_pointer[:mock_idx1+len(self.MOCK_STR1)]
+                + self.search_pointer[mock_idx2+len(self.MOCK_STR2):]).replace(self.MOCK_STR1, '{}')
+        next_token_format = self.search_pointer[mock_idx2:mock_idx2+len(self.MOCK_STR2)].replace(
                 self.MOCK_STR2, '{}')
         if len(tokens) <= 1:
             # Technically there shouldn't be zero tokens, but we shouldn't crash with this problem

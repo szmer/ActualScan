@@ -18,5 +18,13 @@ Flask-Admin==1.5.5
 Scrapy==1.8.0
 simpleflock==0.0.3
 
+# Reddit scraper.
+praw==6.5.1
+Markdown==3.2.1
+markdown-strikethrough==0.1.1
+mdx-linkify==1.4
+beautifulsoup4==4.8.2
+sentence_splitter==1.4
+
 # Testing.
 pytest==5.3.5

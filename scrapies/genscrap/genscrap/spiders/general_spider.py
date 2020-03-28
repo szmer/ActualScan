@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-import http.client
 import json
 import os, os.path
 
@@ -11,14 +10,16 @@ from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
 
 from genscrap.flask_instance.settings import SQLALCHEMY_DATABASE_URI 
-from genscrap.lib import write_to_file, stractor_reading, timestamp_now, full_url
+from genscrap.lib import (
+        write_to_file, stractor_reading, timestamp_now, full_url, solr_update, site_id_tags
+        )
 
 FILEDB_PATH = ''
 # Note it's the original port, not the one mapped by docker-compose.
 SOLR_NETLOC = 'solr:8983'
 SOLR_PING_URL = 'http://solr:8983/solr/lookupy/admin/ping'
 REQUEST_META = ['id', 'is_search', 'job_id', 'query_tags', 'save_copies', 'site_name', 'site_url',
-        'source_type']
+        'site_id', 'source_type']
 
 #
 # Postgres connection & ORM setup.
@@ -28,7 +29,8 @@ pg_engine = create_engine(SQLALCHEMY_DATABASE_URI)
 # Reflect the tables.
 AutomapBase.prepare(pg_engine, reflect=True)
 
-ScrapeRequest = AutomapBase.classes.scrap_request
+ScrapeRequest = AutomapBase.classes.scrape_request
+Site = AutomapBase.classes.site
 pg_session = Session(pg_engine)
 
 #
@@ -40,9 +42,6 @@ class GeneralSpider(scrapy.Spider):
     # We want to catch them to notify the DB of failure.
     handle_httpstatus_list = [400, 401, 402, 403, 404, 405, 406, 407, 408, 409, 410, 411, 412, 413,
             414, 415, 416, 417, 500, 501, 502, 503, 504, 505]
-
-    def __init__(self):
-        self.solr_conn = http.client.HTTPConnection('solr', port=8983, timeout=10)
 
     def start_requests(self):
         yield scrapy.Request(url=SOLR_PING_URL, callback=self.monitoring_parse,
@@ -75,41 +74,21 @@ class GeneralSpider(scrapy.Spider):
             with open(db_path+'index.csv', 'a+') as db_index_file:
                 print(entry_n, url, file=db_index_file)
 
-    def solr_update(self, req_body, req_id=None):
-        """
-        Send req_body as payload to Solr, optionally updating the req_id ScrapeRequest on failure.
-        Return a boolean indicating success or failure.
-        """
-        self.logger.debug('Sent to Solr: {}'.format(req_body))
-        self.solr_conn.request('GET', '/solr/lookupy/update', body=req_body,
-            headers={'Content-type': 'application/json'})
-        solr_response = self.solr_conn.getresponse()
-        self.logger.debug('Solr response: {}'.format(solr_response.status))
-        if solr_response.status != 200:
-            if req_id is not None:
-                db_request = pg_session.query(ScrapeRequest).get(req_id)
-                db_request.status = 'failed'
-                db_request.failure_comment = 'Could not reach Solr, status code {}'.format(
-                        solr_response.status) 
-                pg_session.commit()
-            return False
-        return True
-
     def monitoring_parse(self, response):
         """
         Scrapy parse function for Solr dummy monitoring requests - we want to search Postgres for
         new requests.
         """
-        scrap_requests_waiting = list(pg_session.query(ScrapeRequest).filter_by(
-            status='waiting'))
+        scrape_requests_waiting = list(pg_session.query(ScrapeRequest).filter_by(
+            status='waiting', site_type='web'))
         requests_done = False
-        for scrap_request in scrap_requests_waiting:
-            scrap_request.status = 'scheduled'
-            meta = {attr: getattr(scrap_request, attr)
+        for scrape_request in scrape_requests_waiting:
+            scrape_request.status = 'scheduled'
+            meta = {attr: getattr(scrape_request, attr)
                         for attr
                         in REQUEST_META}
             pg_session.commit()
-            url = full_url(scrap_request.url, scrap_request.site_url)
+            url = full_url(scrape_request.target, scrape_request.site_url)
             yield scrapy.Request(url=url, callback=self.parse, meta=meta, errback=self.fail)
             requests_done = True
         if not requests_done:
@@ -159,14 +138,14 @@ class GeneralSpider(scrapy.Spider):
         if not ok:
             return
 
-        # Check if a new monitoring request is necessary.
-        scrap_requests_waiting_count = pg_session.query(ScrapeRequest).filter_by(
-            status='waiting').count()
-        if scrap_requests_waiting_count == 0:
+        # Check if a new monitoring request is necessary. TODO check jobs instead maybe?
+        scrape_requests_waiting_count = pg_session.query(ScrapeRequest).filter_by(
+            status='waiting', site_type='web').count()
+        if scrape_requests_waiting_count == 0:
             yield scrapy.Request(url=SOLR_PING_URL, callback=self.monitoring_parse,
                     errback=self.fail)
 
-        # Interpret the website with speechtractor.
+        # Interpret the webpage with speechtractor.
         if response.meta['is_search']:
            source_type = 'searchpage'
         else:
@@ -180,22 +159,25 @@ class GeneralSpider(scrapy.Spider):
             # may cause JSONDecodeError
             for found_page in stractor_response_json:
                 if 'url' in found_page:
-                    scrap_request = ScrapeRequest(url=found_page['url'], is_search=False,
+                    scrape_request = ScrapeRequest(target=found_page['url'], is_search=False,
                             job_id=response.meta['job_id'], status='waiting',
                             status_changed=datetime.now(timezone.utc),
                             source_type=response.meta['source_type'],
                             query_tags=response.meta['query_tags'],
                             site_name=response.meta['site_name'],
+                            site_type='web',
                             site_url=response.meta['site_url'],
+                            site_id=response.meta['site_id'],
                             save_copies=response.meta['save_copies'])
-                    pg_session.add(scrap_request)
+                    pg_session.add(scrape_request)
                     pg_session.commit()
                     yield response.follow(found_page['url'],
                             callback=self.parse,
-                            meta={attr: getattr(scrap_request, attr) for attr
+                            meta={attr: getattr(scrape_request, attr) for attr
                                 in REQUEST_META})
         # The actual page indexing.
         else:
+            site_tags = site_id_tags(response.meta['site_id'], pg_session)
             # may cause JSONDecodeError
             for doc in stractor_response_json:
                 doc['date_retr'] = timestamp_now()
@@ -207,14 +189,17 @@ class GeneralSpider(scrapy.Spider):
                 else:
                     doc['real_doc'] = response.url
                 doc['url'] = full_url(doc['url'], response.meta['site_url'])
-                doc['tags'] = response.meta['query_tags'].split(',')
+                doc['tags'] = site_tags,
                 doc['reason_scraped'] = response.meta['job_id']
             # This sends documents to solr with default settings. We need to do a manual commit
             # afterwards.
             solr_json_text = json.dumps(stractor_response_json)
-            self.solr_update(solr_json_text, req_id=response.meta['id'])
+            solr_update(solr_json_text, req_id=response.meta['id'],
+                    req_class=ScrapeRequest, pg_session=pg_session)
+            # Do the manual commit.
             # TODO commit one doc in one go with {add: {doc:}} json structure
-            self.solr_update('{"commit": {}}', req_id=response.meta['id'])
+            solr_update('{"commit": {}}', req_id=response.meta['id'],
+                    req_class=ScrapeRequest, pg_session=pg_session)
 
         if response.meta['save_copies']:
             # Save the page.

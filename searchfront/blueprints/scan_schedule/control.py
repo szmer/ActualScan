@@ -1,4 +1,5 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from logging import error
 
 from searchfront.extensions import db
 
@@ -28,12 +29,25 @@ def start_scan(scan_job):
         for site in tag.sites:
             if not site in sites_queried:
                 sites_queried.add(site) # a site can belong to multiple tags
-                search_url = site.search_url_for(phrase_tokens)
-                req = ScrapeRequest(url=search_url, is_search=True, job_id=scan_job.id,
-                    status='waiting',
-                    source_type=site.source_type, site_name=site.site_name,
-                    site_url=site.homepage_url,
-                    query_tags=scan_job.query_tags, save_copies=scan_job.save_copies)
+                if site.site_type == 'web':
+                    search_pointer = site.search_url_for(phrase_tokens)
+                    req = ScrapeRequest(target=search_pointer, is_search=True, job_id=scan_job.id,
+                            status='waiting',
+                            source_type=site.source_type, site_name=site.site_name,
+                            site_url=site.homepage_url, site_type=site.site_type,
+                            site_id = site.id,
+                            query_tags=scan_job.query_tags, save_copies=scan_job.save_copies)
+                elif site.site_type == 'reddit':
+                    req = ScrapeRequest(target='[reddit] '+scan_job.query_phrase,
+                            is_search=True, job_id=scan_job.id,
+                            status='waiting', site_type=site.site_type,
+                            source_type=site.source_type, site_name=site.site_name,
+                            site_url=site.homepage_url,
+                            site_id = site.id,
+                            query_tags=scan_job.query_tags, save_copies=scan_job.save_copies)
+                else:
+                    error('Unknown site type {} for site {} ({})'.format(site.site_type, site.id,
+                        site.homepage_url))
                 db.session.add(req)
                 db.session.commit()
     scan_job.change_status('working')
@@ -78,11 +92,11 @@ def scan_progress_info(scan_job):
         db.session.commit()
         return {'phase': 'done'}
     phase = ('search' if pending_search_count > 0 else 'crawl')
-    done_requests = ScrapeRequest.query.filter(
-            (ScrapeRequest.status == 'ran')
-            | (ScrapeRequest.status == 'failed'),
-            ScrapeRequest.job_id == scan_job.id
-            ).order_by('status_changed'.desc())
+    done_requests = list(ScrapeRequest.query.filter(
+        (ScrapeRequest.status == 'ran')
+        | (ScrapeRequest.status == 'failed'),
+        ScrapeRequest.job_id == scan_job.id
+        ).order_by(ScrapeRequest.status_changed.desc()))
     fails = len([req for req in done_requests if req.status == 'failed'])
     if phase == 'search':
         dl_proportion = (pending_search_count
@@ -90,7 +104,8 @@ def scan_progress_info(scan_job):
     else:
         dl_proportion = (pending_crawl_count
                 / pending_crawl_count + len([req for req in done_requests if not req.is_search]))
-    return {'phase': phase, 'fails': fails, 'last_url': done_requests[0].url,
+    return {'phase': phase, 'fails': fails,
+            'last_url': done_requests[0].target if len(done_requests) > 0 else None,
             'dl_proportion': dl_proportion}
 
 def do_scan_management():
@@ -117,13 +132,13 @@ def do_scan_management():
     if spare_capacity > 0:
         # TODO an explicit queue? currently just a naive FIFO
         jobs_to_start = list(ScanJob.query.filter_by(status='waiting').order_by(
-            'status_changed'.asc()).limit(spare_capacity))
+            ScanJob.status_changed.asc()).limit(spare_capacity))
         for job in jobs_to_start:
             start_scan(job)
         spare_capacity -= len(jobs_to_start)
     # Remove old jobs and requests.
     scan_job_time_to_live = int(LiveConfigValue.query.get('scan_job_time_to_live').value)
-    scan_job_time_threshold = datetime.now(timezone.utc) - datetime.timedelta(
+    scan_job_time_threshold = datetime.now(timezone.utc) - timedelta(
             seconds=scan_job_time_to_live)
     old_jobs_finished = list(ScanJob.query.filter(ScanJob.status=='working',
         ScanJob.status_changed < scan_job_time_threshold))
@@ -132,7 +147,7 @@ def do_scan_management():
     db.session.commit()
     scrape_request_time_to_live = int(LiveConfigValue.query.get(
         'scrape_request_time_to_live').value)
-    scrape_request_time_threshold = datetime.now(timezone.utc) - datetime.timedelta(
+    scrape_request_time_threshold = datetime.now(timezone.utc) - timedelta(
             seconds=scrape_request_time_to_live)
     old_reqs_finished = list(ScrapeRequest.query.filter(ScrapeRequest.status=='working',
         ScrapeRequest.status_changed < scrape_request_time_threshold))

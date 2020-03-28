@@ -1,7 +1,7 @@
 import datetime
 from datetime import timezone
 import http.client
-from logging import warning
+from logging import warning, debug
 import urllib
 from urllib.parse import urlparse
 
@@ -49,3 +49,35 @@ def stractor_reading(text, source_type):
         warning(stractor_response.read())
         return stractor_response.status
     return stractor_response.read().decode('utf-8')
+
+def solr_update(req_body, req_id=None, req_class=False, pg_session=False):
+    """
+    Send req_body as payload to Solr, optionally updating the req_id ScrapeRequest (or other given
+    req_class) on failure. You need to pass an SQLAlchemy pg_session for this. Return a boolean
+    indicating success or failure.
+    """
+    # Recreate the connection each time to avoid getting stuck in bad states.
+    solr_conn = http.client.HTTPConnection('solr', port=8983, timeout=10)
+    solr_conn.request('GET', '/solr/lookupy/update', body=req_body,
+        headers={'Content-type': 'application/json'})
+    debug('Sent to Solr: {}'.format(req_body))
+    solr_response = solr_conn.getresponse()
+    debug('Solr response: {}'.format(solr_response.status))
+    if solr_response.status != 200:
+        if req_id is not None:
+            db_request = pg_session.query(req_class).get(req_id)
+            db_request.status = 'failed'
+            db_request.failure_comment = 'Could not reach Solr, status code {}'.format(
+                    solr_response.status)
+            pg_session.commit()
+        return False
+    return True
+
+def site_id_tags(site_id, pg_session):
+    """
+    Retrieve the list of site tags for the site_id with pg_session.
+    """
+    query = ('SELECT name FROM tag WHERE id IN (SELECT tag_id FROM sites_tags'
+            ' WHERE site_id = {})').format(site_id)
+    tag_rows = pg_session.execute(query)
+    return [row[0] for row in tag_rows]
