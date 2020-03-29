@@ -1,8 +1,9 @@
 from flask import Flask
 from flask_security.utils import encrypt_password
 
-from searchfront.extensions import db, security, user_datastore, admin
+from searchfront.extensions import db, security, user_datastore, admin, ModelViewWithRels, SiteModelView
 from searchfront.scrapy_process import scrapyp
+from searchfront.reddit_process import redditp
 
 # Import blueprints now as some of them may require setting up extensions beforehand.
 from searchfront.blueprints.page import page
@@ -52,7 +53,6 @@ def create_app(settings_override=None):
             user_datastore.add_role_to_user(app.config['INIT_USER_EMAIL'], 'admin')
             db.session.commit()
 
-    # note that Scrapy needs to have the control classes already present in Postgres
     @app.before_first_request
     def init_scrapy():
         scrapyp.run()
@@ -61,7 +61,18 @@ def create_app(settings_override=None):
         if scrapyp.process.poll() is not None:
             app.logger.warning('Scrapy process is not running on start of the flask app.')
 
+    @app.before_first_request
+    def init_reddit():
+        redditp.run()
+        if redditp.process.poll() is None:
+            app.logger.info('The reddit process is running on start of the flask app.')
+        if redditp.process.poll() is not None:
+            app.logger.warning('Reddit process is not running on start of the flask app.')
+
+    # The admin panel setup.
     admin.add_view(ManagerAdminView(AppUser, db.session))
+    admin.add_view(SiteModelView(Site, db.session))
+    admin.add_view(ModelViewWithRels(Tag, db.session))
 
     return app
 
