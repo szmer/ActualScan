@@ -28,6 +28,8 @@ scrapies/genscrap/genscrap/flask_instance
 
 ## Webpack
 webpack/node_modules
+webpack/yarn-error.log
+webpack/package-lock.json
 
 ## Pycache
 *__pycache__*

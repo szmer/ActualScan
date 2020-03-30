@@ -1,12 +1,14 @@
 from flask import Flask
 from flask_security.utils import encrypt_password
 
-from searchfront.extensions import db, security, user_datastore, admin, ModelViewWithRels, SiteModelView
+from searchfront.extensions import (
+        db, security, user_datastore, admin, SiteModelView, TagModelView
+        )
 from searchfront.scrapy_process import scrapyp
 from searchfront.reddit_process import redditp
 
 # Import blueprints now as some of them may require setting up extensions beforehand.
-from searchfront.blueprints.page import page
+from searchfront.blueprints.frontpage import frontpage
 from searchfront.blueprints.user import AppUser
 from searchfront.blueprints.manager import ManagerAdminView
 from searchfront.blueprints.live_config import LiveConfigValue
@@ -24,7 +26,7 @@ def create_app(settings_override=None):
     if settings_override:
         app.config.update(settings_override)
 
-    app.register_blueprint(page)
+    app.register_blueprint(frontpage)
     extensions(app)
 
     @app.before_first_request
@@ -71,8 +73,9 @@ def create_app(settings_override=None):
 
     # The admin panel setup.
     admin.add_view(ManagerAdminView(AppUser, db.session))
+    # TODO add authorization requirements!!!
     admin.add_view(SiteModelView(Site, db.session))
-    admin.add_view(ModelViewWithRels(Tag, db.session))
+    admin.add_view(TagModelView(Tag, db.session))
 
     return app
 

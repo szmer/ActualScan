@@ -1,0 +1,13 @@
+{% extends 'layouts/base.html' %}
+{% from "macros/form.html" import render_field, render_selectmultiple_field %}
+{% block body %}
+<h1>ActualScan</h1>
+<form>
+   <dl>
+   {{ render_field(form.scan_query) }}
+   {{ render_selectmultiple_field(form.query_tags) }}
+   </dl>
+
+   <input type=submit value=Go>
+</form>
+{% endblock %}

@@ -13,6 +13,12 @@ class Tag(db.Model):
     name = db.Column(db.String(256), nullable=False)
     # (also a sites backref)
 
+    def __repr__(self):
+        """
+        Implementing __repr__ is beneficial for displaying in forms.
+        """
+        return self.name
+
 # TODO subreddit sites and similar special cases
 class Site(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -29,6 +35,12 @@ class Site(db.Model):
 
     MOCK_STR1 = '|||fat|||'
     MOCK_STR2 = '|||cat|||'
+
+    def __repr__(self):
+        """
+        Implementing __repr__ is beneficial for displaying in forms.
+        """
+        return self.site_name
 
     def search_url_for(self, tokens):
         """

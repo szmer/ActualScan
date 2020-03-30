@@ -45,5 +45,8 @@
 @import '~bootstrap/scss/utilities';
 @import '~bootstrap/scss/print';
 
+@import '../node_modules/bootstrap-select/sass/variables.scss';
+@import '../node_modules/bootstrap-select/sass/bootstrap-select.scss';
+
 // Application.
 @import 'scss/all';
