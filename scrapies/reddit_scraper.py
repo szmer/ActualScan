@@ -1,7 +1,7 @@
 import argparse
 from datetime import datetime, timezone
 import json
-from logging import debug, getLogger
+from logging import debug, getLogger, info
 import re
 
 import praw
@@ -22,7 +22,7 @@ from bs4 import BeautifulSoup
 
 # We need to get one module deeper comparing to the general spider, because we're outside of the
 # Scrapy project.
-from genscrap.genscrap.lib import date_fmt, solr_update, site_id_tags
+from genscrap.genscrap.lib import date_fmt, solr_update, site_id_tags, update_request_status
 from genscrap.genscrap.flask_instance.settings import (
         SQLALCHEMY_DATABASE_URI, REDDIT_UA, REDDIT_CLIENT, REDDIT_SECRET
         )
@@ -67,6 +67,7 @@ def ok(obj, attrname):
     return hasattr(obj, attrname) and getattr(obj, attrname) is not None and getattr(obj, attrname)
 
 splitter = SentenceSplitter(language='en')
+# TODO ignore "[deleted]" comments
 def format_text(text):
     """
     This can return False if the text is reject (if short and not alphanumeric).
@@ -92,7 +93,8 @@ def format_text(text):
             result += sent + '\n'
     return result
 
-def make_scrape_request(target):
+def make_scrape_request(target, job_id):
+    info('Ran a Reddit scrape request for {} ({})'.format(target, job_id))
     return ScrapeRequest(target=target,
             is_search=False,
             job_id=search_scrape_request.job_id, status='ran',
@@ -130,9 +132,7 @@ while True:
     for search_scrape_request in search_scrape_requests_waiting:
         debug('Processing the scrape request for {} in {}'.format(
             search_scrape_request.target, search_scrape_request.job_id))
-        search_scrape_request.status = 'ran'
-        pg_session.add(search_scrape_request)
-        pg_session.commit()
+        update_request_status(pg_session, search_scrape_request, 'ran')
         # Scan job level submission deduplication. TODO just consult with Solr!
         downloaded_submissions = set()
         search_phrase = search_scrape_request.target[len('[reddit] '):]
@@ -153,7 +153,8 @@ while True:
                 continue
             # Add to the dedup and to the database.
             downloaded_submissions.add(submission.permalink)
-            submission_scrape_request = make_scrape_request(submission.permalink)
+            submission_scrape_request = make_scrape_request(submission.permalink,
+                    search_scrape_request.job_id)
             pg_session.add(submission_scrape_request)
             pg_session.commit()
             # Load all the 'load more's.
@@ -209,7 +210,8 @@ while True:
                     continue
                 # Notify the database.
                 downloaded_submissions.add(submission.permalink)
-                submission_scrape_request = make_scrape_request(submission.permalink)
+                submission_scrape_request = make_scrape_request(submission.permalink,
+                    search_scrape_request.job_id)
                 pg_session.add(submission_scrape_request)
                 pg_session.commit()
                 comment_obj = {'reason_scraped': search_scrape_request.job_id, 'source_type': 'f',

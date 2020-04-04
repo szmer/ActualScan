@@ -7,14 +7,20 @@ from searchfront.blueprints.site import Tag
 from searchfront.blueprints.scan_schedule import ScanJob, ScrapeRequest
 from searchfront.blueprints.live_config import LiveConfigValue
 
-def request_scan(user_id, query_phrase, query_tags):
+def request_scan(user_id, query_phrase : str, query_tags : list, force_new=False):
     """
-    Put an awaiting scan job in the database.
+    Put an awaiting scan job in the database. query_tags should be a list of strings. If force_new
+    is set and the job already exists, a ValueError is raised. Return the ScanJob object.
     """
-    job = ScanJob(id=ScanJob.identifier(user_id, query_phrase, query_tags),
-            query_phrase=query_phrase, query_tags=query_tags, status='waiting')
-    db.session.add(job)
-    db.session.commit()
+    job_id = ScanJob.identifier(user_id, query_phrase, query_tags)
+    job = ScanJob.query.get(job_id)
+    if job is None:
+        job = ScanJob(id=job_id, query_phrase=query_phrase, query_tags=query_tags, status='waiting')
+        db.session.add(job)
+        db.session.commit()
+    elif force_new:
+        raise ValueError('Scan job {} already exists, but was asked to recreate it'.format(job_id))
+    return job
 
 def start_scan(scan_job):
     """

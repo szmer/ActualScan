@@ -4,6 +4,8 @@ import json
 from time import sleep
 import urllib.parse
 
+import pytest
+
 from searchfront.blueprints.scan_schedule.models import ScanJob, ScrapeRequest
 from searchfront.blueprints.scan_schedule.control import (request_scan, terminate_scan,
         scan_progress_info, do_scan_management)
@@ -17,6 +19,7 @@ def solr_search_json(query):
     get_response_json = json.loads(get_response_text)
     return get_response_json
 
+@pytest.mark.with_network
 class TestScanSchedule(object):
     def test_scan_environment(self, db, scrapyp, redditp):
         # Check if Scrapy and Speechtractor are up.
@@ -35,7 +38,7 @@ class TestScanSchedule(object):
         if existing_job:
             terminate_scan(existing_job)
         prescan_time = datetime.now(timezone.utc)
-        request_scan('ex@example.com', 'NabuchodonozorKopieJeftego?', 'fun')
+        request_scan('ex@example.com', 'NabuchodonozorKopieJeftego?', ['fun'])
 
         # Ensure that the job is present, was just created and is inspectable.
         job = ScanJob.query.get(job_id)
@@ -86,7 +89,7 @@ class TestScanSchedule(object):
         existing_job = ScanJob.query.get(job_id)
         if existing_job:
             terminate_scan(existing_job)
-        request_scan('ex@example.com', 'inspirational', 'games')
+        request_scan('ex@example.com', 'inspirational', ['games'])
 
         # This should start the scan.
         do_scan_management()
@@ -137,7 +140,7 @@ class TestScanSchedule(object):
         existing_job = ScanJob.query.get(job_id)
         if existing_job:
             terminate_scan(existing_job)
-        request_scan('ex@example.com', 'jour', 'reddit')
+        request_scan('ex@example.com', 'jour', ['reddit'])
 
         # This should start the scan.
         do_scan_management()

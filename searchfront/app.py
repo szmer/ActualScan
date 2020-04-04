@@ -1,8 +1,8 @@
 from flask import Flask
-from flask_security.utils import encrypt_password
+from flask_security.utils import hash_password
 
 from searchfront.extensions import (
-        db, security, user_datastore, admin, SiteModelView, TagModelView
+        db, csrf, security, user_datastore, admin, SiteModelView, TagModelView
         )
 from searchfront.scrapy_process import scrapyp
 from searchfront.reddit_process import redditp
@@ -50,7 +50,7 @@ def create_app(settings_override=None):
             # Add the root user.
             if not user_datastore.get_user(app.config['INIT_USER_EMAIL']):
                 user_datastore.create_user(email=app.config['INIT_USER_EMAIL'],
-                        password=encrypt_password(app.config['INIT_USER_PASSWORD']))
+                        password=hash_password(app.config['INIT_USER_PASSWORD']))
             db.session.commit()
             user_datastore.add_role_to_user(app.config['INIT_USER_EMAIL'], 'admin')
             db.session.commit()
@@ -81,5 +81,6 @@ def create_app(settings_override=None):
 
 def extensions(app):
     db.init_app(app)
+    csrf.init_app(app)
     security.init_app(app, datastore=user_datastore)
     admin.init_app(app)

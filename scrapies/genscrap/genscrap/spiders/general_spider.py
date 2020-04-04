@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 import json
+from logging import info
 import os, os.path
 
 import simpleflock
@@ -11,7 +12,8 @@ from sqlalchemy import create_engine
 
 from genscrap.flask_instance.settings import SQLALCHEMY_DATABASE_URI 
 from genscrap.lib import (
-        write_to_file, stractor_reading, timestamp_now, full_url, solr_update, site_id_tags
+        write_to_file, stractor_reading, timestamp_now, full_url, solr_update, site_id_tags,
+        update_request_status
         )
 
 FILEDB_PATH = ''
@@ -83,11 +85,10 @@ class GeneralSpider(scrapy.Spider):
             status='waiting', site_type='web'))
         requests_done = False
         for scrape_request in scrape_requests_waiting:
-            scrape_request.status = 'scheduled'
+            update_request_status(pg_session, scrape_request, 'scheduled')
             meta = {attr: getattr(scrape_request, attr)
                         for attr
                         in REQUEST_META}
-            pg_session.commit()
             url = full_url(scrape_request.target, scrape_request.site_url)
             yield scrapy.Request(url=url, callback=self.parse, meta=meta, errback=self.fail)
             requests_done = True
@@ -103,11 +104,11 @@ class GeneralSpider(scrapy.Spider):
         stractor_output = stractor_reading(html_text, source_type)
         # Speechtractor failures.
         if isinstance(stractor_output, int):
-            db_request = pg_session.query(ScrapeRequest).get(request_id)
-            db_request.status = 'failed'
-            db_request.failure_comment = 'Could not reach Speechtractor, status code {}'.format(
-                    stractor_output) 
-            pg_session.commit()
+            update_request_status(pg_session,
+                    pg_session.query(ScrapeRequest).get(request_id),
+                    'failed',
+                    failure_comment='Could not reach Speechtractor, status code {}'.format(
+                        stractor_output))
         return json.loads(stractor_output)
 
     def status_notify_db(self, request_id, status):
@@ -116,14 +117,12 @@ class GeneralSpider(scrapy.Spider):
         indicating if the status is OK.
         """
         db_request = pg_session.query(ScrapeRequest).get(request_id)
-        db_request.status_changed = datetime.now(timezone.utc)
         # Notify of failures if needed.
         if status != 200:
-            db_request.status = 'failed'
-            db_request.failure_comment = 'Status code: {}'.format(status)
+            update_request_status(pg_session, db_request, 'failed',
+                    failure_comment='Status code: {}'.format(status))
         else:
-            db_request.status = 'ran'
-        pg_session.commit()
+            update_request_status(pg_session, db_request, 'ran')
         if status != 200:
             return False
         return True
@@ -150,56 +149,63 @@ class GeneralSpider(scrapy.Spider):
            source_type = 'searchpage'
         else:
             source_type = response.meta['source_type']
+        # may cause JSONDecodeError
         stractor_response_json = self.interpret_stractor(source_type, response.text,
                 response.meta['id'])
 
         # Handling search pages.
         if response.meta['is_search']:
-            # TODO go to the next page!
-            # may cause JSONDecodeError
-            for found_page in stractor_response_json:
-                if 'url' in found_page:
-                    scrape_request = ScrapeRequest(target=found_page['url'], is_search=False,
-                            job_id=response.meta['job_id'], status='waiting',
-                            status_changed=datetime.now(timezone.utc),
-                            source_type=response.meta['source_type'],
-                            query_tags=response.meta['query_tags'],
-                            site_name=response.meta['site_name'],
-                            site_type='web',
-                            site_url=response.meta['site_url'],
-                            site_id=response.meta['site_id'],
-                            save_copies=response.meta['save_copies'])
-                    pg_session.add(scrape_request)
-                    pg_session.commit()
-                    yield response.follow(found_page['url'],
-                            callback=self.parse,
-                            meta={attr: getattr(scrape_request, attr) for attr
-                                in REQUEST_META})
+            if stractor_response_json is not None and stractor_response_json:
+                # TODO go to the next page!
+                for found_page in stractor_response_json:
+                    if 'url' in found_page:
+                        scrape_request = ScrapeRequest(target=found_page['url'], is_search=False,
+                                job_id=response.meta['job_id'], status='waiting',
+                                status_changed=datetime.now(timezone.utc),
+                                source_type=response.meta['source_type'],
+                                query_tags=response.meta['query_tags'],
+                                site_name=response.meta['site_name'],
+                                site_type='web',
+                                site_url=response.meta['site_url'],
+                                site_id=response.meta['site_id'],
+                                save_copies=response.meta['save_copies'])
+                        pg_session.add(scrape_request)
+                        pg_session.commit()
+                        yield response.follow(found_page['url'],
+                                callback=self.parse,
+                                meta={attr: getattr(scrape_request, attr) for attr
+                                    in REQUEST_META})
+            else:
+                info('Got empty Speechractor response: {} for search target: {}'.format(
+                    stractor_response_json, response.url))
         # The actual page indexing.
         else:
             site_tags = site_id_tags(response.meta['site_id'], pg_session)
-            # may cause JSONDecodeError
-            for doc in stractor_response_json:
-                doc['date_retr'] = timestamp_now()
-                doc['site_name'] = response.meta['site_name']
-                doc['source_type'] = response.meta['source_type']
-                if len(stractor_response_json) == 1:
-                    doc['real_doc'] = 'self'
-                    doc['url'] = response.url
-                else:
-                    doc['real_doc'] = response.url
-                doc['url'] = full_url(doc['url'], response.meta['site_url'])
-                doc['tags'] = site_tags,
-                doc['reason_scraped'] = response.meta['job_id']
-            # This sends documents to solr with default settings. We need to do a manual commit
-            # afterwards.
-            solr_json_text = json.dumps(stractor_response_json)
-            solr_update(solr_json_text, req_id=response.meta['id'],
-                    req_class=ScrapeRequest, pg_session=pg_session)
-            # Do the manual commit.
-            # TODO commit one doc in one go with {add: {doc:}} json structure
-            solr_update('{"commit": {}}', req_id=response.meta['id'],
-                    req_class=ScrapeRequest, pg_session=pg_session)
+            if stractor_response_json is not None and stractor_response_json:
+                for doc in stractor_response_json:
+                    doc['date_retr'] = timestamp_now()
+                    doc['site_name'] = response.meta['site_name']
+                    doc['source_type'] = response.meta['source_type']
+                    if len(stractor_response_json) == 1:
+                        doc['real_doc'] = 'self'
+                        doc['url'] = response.url
+                    else:
+                        doc['real_doc'] = response.url
+                    doc['url'] = full_url(doc['url'], response.meta['site_url'])
+                    doc['tags'] = site_tags,
+                    doc['reason_scraped'] = response.meta['job_id']
+                # This sends documents to solr with default settings. We need to do a manual commit
+                # afterwards.
+                solr_json_text = json.dumps(stractor_response_json)
+                solr_update(solr_json_text, req_id=response.meta['id'],
+                        req_class=ScrapeRequest, pg_session=pg_session)
+                # Do the manual commit.
+                # TODO commit one doc in one go with {add: {doc:}} json structure
+                solr_update('{"commit": {}}', req_id=response.meta['id'],
+                        req_class=ScrapeRequest, pg_session=pg_session)
+            else:
+                info('Got empty Speechractor response: {} for scraping target: {}'.format(
+                    stractor_response_json, response.url))
 
         if response.meta['save_copies']:
             # Save the page.

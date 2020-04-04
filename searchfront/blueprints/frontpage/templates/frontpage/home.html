@@ -1,13 +1,13 @@
 {% extends 'layouts/base.html' %}
 {% from "macros/form.html" import render_field, render_selectmultiple_field %}
 {% block body %}
-<h1>ActualScan</h1>
 <form>
    <dl>
-   {{ render_field(form.scan_query) }}
-   {{ render_selectmultiple_field(form.query_tags) }}
+   {{ render_field(form.scan_query, show_errors) }}
+   {{ render_selectmultiple_field(form.query_tags, show_errors) }}
+   {{ form.csrf_token }}
    </dl>
 
-   <input type=submit value=Go>
+   <button type="submit" class="btn btn-primary">Scan</button>
 </form>
 {% endblock %}

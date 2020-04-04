@@ -7,6 +7,12 @@
 
 (hunchentoot:define-easy-handler (interpret-01 :uri "/api/v01/interpret") (html sourcetype)
   (setf (hunchentoot:content-type*) "text/json")
+  (when *log-requests-p*
+    (log:info "Received a request for processing ~A, source type ~A"
+              (if (or (not html) (<= (length html) 140))
+                  html ; don't do replacements on short ones, they may be nil
+                  (cl-strings:replace-all (subseq html 0 140) (format nil "~%") " "))
+              sourcetype))
   (if (not (and html sourcetype))
       (progn
         (setf (hunchentoot:return-code*) hunchentoot:+http-bad-request+)

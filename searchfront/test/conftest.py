@@ -20,6 +20,7 @@ def app():
     }
     _app = create_app(settings_override=params)
     _app.config.from_object('flask_config.settings')
+    _app.config['WTF_CSRF_ENABLED'] = False
     context = _app.app_context()
     context.push()
     yield _app

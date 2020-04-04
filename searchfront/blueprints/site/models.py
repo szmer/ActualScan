@@ -17,7 +17,7 @@ class Tag(db.Model):
         """
         Implementing __repr__ is beneficial for displaying in forms.
         """
-        return self.name
+        return 'tag: \'{}\''.format(self.name)
 
 # TODO subreddit sites and similar special cases
 class Site(db.Model):
@@ -40,7 +40,7 @@ class Site(db.Model):
         """
         Implementing __repr__ is beneficial for displaying in forms.
         """
-        return self.site_name
+        return 'site on {}'.format(self.site_name)
 
     def search_url_for(self, tokens):
         """

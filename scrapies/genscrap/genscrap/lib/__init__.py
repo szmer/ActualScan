@@ -1,7 +1,6 @@
-import datetime
-from datetime import timezone
+from datetime import datetime, timezone
 import http.client
-from logging import warning, debug
+from logging import debug, info, warning
 import urllib
 from urllib.parse import urlparse
 
@@ -9,7 +8,7 @@ def date_fmt(time_obj):
     return time_obj.strftime('%Y-%m-%dT%H:%M:%SZ')
 
 def timestamp_now():
-    return date_fmt(datetime.datetime.now(tz=timezone.utc))
+    return date_fmt(datetime.now(tz=timezone.utc))
 
 def full_url(part, site_url):
     """
@@ -81,3 +80,12 @@ def site_id_tags(site_id, pg_session):
             ' WHERE site_id = {})').format(site_id)
     tag_rows = pg_session.execute(query)
     return [row[0] for row in tag_rows]
+
+def update_request_status(db_session, request, new_status, failure_comment=None):
+    request.status = new_status
+    request.status_changed = datetime.now(timezone.utc)
+    if failure_comment is not None:
+        request.failure_comment = failure_comment
+    db_session.commit()
+    info('Status of the request for {} ({}) changed to {}'.format(request.target, request.job_id,
+        new_status))

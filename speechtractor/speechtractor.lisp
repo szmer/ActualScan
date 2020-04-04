@@ -6,7 +6,10 @@
 (defparameter *http-port* 3756)
 ;; Silence hunchentoot reporting.
 (defparameter *server-silentp* t)
+;; Should the hunchentoot REPL enter the interpreter debugger on error.
 (defparameter *server-enter-debug-p* t)
+;; Should we print logs for incoming HTTP requests.
+(defparameter *log-requests-p* t)
 
 ;;; Set timezone that will be also returned by chronicity.
 (setf local-time:*default-timezone* local-time:+utc-zone+)

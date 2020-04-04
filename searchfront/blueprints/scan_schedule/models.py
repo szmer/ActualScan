@@ -1,5 +1,4 @@
-from datetime import datetime, timezone
-
+from searchfront.lib import now_time
 from searchfront.extensions import db
 
 # NOTE we don't use explicit enums here, because we want the easy discoverability of schema on the
@@ -19,9 +18,6 @@ from searchfront.extensions import db
 #    ran
 #    failed
 #    cancelled
-
-def now_time():
-    return datetime.now(timezone.utc)
 
 class ScanJob(db.Model):
     # Id should be formed from the user identification and the query (possibly hashed).
@@ -43,12 +39,12 @@ class ScanJob(db.Model):
     save_copies = db.Column(db.Boolean(), nullable=False, default=False)
 
     def bump(self):
-        self.last_checked = datetime.now(timezone.utc)
+        self.last_checked = now_time()
 
     def change_status(self, status):
         self.status = status
-        self.last_checked = datetime.now(timezone.utc)
-        self.status_changed = datetime.now(timezone.utc)
+        self.last_checked = now_time()
+        self.status_changed = now_time()
 
     @staticmethod
     def identifier(user_id, phrase, tags):
@@ -91,4 +87,4 @@ class ScrapeRequest(db.Model):
 
     def change_status(self, status):
         self.status = status
-        self.status_changed = datetime.now(timezone.utc)
+        self.status_changed = now_time()

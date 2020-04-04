@@ -1,4 +1,5 @@
 DEBUG = True
+TEMPLATES_AUTO_RELOAD = True
 
 LIVECONFIG_START_VALUES = {
         'scan_job_time_to_live': str(60*60*24*30), # a month (in seconds)

@@ -7,7 +7,9 @@
     <meta name="description"
           content="{% block meta_description %}{% endblock %}">
 
-    <title>{% block title %}{% endblock %}</title>
+    <title>{% block title %}{% endblock %} - ActualScan</title>
+
+    {% block head %}{% endblock %}
 
     <link
       rel="stylesheet"
@@ -15,6 +17,7 @@
   </head>
   <body>
     {% block header %}{% endblock %}
+    <h1>ActualScan</h1>
 
     <main class="container">
       <div class="md-margin-top">{% block heading %}{% endblock %}</div>

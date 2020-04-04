@@ -2,6 +2,10 @@
 from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
 
+# CSRF protection.
+from flask_wtf.csrf import CSRFProtect
+csrf = CSRFProtect()
+
 # Flask-Security.
 from flask_security import Security, SQLAlchemyUserDatastore
 from searchfront.blueprints.user import AppUser, Role

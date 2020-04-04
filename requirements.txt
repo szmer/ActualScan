@@ -18,6 +18,8 @@ Flask-Admin==1.5.5
 # (this is the version that was installed by Flask-Admin 1.5.5)
 WTForms==2.2.1
 Flask-WTF==0.14.3
+# not currently used, breaks Flask-WTF
+WTForms-SQLAlchemy==0.1
 
 # Scrapy.
 Scrapy==1.8.0

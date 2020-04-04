@@ -1,0 +1,56 @@
+{% extends 'layouts/base.html' %}
+{% from "macros/form.html" import render_field, render_selectmultiple_field %}
+{% block title %}{% if scan_phrase %}{{ scan_phrase }}{% else %}Searching{% endif %}{% endblock %}
+
+{% block head %}
+{% if is_good %}
+<meta http-equiv="refresh" content="2">
+{% endif %}
+{% endblock %}
+
+{% block body %}
+{% if is_good %}
+<div class="alert alert-success" role="alert">
+   <p>We are currently processing your request, please wait.</p>
+
+   <p>If your browser doesn't refresh this page automatically, please
+   <a href="{{ request.url }}">click here</a>
+   after a moment.</p>
+</div>
+{% else %}
+<div class="alert alert-danger" role="alert">
+   <p>There was a problem with your scan request.</p>
+</div>
+{% endif %}
+
+<table class="table">
+   <thead class="thead-light">
+      <tr>
+      <th scope="col">Item</th>
+      <th scope="col">Information</th>
+      </tr>
+   </thead>
+
+   <tbody>
+      <tr>
+      <th scope="row">Scan status</th>
+      <td>{{ status_data.phase }}</td>
+      </tr>
+
+      <tr>
+      <th scope="row">No. of failures</th>
+      <td>{% if status_data.failures %}{{ status_data.failures }}{% else %}0{% endif %}</td>
+      </tr>
+
+      <tr>
+      <th scope="row">Last page processed</th>
+      <td>{% if status_data.last_url %}{{ status_data.last_url }}{% else %}-{% endif %}</td>
+      </tr>
+
+      <tr>
+      <th scope="row">% of the current phase</th>
+      <td>{% if status_data.dl_proportion %}{{ status_data.dl_proportion }}{% else %}-{% endif %}</td>
+      </tr>
+   </tbody>
+</table>
+{% endblock %}
