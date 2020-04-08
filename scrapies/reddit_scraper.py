@@ -169,11 +169,6 @@ while True:
                 # Remove comments downvoted into oblivion.
                 if comment.score < minimum_score:
                     deletions.append(comment_n)
-                # Remove comments with little alphabetic content.
-                # NOTE Currently we're just storing everything.
-###-                if (not ok(comment, 'body') or (len(comment.body) < 50
-###-                        and len(re.sub('[^\\W0-9]', '', comment.body)) / len(comment.body) >= 0.65)):
-###-                    deletions.append(comment_n)
             submission.comments._comments = [comment for comment_n, comment
                     in enumerate(submission.comments._comments)
                     if not comment_n in deletions]
@@ -186,6 +181,8 @@ while True:
                 if ok(submission, 'permalink'):
                     submission_obj['url'] = 'https://reddit.com'+submission.permalink
                 else:
+                    update_request_status(pg_session, submission_scrape_request, 'failed',
+                            failure_comment='no permalink')
                     continue
                 submission_obj['real_doc'] = 'self'
                 if ok(submission, 'author'):
@@ -204,30 +201,33 @@ while True:
                         req_class=ScrapeRequest, pg_session=pg_session)
             # Make the comment's object (Solr documents).
             for comment in submission.comments.list():
+                # Notify the database.
+                comment_scrape_request = make_scrape_request(comment.permalink,
+                    search_scrape_request.job_id)
+                pg_session.add(comment_scrape_request)
+                pg_session.commit()
+                # Having a permalink is crucial to even indexing the comment.
                 if ok(comment, 'permalink'):
                     comment_permalink = 'https://reddit.com'+comment.permalink
                 else:
+                    update_request_status(pg_session, comment_scrape_request, 'failed',
+                            failure_comment='no permalink')
                     continue
-                # Notify the database.
-                downloaded_submissions.add(submission.permalink)
-                submission_scrape_request = make_scrape_request(submission.permalink,
-                    search_scrape_request.job_id)
-                pg_session.add(submission_scrape_request)
-                pg_session.commit()
                 comment_obj = {'reason_scraped': search_scrape_request.job_id, 'source_type': 'f',
                         'date_retr': date_fmt(datetime.now(tz=timezone.utc)),
                         'url': comment_permalink, 'tags': subreddit_tags }
                 if ok(comment, 'body'):
                     comment_obj['text'] = format_text(comment.body)
                     if not comment_obj['text']:
+                        update_request_status(pg_session, comment_scrape_request, 'failed',
+                                failure_comment='no extractable text')
                         continue
                 else:
+                    update_request_status(pg_session, comment_scrape_request, 'failed',
+                            failure_comment='no text body')
                     continue
                 # TODO ? it would be better to set here the link to whole discussion set on this comment
-                if ok(submission, 'permalink'):
-                    comment_obj['real_doc'] = 'https://reddit.com'+submission.permalink
-                else:
-                    continue
+                comment_obj['real_doc'] = 'https://reddit.com'+submission.permalink
                 if ok(comment, 'author'):
                     comment_obj['author'] = comment.author.name
                 if ok(comment, 'created_utc'):
@@ -240,9 +240,10 @@ while True:
                         comment_obj['adult_b'] = True
                 # Send to Solr (this needs a manual commit).
                 solr_json_text = json.dumps([comment_obj])
-                solr_update(solr_json_text, req_id=submission_scrape_request.id,
+                solr_update(solr_json_text, req_id=comment_scrape_request.id,
                         req_class=ScrapeRequest, pg_session=pg_session)
                 # Do the manual commit.
-                solr_update('{"commit": {}}', req_id=submission_scrape_request.id,
+                solr_update('{"commit": {}}', req_id=comment_scrape_request.id,
                         req_class=ScrapeRequest, pg_session=pg_session)
+                update_request_status(pg_session, comment_scrape_request, 'committed')
 debug('Reddit scraper exited.')

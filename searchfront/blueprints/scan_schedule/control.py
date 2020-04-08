@@ -74,10 +74,9 @@ def terminate_scan(scan_job):
 
 def scan_progress_info(scan_job):
     """
-    A dictionary: 'phase' ('waiting', 'search', 'crawl' or 'done'), possibly also 'fails',
-    'last_url', 'dl_proportion'. Note that dl_proportion reflects proportion of the pages to be
-    crawled or the search pages depending on the phase. This may update the job to mark it as
-    finished.
+    A dictionary: 'phase' ('waiting', 'search', 'crawl' or appropriate ScanJob status), possibly
+    also 'fails', 'last_url', 'dl_proportion'. Note that dl_proportion reflects proportion of the
+    pages to be crawled or the search pages depending on the phase.
     """
     if scan_job.status in ['waiting', 'finished', 'terminated', 'rejected']:
         return {'phase': scan_job.status}
@@ -92,11 +91,11 @@ def scan_progress_info(scan_job):
         is_search=False,
         job_id=scan_job.id
         ).count()
-    # If everything is finished, mark it as such now.
-    if pending_crawl_count == pending_search_count == 0:
-        scan_job.change_status('finished')
-        db.session.commit()
-        return {'phase': 'done'}
+    # This is the job of do_scan_management!
+    #-if pending_crawl_count == pending_search_count == 0:
+    #-    scan_job.change_status('finished')
+    #-    db.session.commit()
+    #-    return {'phase': 'done'}
     phase = ('search' if pending_search_count > 0 else 'crawl')
     done_requests = list(ScrapeRequest.query.filter(
         (ScrapeRequest.status == 'ran')
@@ -105,11 +104,19 @@ def scan_progress_info(scan_job):
         ).order_by(ScrapeRequest.status_changed.desc()))
     fails = len([req for req in done_requests if req.status == 'failed'])
     if phase == 'search':
-        dl_proportion = (pending_search_count
-                / pending_search_count + len([req for req in done_requests if req.is_search]))
+        done_count = len([req for req in done_requests if req.is_search])
+        if (pending_search_count + done_count) > 0: # avoid division by 0
+            dl_proportion = (pending_search_count
+                    / (pending_search_count + done_count))
+        else:
+            dl_proportion = 1.0
     else:
-        dl_proportion = (pending_crawl_count
-                / pending_crawl_count + len([req for req in done_requests if not req.is_search]))
+        done_count = len([req for req in done_requests if not req.is_search])
+        if (pending_crawl_count + done_count) > 0:
+            dl_proportion = (pending_crawl_count
+                    / (pending_crawl_count + done_count))
+        else:
+            dl_proportion = 1.0
     return {'phase': phase, 'fails': fails,
             'last_url': done_requests[0].target if len(done_requests) > 0 else None,
             'dl_proportion': dl_proportion}
@@ -122,9 +129,10 @@ def do_scan_management():
     - Removes the old jobs and requests (as configured in live config).
     """
     # Mark finished jobs.
-    jobs_waiting = list(ScanJob.query.filter_by(status='working'))
-    for job in jobs_waiting:
-        requests_waiting = [req for req in job.requests if req.status in ['waiting', 'scheduled']]
+    jobs_working = list(ScanJob.query.filter_by(status='working'))
+    for job in jobs_working:
+        requests_waiting = [req for req in job.requests if req.status in ['waiting', 'scheduled',
+            'ran']]
         if len(requests_waiting) > 0:
             continue
         # We want to ensure that some requests are actually present even if finished to prevent

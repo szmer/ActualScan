@@ -111,12 +111,11 @@ class GeneralSpider(scrapy.Spider):
                         stractor_output))
         return json.loads(stractor_output)
 
-    def status_notify_db(self, request_id, status):
+    def status_notify_db(self, db_request, status):
         """
         If status is not HTTP 200 (OK), mark the request of the id as failed. Return a boolean
         indicating if the status is OK.
         """
-        db_request = pg_session.query(ScrapeRequest).get(request_id)
         # Notify of failures if needed.
         if status != 200:
             update_request_status(pg_session, db_request, 'failed',
@@ -132,8 +131,9 @@ class GeneralSpider(scrapy.Spider):
         The "regular" Scrapy parse function for search pages and indexed pages. The former should
         yield some new Scrapy Requests to follow.
         """
-        # Update the status of non-monitoring requests.
-        ok = self.status_notify_db(response.meta['id'], response.status)
+        db_request = pg_session.query(ScrapeRequest).get(response.meta['id'])
+        # Update the status of the request (ran, failed).
+        ok = self.status_notify_db(db_request, response.status)
         if not ok:
             return
 
@@ -175,7 +175,10 @@ class GeneralSpider(scrapy.Spider):
                                 callback=self.parse,
                                 meta={attr: getattr(scrape_request, attr) for attr
                                     in REQUEST_META})
+                update_request_status(pg_session, db_request, 'committed')
             else:
+                update_request_status(pg_session, db_request, 'failed',
+                        failure_comment='empty Speechtractor response')
                 info('Got empty Speechractor response: {} for search target: {}'.format(
                     stractor_response_json, response.url))
         # The actual page indexing.
@@ -203,7 +206,10 @@ class GeneralSpider(scrapy.Spider):
                 # TODO commit one doc in one go with {add: {doc:}} json structure
                 solr_update('{"commit": {}}', req_id=response.meta['id'],
                         req_class=ScrapeRequest, pg_session=pg_session)
+                update_request_status(pg_session, db_request, 'committed')
             else:
+                update_request_status(pg_session, db_request, 'failed',
+                        failure_comment='empty Speechtractor response')
                 info('Got empty Speechractor response: {} for scraping target: {}'.format(
                     stractor_response_json, response.url))
 

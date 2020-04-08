@@ -13,9 +13,9 @@ from searchfront.extensions import db
 #
 ### Possible request statuses:
 #    waiting
-#    scheduled (in Scrapy)
-#      Scrapy shouldn't report back against there was a failure, so "ran" doesn't guarantee success.
+#    scheduled
 #    ran
+#    committed (two m's, to t's!)
 #    failed
 #    cancelled
 
