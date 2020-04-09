@@ -46,6 +46,9 @@ current_app.logger.info('hey')
 docker-compose exec postgres psql -U teremin
 ```
 
+Note that `while True` loops in the website container generally produce an unending stream of
+transaction, so it may have to be restarted.
+
 ## Debugging Scrapy, Reddit scraper
 
 - change the call in scrapy_process.py, reddit_process.py to -L INFO or -L DEBUG

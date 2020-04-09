@@ -34,6 +34,9 @@ class ScanJob(db.Model):
     # NOTE we currently *require* tags in scan jobs
     query_tags = db.Column(db.String(8192), nullable=False)
     requests = db.relationship('ScrapeRequest', backref=db.backref('job', lazy=True), lazy=True)
+    # These counts should be filled out when starting the job; they're needed for progress reporting
+    website_count = db.Column(db.Integer)
+    subreddit_count = db.Column(db.Integer)
     # This controls whether scrapy should also save raw copies of html to disk. Setting spread to
     # requests.
     save_copies = db.Column(db.Boolean(), nullable=False, default=False)
@@ -77,6 +80,10 @@ class ScrapeRequest(db.Model):
     site_type = db.Column(db.String(32), nullable=False)
     site_url = db.Column(db.String(8192), nullable=False)
     query_tags = db.Column(db.String(8192), nullable=False)
+    # This has meaning for search requests. For website requests, this should contain the number of
+    # search pages (not implemented). For Reddit requests, this should contain the number total of
+    # comments yielded by the search from all submissions in the subreddit.
+    lead_count = db.Column(db.Integer)
     # The job id is also used in reason_scraped in Solr.
     job_id = db.Column(db.String, db.ForeignKey('scan_job.id'), nullable=False)
     # (job field defined as a backref)

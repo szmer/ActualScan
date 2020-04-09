@@ -1,6 +1,9 @@
 from datetime import datetime, timedelta, timezone
 from logging import error
 
+from flask import current_app
+from sqlalchemy import func
+
 from searchfront.extensions import db
 
 from searchfront.blueprints.site import Tag
@@ -31,6 +34,8 @@ def start_scan(scan_job):
     tag_strs = scan_job.query_tags.split(',')
     tags = Tag.query.filter(Tag.name.in_(tag_strs))
     sites_queried = set()
+    website_count = 0
+    subreddit_count = 0
     for tag in tags:
         for site in tag.sites:
             if not site in sites_queried:
@@ -43,6 +48,7 @@ def start_scan(scan_job):
                             site_url=site.homepage_url, site_type=site.site_type,
                             site_id = site.id,
                             query_tags=scan_job.query_tags, save_copies=scan_job.save_copies)
+                    website_count += 1
                 elif site.site_type == 'reddit':
                     req = ScrapeRequest(target='[reddit] '+scan_job.query_phrase,
                             is_search=True, job_id=scan_job.id,
@@ -51,12 +57,15 @@ def start_scan(scan_job):
                             site_url=site.homepage_url,
                             site_id = site.id,
                             query_tags=scan_job.query_tags, save_copies=scan_job.save_copies)
+                    subreddit_count += 1
                 else:
                     error('Unknown site type {} for site {} ({})'.format(site.site_type, site.id,
                         site.homepage_url))
                 db.session.add(req)
                 db.session.commit()
     scan_job.change_status('working')
+    scan_job.website_count = website_count
+    scan_job.subreddit_count = subreddit_count
     db.session.commit()
     # TODO failure
 
@@ -81,44 +90,114 @@ def scan_progress_info(scan_job):
     if scan_job.status in ['waiting', 'finished', 'terminated', 'rejected']:
         return {'phase': scan_job.status}
     # TODO possibly optimize queries
-    pending_search_count = ScrapeRequest.query.filter_by(
-            status='waiting',
-            is_search=True,
-            job_id=scan_job.id
-            ).count()
-    pending_crawl_count = ScrapeRequest.query.filter_by(
-        status='waiting',
-        is_search=False,
-        job_id=scan_job.id
-        ).count()
-    # This is the job of do_scan_management!
-    #-if pending_crawl_count == pending_search_count == 0:
-    #-    scan_job.change_status('finished')
-    #-    db.session.commit()
-    #-    return {'phase': 'done'}
-    phase = ('search' if pending_search_count > 0 else 'crawl')
-    done_requests = list(ScrapeRequest.query.filter(
-        (ScrapeRequest.status == 'ran')
+    # Count the committed search and crawl (non-search) requests.
+    committed_reddit_search_count = ScrapeRequest.query.filter_by(
+            status='committed', site_type='reddit', is_search=True,
+            job_id=scan_job.id).count()
+    committed_web_search_count = ScrapeRequest.query.filter_by(
+            status='committed', site_type='web', is_search=True,
+            job_id=scan_job.id).count()
+    committed_crawl_count = ScrapeRequest.query.filter_by(
+        status='committed', is_search=False, job_id=scan_job.id).count()
+    # Count search requests that ran (may not finished, but we have real data for them).
+    ran_reddit_search_count = ScrapeRequest.query.filter_by(
+            status='ran', site_type='reddit', is_search=True,
+            job_id=scan_job.id).count()
+    ran_web_search_count = ScrapeRequest.query.filter_by(
+            status='ran', site_type='web', is_search=True,
+            job_id=scan_job.id).count()
+    # Committed Reddit crawls. NOTE that once we implement search paging with reporting the number
+    # of pages, we will switch to an analogous method of estimation for Web.
+    committed_reddit_crawl_count = ScrapeRequest.query.filter_by(is_search=False,
+            status='committed', site_type='reddit', job_id=scan_job.id).count()
+    committed_web_crawl_count = ScrapeRequest.query.filter_by(is_search=False,
+            status='committed', site_type='web', job_id=scan_job.id).count()
+    # NOTE this assumes that the Reddit scraper is single-threaded and processes requests in
+    # sequence.
+    current_reddit_search = list(ScrapeRequest.query.filter_by(
+                    status='ran', site_type='reddit', is_search=True,
+                    job_id=scan_job.id))
+    reddit_current_load_from_search = (0 if len(current_reddit_search) == 0
+            else current_reddit_search[0].lead_count)
+    reddit_past_load_from_search = ScrapeRequest.query.with_entities(
+             func.sum(ScrapeRequest.lead_count).label("comments_sum")
+             ).filter(ScrapeRequest.status=='committed',
+                     ScrapeRequest.site_type=='reddit',
+                     ScrapeRequest.is_search==True,
+                     ScrapeRequest.job_id==scan_job.id).scalar()
+    reddit_past_load_from_search = (int(reddit_past_load_from_search)
+            if reddit_past_load_from_search is not None
+            else 0)
+    # Count all search and crawl (non-search) requests.
+    full_search_count = ScrapeRequest.query.filter_by(is_search=True, job_id=scan_job.id).count()
+    full_web_crawl_count = ScrapeRequest.query.filter_by(is_search=False, site_type='web',
+            job_id=scan_job.id).count()
+    # Count failures.
+    fails_count = ScrapeRequest.query.filter_by(status='failed', job_id=scan_job.id).count()
+    # Compute the denominator for computing scan progress. In the estimation, use the real numbers
+    # for done search requests and the estimators from config for the future ones.
+    reddit_full_estimation = (
+            # Estimation for future search requests.
+            ((scan_job.subreddit_count - ran_reddit_search_count)
+            * int(LiveConfigValue.query.get('subreddit_estimation_multiplier').value))
+            # Current load from search.
+            + reddit_current_load_from_search
+            # Committed requests.
+            + reddit_past_load_from_search
+            )
+    web_full_estimation = (
+            ((scan_job.website_count - ran_web_search_count)
+            * int(LiveConfigValue.query.get('website_estimation_multiplier').value))
+            + committed_web_crawl_count
+            )
+    full_estimation = reddit_full_estimation + web_full_estimation
+    if full_estimation == 0: # avoid / 0 should it happen for whatever reason
+        full_estimation = 1
+
+    current_app.logger.debug('Progress estimation for {}:\n'
+            'Done subs Reddit: {}, future estimation: {}, current load to crawl {}, '
+            'full Reddit estimation: {}, already committed: {}\n'
+            'Committed Web: {}, future estimation: {}, full web estimation {}\n'
+            'Full estimation numerator is {}, denominator {}'
+            .format(scan_job.id,
+                # Reddit done
+                reddit_past_load_from_search,
+                # Reddit future
+                (scan_job.subreddit_count - ran_reddit_search_count)
+                * int(LiveConfigValue.query.get(
+                    'subreddit_estimation_multiplier').value),
+                # Reddit current
+                reddit_current_load_from_search,
+                # Reddit estimation,
+                reddit_full_estimation,
+                # Reddit committed
+                committed_reddit_crawl_count+committed_reddit_search_count,
+                # Web done
+                committed_web_crawl_count+committed_web_search_count,
+                # Web future
+                (scan_job.website_count - ran_web_search_count)
+                * int(LiveConfigValue.query.get('website_estimation_multiplier').value),
+                # Web full estimation
+                web_full_estimation,
+                # Full estimation components
+                (committed_reddit_search_count + committed_web_search_count
+                    + committed_crawl_count),
+                full_estimation))
+
+    dl_proportion = (committed_reddit_search_count
+            + committed_web_search_count
+            + committed_crawl_count) / full_estimation
+    phase = ('search'
+            if (ran_reddit_search_count+ran_web_search_count) < full_search_count
+            else 'crawl')
+    done_request = list(ScrapeRequest.query.filter(
+        (ScrapeRequest.status == 'committed')
         | (ScrapeRequest.status == 'failed'),
         ScrapeRequest.job_id == scan_job.id
-        ).order_by(ScrapeRequest.status_changed.desc()))
-    fails = len([req for req in done_requests if req.status == 'failed'])
-    if phase == 'search':
-        done_count = len([req for req in done_requests if req.is_search])
-        if (pending_search_count + done_count) > 0: # avoid division by 0
-            dl_proportion = (pending_search_count
-                    / (pending_search_count + done_count))
-        else:
-            dl_proportion = 1.0
-    else:
-        done_count = len([req for req in done_requests if not req.is_search])
-        if (pending_crawl_count + done_count) > 0:
-            dl_proportion = (pending_crawl_count
-                    / (pending_crawl_count + done_count))
-        else:
-            dl_proportion = 1.0
-    return {'phase': phase, 'fails': fails,
-            'last_url': done_requests[0].target if len(done_requests) > 0 else None,
+        ).order_by(ScrapeRequest.status_changed.desc()).limit(1))
+    return {'phase': phase, 'fails': fails_count,
+            # TODO test that it's the target, not ScrapeRequest object
+            'last_url': done_request[0].target if len(done_request) > 0 else None,
             'dl_proportion': dl_proportion}
 
 def do_scan_management():

@@ -93,11 +93,11 @@ def format_text(text):
             result += sent + '\n'
     return result
 
-def make_scrape_request(target, job_id):
+def make_scrape_request(target, job_id, status='ran'):
     info('Ran a Reddit scrape request for {} ({})'.format(target, job_id))
     return ScrapeRequest(target=target,
             is_search=False,
-            job_id=search_scrape_request.job_id, status='ran',
+            job_id=search_scrape_request.job_id, status=status,
             status_changed=datetime.now(timezone.utc),
             source_type=search_scrape_request.source_type,
             query_tags=search_scrape_request.query_tags,
@@ -132,9 +132,6 @@ while True:
     for search_scrape_request in search_scrape_requests_waiting:
         debug('Processing the scrape request for {} in {}'.format(
             search_scrape_request.target, search_scrape_request.job_id))
-        update_request_status(pg_session, search_scrape_request, 'ran')
-        # Scan job level submission deduplication. TODO just consult with Solr!
-        downloaded_submissions = set()
         search_phrase = search_scrape_request.target[len('[reddit] '):]
         try:
             subreddit_name = search_scrape_request.site_name[len('/r/'):]
@@ -142,21 +139,41 @@ while True:
             continue
         subreddit = reddit.subreddit(subreddit_name)
         subreddit_tags = site_id_tags(search_scrape_request.site_id, pg_session)
+
         submissions = subreddit.search('title:{} OR selftext:{}'.format(
             search_phrase, search_phrase), sort='comments', limit=REDDIT_SEARCH_DEPTH)
-        # Process submissions from this subreddit.
+        # We now need to get the count of the comments, to have an accurate progress estimation.
+        # Note that this will load all submission objects, which can take a while.
+        submissions_list = []
+        submission_requests = dict() # permalink -> request id, for easy retrieval
         for submission in submissions:
-            # Submission deduplication (limited to the ScanJob).
+            if not ok(submission, 'permalink'):
+                continue
+            submission_scrape_request = make_scrape_request(submission.permalink,
+                    search_scrape_request.job_id, status='scheduled')
+            pg_session.add(submission_scrape_request)
+            pg_session.commit()
+            submissions_list.append(submission)
+            submission_requests[submission.permalink] = submission_scrape_request.id
+        comments_count = sum([subm.num_comments for subm in submissions_list])
+        search_scrape_request.lead_count = comments_count
+        pg_session.commit()
+        # Only now mark the search request as ran - we now know the load of requests it introduces.
+        update_request_status(pg_session, search_scrape_request, 'ran')
+
+        # Scrape request level submission deduplication. TODO just consult with Solr!
+        downloaded_submissions = set()
+        # Process submissions from this subreddit.
+        for submission in submissions_list:
             if not ok(submission, 'permalink'):
                 continue
             if submission.permalink in downloaded_submissions:
                 continue
             # Add to the dedup and to the database.
             downloaded_submissions.add(submission.permalink)
-            submission_scrape_request = make_scrape_request(submission.permalink,
-                    search_scrape_request.job_id)
-            pg_session.add(submission_scrape_request)
-            pg_session.commit()
+            submission_scrape_request = pg_session.query(ScrapeRequest).get(
+                    submission_requests[submission.permalink])
+            update_request_status(pg_session, submission_scrape_request, 'ran')
             # Load all the 'load more's.
             submission.comments.replace_more(limit=None)
             # Apply some rules for deleting comments on the top level.
@@ -199,6 +216,7 @@ while True:
                 solr_json_text = json.dumps([submission_obj])
                 solr_update(solr_json_text, req_id=submission_scrape_request.id,
                         req_class=ScrapeRequest, pg_session=pg_session)
+                update_request_status(pg_session, submission_scrape_request, 'committed')
             # Make the comment's object (Solr documents).
             for comment in submission.comments.list():
                 # Notify the database.
@@ -246,4 +264,6 @@ while True:
                 solr_update('{"commit": {}}', req_id=comment_scrape_request.id,
                         req_class=ScrapeRequest, pg_session=pg_session)
                 update_request_status(pg_session, comment_scrape_request, 'committed')
+        update_request_status(pg_session, search_scrape_request, 'committed')
+
 debug('Reddit scraper exited.')
