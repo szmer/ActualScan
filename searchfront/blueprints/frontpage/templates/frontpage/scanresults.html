@@ -2,14 +2,17 @@
 {% from "macros/form.html" import render_field, render_selectmultiple_field %}
 {% block title %}{% if scan_phrase %}{{ scan_phrase }}{% else %}Searching{% endif %}{% endblock %}
 
+<!-- TODO add noscript when ready -->
 {% block head %}
-{% if is_good %}
+{% if is_good and not result %}
 <meta http-equiv="refresh" content="2">
 {% endif %}
 {% endblock %}
 
 {% block body %}
-{% if not results %}
+<h2>{{ scan_phrase }}</h2>
+
+{% if not result %}
    {% if is_good %}
    <div class="alert alert-success" role="alert">
       <p>We are currently processing your request, please wait.</p>
@@ -56,6 +59,113 @@
    </table>
 
 {% else %}
+{% if result.years %}
+<div class="card">
+  <div class="card-header">
+    Trend
+  </div>
+  <div class="ct-chart-trend ct-golden-section"></div>
+</div>
+{% endif %}
+
+{% if result.sitesStats %}
+<div class="card">
+  <div class="card-header">
+    Sites
+  </div>
+  <div class="ct-chart-sites ct-golden-section"></div>
+</div>
+{% endif %}
+
+{% if result.typical %}
+<div class="card">
+  <div class="card-header">
+    Common opinion
+  </div>
+       {% for sent in result.typical %}
+       <div class="card-body">
+       <p class="card-text">{{ sent['text'] }}</p>
+       <p class="card-text"><small class="text-muted">by {{ sent['author'] }}
+          ({{ sent['date'] }})
+          at {{ sent['domain'] }} </small></p>
+       </div>
+       {% endfor %}
+</div>
+{% endif %}
+
+{% if result.phrases %}
+<div class="card">
+  <div class="card-header">
+    Hot phrases
+  </div>
+       {% for phrase in result.phrases %}
+       <div class="card-body">
+          <h5 class="card-title">{{ phrase['text'] }}</h5>
+          <ul>
+             {% for sent in phrase['typical'] %}
+             <li>
+                <span class="card-text">{{ sent['text'] }}</span>
+                <small class="text-muted">by {{ sent['author'] }} ({{ sent['date'] }})
+                   at {{ sent['domain'] }} </small>
+             </li>
+             {% endfor %}
+          </ul>
+       </div>
+       {% endfor %}
+</div>
+{% endif %}
+
+{% if result.atypical %}
+<div class="card">
+  <div class="card-header">
+    Oddball posters
+  </div>
+       {% for sent in result.atypical %}
+       <div class="card-body">
+       <p class="card-text">{{ sent['text'] }}</p>
+       <p class="card-text"><small class="text-muted">by {{ sent['author'] }}
+          ({{ sent['date'] }})
+          at {{ sent['domain'] }} </small></p>
+       </div>
+       {% endfor %}
+</div>
+{% endif %}
+
+<script defer>
+var chartOptions = {
+  labelInterpolationFnc: function(value) {
+    return value[0]
+  }
+};
+var chartResponsiveOptions = [
+  ['screen and (min-width: 640px)', {
+    chartPadding: 30,
+    labelOffset: 100,
+    labelDirection: 'explode',
+    labelInterpolationFnc: function(value) {
+      return value;
+    }
+  }],
+  ['screen and (min-width: 1024px)', {
+    labelOffset: 20,
+    chartPadding: 20
+  }]
+];
+
+{% if result.sitesStats %}
+var sitesData = {
+   labels: [{% for site in result.sitesStats %}'{{ site['site'] }}',{% endfor %}],
+   series: [{% for site in result.sitesStats %}{{ site['frequency'] }},{% endfor %}]
+};
+new Chartist.Pie('.ct-chart-sites', sitesData, chartOptions, chartResponsiveOptions);
+{% endif %}
+
+{% if result.years %}
+var years = [{% for y in result.years %}'{{ y }}',{% endfor %}];
+var yearCounts = [{% for c in result.yearCounts %}{{ c }},{% endfor %}];
+new Chartist.Line('.ct-chart-trend', {labels: years, series: [yearCounts]}, chartOptions);
+{% endif %}
+</script>
 
 {% endif %}
 {% endblock %}

@@ -109,10 +109,10 @@
                                                  (gethash "facet_counts"
                                                           response-json)))))
           (if year-label-p
-              (progn (push (cons :year (subseq item 0 4)) (getf result-list :years))
+              (progn (push (subseq item 0 4) (getf result-list :years))
                      (setf year-label-p nil))
               ;; TODO scale up for the current year
-              (progn (push (cons :count item) (getf result-list :year-counts))
+              (progn (push item (getf result-list :year-counts))
                      (setf year-label-p t))))
         (mapcar (lambda (item) (if (listp item) (reverse item) item))
                 result-list)))))

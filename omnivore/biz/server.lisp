@@ -3,7 +3,7 @@
 ;;;
 ;;;
 (defun sent-alist-representation (sent)
-  (list (cons :sent-text (raw-text sent))
+  (list (cons :text (raw-text sent))
         (cons :date
               (if (read-attribute sent "publication-date")
                   ;; KLUDGE poor man's formatting
@@ -24,25 +24,27 @@
 ;;;
 ;;; Dynamic responders.
 (hunchentoot:define-easy-handler (query-response :uri "/result") (q)
-  (setf (hunchentoot:content-type*) "text/html")
+  (setf (hunchentoot:content-type*) "application/json")
   (let ((query-result (query-result-solr! q)))
     (cl-json:encode-json-to-string
      (list (cons :query-text q)
-           (list :typical
+           (cons :typical
                  (mapcar #'sent-alist-representation
                          (getf query-result :typical)))
-           (list :atypical
+           (cons :atypical
                  (mapcar #'sent-alist-representation
                          (getf query-result :atypical)))
-           (list :phrases
+           (cons :phrases
                  (mapcar (lambda (phrase-entry)
-                           (list :phrase (cl-strings:join (getf phrase-entry :phrase)
-                                                          :separator " ")
-                                 :typical
-                                 (mapcar #'sent-alist-representation
-                                         (getf phrase-entry :typical))))
+                           (list (cons
+                                   :text (cl-strings:join (getf phrase-entry :phrase)
+                                                          :separator " "))
+                                 (cons
+                                   :typical
+                                   (mapcar #'sent-alist-representation
+                                           (getf phrase-entry :typical)))))
                          (getf query-result :phrases)))
-           (list :sites-stats
+           (cons :sites-stats
                  (mapcar (lambda (site-entry) (list (cons :site (car site-entry))
                                                     (cons :frequency (cdr site-entry))))
                          (getf query-result :sites-stats)))

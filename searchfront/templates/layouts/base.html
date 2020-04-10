@@ -14,6 +14,9 @@
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/app.css') }}">
+
+    <script type="application/javascript" src="{{ url_for('static', filename='js/app.js') }}">
+    </script>
   </head>
   <body>
     {% block header %}{% endblock %}
@@ -32,9 +35,5 @@
         </ul>
       </div>
     </footer>
-
-    <script
-      src="{{ url_for('static', filename='js/app.js') }}">
-    </script>
   </body>
 </html>
