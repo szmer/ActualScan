@@ -15,6 +15,7 @@ def home():
     form = PublicScanForm(formdata=request.args) # for a GET form
     if form.validate():
         return redirect(url_for('.scanresults', **request.args))
+    # We need the show_errors toggle for not displaying errors when there are no GET args.
     return render_template('frontpage/home.html', form=form, show_errors=bool(request.args))
 
 @frontpage.route('/scanresults')

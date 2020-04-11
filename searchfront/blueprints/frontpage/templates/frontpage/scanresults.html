@@ -3,13 +3,14 @@
 {% block title %}{% if scan_phrase %}{{ scan_phrase }}{% else %}Searching{% endif %}{% endblock %}
 
 <!-- TODO add noscript when ready -->
-{% block head %}
+{% block metas %}
 {% if is_good and not result %}
 <meta http-equiv="refresh" content="2">
 {% endif %}
 {% endblock %}
 
-{% block body %}
+{% block big_container %}
+<main class="container-fluid p-5">
 <h2>{{ scan_phrase }}</h2>
 
 {% if not result %}
@@ -168,4 +169,5 @@ new Chartist.Line('.ct-chart-trend', {labels: years, series: [yearCounts]}, char
 </script>
 
 {% endif %}
+</main>
 {% endblock %}

@@ -1,6 +1,6 @@
 {% extends 'layouts/base.html' %}
 {% from "macros/form.html" import render_field, render_selectmultiple_field %}
-{% block body %}
+{% block container %}
 <form>
    <dl>
    {{ render_field(form.scan_query, show_errors) }}

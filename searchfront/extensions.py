@@ -1,3 +1,7 @@
+# Flask-DebugToolbar
+from flask_debugtoolbar import DebugToolbarExtension
+debug_toolbar = DebugToolbarExtension()
+
 # Flask-SQLAlchemy.
 from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
@@ -8,7 +12,7 @@ csrf = CSRFProtect()
 
 # Flask-Security.
 from flask_security import Security, SQLAlchemyUserDatastore
-from searchfront.blueprints.user import AppUser, Role
+from searchfront.blueprints.account import AppUser, Role
 user_datastore = SQLAlchemyUserDatastore(db, AppUser, Role)
 security = Security()
 

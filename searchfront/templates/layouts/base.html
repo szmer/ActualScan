@@ -1,39 +1,58 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description"
-          content="{% block meta_description %}{% endblock %}">
+{% extends "bootstrap/base.html" %}
 
-    <title>{% block title %}{% endblock %} - ActualScan</title>
+{% block title %}{% block page_title %}{% endblock %} - ActualScan{% endblock %}
 
-    {% block head %}{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+{% endblock %}
 
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/app.css') }}">
+{% block scripts %}
+<script type="application/javascript" src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% endblock %}
 
-    <script type="application/javascript" src="{{ url_for('static', filename='js/app.js') }}">
-    </script>
-  </head>
-  <body>
-    {% block header %}{% endblock %}
-    <h1>ActualScan</h1>
+{% block navbar %}
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <a class="navbar-brand" href="/">ActualScan</a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+     aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+     <span class="navbar-toggler-icon"></span>
+  </button>
 
-    <main class="container">
-      <div class="md-margin-top">{% block heading %}{% endblock %}</div>
-      {% block body %}{% endblock %}
-    </main>
+  <div class="collapse navbar-collapse" id="navbarSupportedContent">
+     <ul class="navbar-nav mr-auto">
+        <li class="nav-item active">
+           <a class="nav-link" href="{{ url_for('account.account_home') }}">Your account</a>
+        </li>
 
-    <footer class="footer text-center">
-      <div class="container">
-        <ul class="list-inline">
-          <li class="text-muted">Therminsley &copy; ?</li>
-          {% block footer %}{% endblock %}
-        </ul>
-      </div>
-    </footer>
-  </body>
-</html>
+        <li class="nav-item active">
+           <a class="nav-link" href="{{ url_for('manager_site.index_view') }}">Add sites, tags</a>
+        </li>
+        {% if current_user.is_authenticated %}
+
+        <li class="nav-item active">
+           <a class="nav-link" href="{{ url_for('security.logout') }}">Logout</a>
+        </li>
+        {% endif %}
+     </ul>
+  </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+{% block big_container %}
+<main class="container-fluid p-5">
+   <div class="col-lg-5">
+   {% block container %}{% endblock %}
+   </div>
+ </main>
+{% endblock %}
+
+ <footer class="footer text-center">
+   <div class="container">
+     <ul class="list-inline">
+       <li class="text-muted">Szymon Rutkowski &copy; 2020
+       {% block footer %}{% endblock %}
+     </ul>
+   </div>
+ </footer>
+{% endblock %}

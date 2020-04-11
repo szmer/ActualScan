@@ -1,6 +1,11 @@
 DEBUG = True
 TEMPLATES_AUTO_RELOAD = True
 
+DEBUG_TB_INTERCEPT_REDIRECTS = False
+
+SECURITY_REGISTERABLE = True
+SECURITY_CHANGEABLE = True
+
 LIVECONFIG_START_VALUES = {
         'scan_job_time_to_live': 60*60*24*30, # a month (in seconds) before it's deleted from db
         'scrape_request_time_to_live': 60*60*24*30,

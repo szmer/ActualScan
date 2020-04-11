@@ -1,15 +1,16 @@
 from flask import Flask
 from flask_security.utils import hash_password
 
+from flask_bootstrap import Bootstrap
 from searchfront.extensions import (
-        db, csrf, security, user_datastore, admin, SiteModelView, TagModelView
+        debug_toolbar, db, csrf, security, user_datastore, admin, SiteModelView, TagModelView
         )
 from searchfront.scrapy_process import scrapyp
 from searchfront.reddit_process import redditp
 
 # Import blueprints now as some of them may require setting up extensions beforehand.
 from searchfront.blueprints.frontpage import frontpage
-from searchfront.blueprints.user import AppUser
+from searchfront.blueprints.account import account, AppUser
 from searchfront.blueprints.manager import ManagerAdminView
 from searchfront.blueprints.live_config import LiveConfigValue
 from searchfront.blueprints.site import Site, Tag
@@ -27,6 +28,7 @@ def create_app(settings_override=None):
         app.config.update(settings_override)
 
     app.register_blueprint(frontpage)
+    app.register_blueprint(account)
     extensions(app)
 
     @app.before_first_request
@@ -55,6 +57,15 @@ def create_app(settings_override=None):
             user_datastore.add_role_to_user(app.config['INIT_USER_EMAIL'], 'admin')
             db.session.commit()
 
+            # Add the test user when in debug mode.app.config['INIT_USER_EMAIL']
+            if app.config['DEBUG']:
+                if not user_datastore.get_user('john@example.com'):
+                    user_datastore.create_user(email='john@example.com',
+                            password=hash_password('password'))
+                db.session.commit()
+                user_datastore.add_role_to_user('john@example.com', 'registered')
+                db.session.commit()
+
     @app.before_first_request
     def init_scrapy():
         scrapyp.run()
@@ -74,12 +85,14 @@ def create_app(settings_override=None):
     # The admin panel setup.
     admin.add_view(ManagerAdminView(AppUser, db.session))
     # TODO add authorization requirements!!!
-    admin.add_view(SiteModelView(Site, db.session))
-    admin.add_view(TagModelView(Tag, db.session))
+    admin.add_view(SiteModelView(Site, db.session, endpoint='manager_site'))
+    admin.add_view(TagModelView(Tag, db.session, endpoint='manager_tag'))
 
     return app
 
 def extensions(app):
+    Bootstrap(app)
+    debug_toolbar.init_app(app)
     db.init_app(app)
     csrf.init_app(app)
     security.init_app(app, datastore=user_datastore)
