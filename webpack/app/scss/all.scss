@@ -1,0 +1,13 @@
+.admin-area .nav li {
+   display: inline-block;
+   padding: 5px;
+   color: $gray-800;
+}
+.navbar .nav li:first-child {
+  color: $gray-500;
+}
+.admin-area .navbar a {
+  font-weight: bold;
+  font-size: $font-size-base * 1.3;
+  color: inherit;
+}

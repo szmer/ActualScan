@@ -11,7 +11,7 @@ from searchfront.reddit_process import redditp
 # Import blueprints now as some of them may require setting up extensions beforehand.
 from searchfront.blueprints.frontpage import frontpage
 from searchfront.blueprints.account import account, AppUser
-from searchfront.blueprints.manager import ManagerAdminView
+from searchfront.blueprints.manager import manager, ManagerAdminView
 from searchfront.blueprints.live_config import LiveConfigValue
 from searchfront.blueprints.site import Site, Tag
 from searchfront.blueprints.scan_schedule import ScanJob, ScrapeRequest
@@ -29,6 +29,7 @@ def create_app(settings_override=None):
 
     app.register_blueprint(frontpage)
     app.register_blueprint(account)
+    app.register_blueprint(manager)
     extensions(app)
 
     @app.before_first_request
@@ -58,7 +59,7 @@ def create_app(settings_override=None):
             db.session.commit()
 
             # Add the test user when in debug mode.app.config['INIT_USER_EMAIL']
-            if app.config['DEBUG']:
+            if app.config['ENV'] == 'development':
                 if not user_datastore.get_user('john@example.com'):
                     user_datastore.create_user(email='john@example.com',
                             password=hash_password('password'))
@@ -85,8 +86,8 @@ def create_app(settings_override=None):
     # The admin panel setup.
     admin.add_view(ManagerAdminView(AppUser, db.session))
     # TODO add authorization requirements!!!
-    admin.add_view(SiteModelView(Site, db.session, endpoint='manager_site'))
-    admin.add_view(TagModelView(Tag, db.session, endpoint='manager_tag'))
+    admin.add_view(SiteModelView(Site, db.session, endpoint='manager_site', name='Sites'))
+    admin.add_view(TagModelView(Tag, db.session, endpoint='manager_tag', name='Tags'))
 
     return app
 

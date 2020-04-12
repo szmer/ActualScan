@@ -1,5 +1,8 @@
 # Structure
 
+Flask-Admin templates are partly overwritten in ModelViews and live inside `templates/manager`.
+Overwritten Flask-Security templates are inside the account blueprint, inside `templates/security`.
+
 # Testing
 
 ```bash

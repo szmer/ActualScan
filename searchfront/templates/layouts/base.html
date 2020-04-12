@@ -2,14 +2,17 @@
 
 {% block title %}{% block page_title %}{% endblock %} - ActualScan{% endblock %}
 
-{% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
-{% endblock %}
+{% set app_head_includes %}
+   {% block styles %}
+   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+   {% endblock %}
 
-{% block scripts %}
-<script type="application/javascript" src="{{ url_for('static', filename='js/app.js') }}"></script>
-{% endblock %}
+   {% block scripts %}
+   <script type="application/javascript" src="{{ url_for('static', filename='js/app.js') }}"></script>
+   {% endblock %}
+{% endset %}
 
+{% set app_navbar %}
 {% block navbar %}
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
   <a class="navbar-brand" href="/">ActualScan</a>
@@ -37,6 +40,7 @@
   </div>
 </nav>
 {% endblock %}
+{% endset %}
 
 {% block content %}
 {% block big_container %}

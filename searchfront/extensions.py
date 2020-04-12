@@ -21,14 +21,16 @@ from flask_admin import Admin
 from searchfront.blueprints.manager import ManagerIndexView
 # NOTE that the endpoints here are still named 'admin'. This prevents us from having weird errors
 # with admin.static
-admin = Admin(name='Manager', index_view=ManagerIndexView(name='Manager', url='/manager/'))
+admin = Admin(name='manager', index_view=ManagerIndexView(name='manager', url='/manager/'),
+        base_template='manager/admin_base.html')
 
 from flask_admin.contrib.sqla import ModelView
 class ModelViewWithRels(ModelView):
     column_hide_backrefs = False
 
+from searchfront.blueprints.manager import ManagerView
 from searchfront.blueprints.site import Tag
-class SiteModelView(ModelViewWithRels):
+class SiteModelView(ManagerView, ModelViewWithRels):
     #
     # To display tags properly in the view.
     column_list = ('homepage_url', 'site_name', 'search_pointer', 'source_type', 'site_type',
@@ -56,5 +58,5 @@ class SiteModelView(ModelViewWithRels):
     # https://stackoverflow.com/questions/35139397/filtering-the-drop-downs-in-flask-admin-before-it-gets-to-the-user
     # https://stackoverflow.com/questions/40381086/how-to-customize-flask-admin-queryselectmultiplefield-choice/56462018#56462018
 
-class TagModelView(ModelViewWithRels):
+class TagModelView(ManagerView, ModelViewWithRels):
     form_excluded_columns = ('sites',)
