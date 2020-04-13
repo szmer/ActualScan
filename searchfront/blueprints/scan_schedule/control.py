@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta, timezone
-from logging import error
 
 from flask import current_app
 from sqlalchemy import func
@@ -15,10 +14,12 @@ def request_scan(user_id, query_phrase : str, query_tags : list, force_new=False
     Put an awaiting scan job in the database. query_tags should be a list of strings. If force_new
     is set and the job already exists, a ValueError is raised. Return the ScanJob object.
     """
-    job_id = ScanJob.identifier(user_id, query_phrase, query_tags)
+    # TODO also recreate the job if in an inactive status
+    query_tags_str = ','.join(query_tags)
+    job_id = ScanJob.identifier(user_id, query_phrase, query_tags_str)
     job = ScanJob.query.get(job_id)
     if job is None:
-        job = ScanJob(id=job_id, query_phrase=query_phrase, query_tags=query_tags, status='waiting')
+        job = ScanJob(id=job_id, query_phrase=query_phrase, query_tags=query_tags_str, status='waiting')
         db.session.add(job)
         db.session.commit()
     elif force_new:
@@ -29,6 +30,7 @@ def start_scan(scan_job):
     """
     Start the scan_job (put the scrape requests).
     """
+    current_app.logger.info('Starting scan job {}'.format(scan_job.id))
     phrase_tokens = scan_job.query_phrase.split()
     # TODO test for the situation with no coherent/findable tags
     tag_strs = scan_job.query_tags.split(',')
@@ -40,6 +42,8 @@ def start_scan(scan_job):
         for site in tag.sites:
             if not site in sites_queried:
                 sites_queried.add(site) # a site can belong to multiple tags
+                current_app.logger.info('Starting requests for site (tag {}, scan job {})'.
+                        format(site.site_name, tag.name, scan_job.id))
                 if site.site_type == 'web':
                     search_pointer = site.search_url_for(phrase_tokens)
                     req = ScrapeRequest(target=search_pointer, is_search=True, job_id=scan_job.id,
@@ -59,8 +63,8 @@ def start_scan(scan_job):
                             query_tags=scan_job.query_tags, save_copies=scan_job.save_copies)
                     subreddit_count += 1
                 else:
-                    error('Unknown site type {} for site {} ({})'.format(site.site_type, site.id,
-                        site.homepage_url))
+                    current_app.logger.error('Unknown site type {} for site {} ({})'.format(
+                        site.site_type, site.id, site.homepage_url))
                 db.session.add(req)
                 db.session.commit()
     scan_job.change_status('working')
@@ -207,6 +211,7 @@ def do_scan_management():
     - If there is spare capacity to run jobs, runs them.
     - Removes the old jobs and requests (as configured in live config).
     """
+    current_app.logger.info('Running scan management...')
     # Mark finished jobs.
     jobs_working = list(ScanJob.query.filter_by(status='working'))
     for job in jobs_working:
@@ -217,6 +222,7 @@ def do_scan_management():
         # We want to ensure that some requests are actually present even if finished to prevent
         # race conditions with jobs just being started.
         elif len(job.requests) > 0:
+            current_app.logger.info('Job {} marked as finished.'.format(job.id))
             job.change_status('finished')
     db.session.commit()
     # Run new jobs if possible.
@@ -227,6 +233,7 @@ def do_scan_management():
         jobs_to_start = list(ScanJob.query.filter_by(status='waiting').order_by(
             ScanJob.status_changed.asc()).limit(spare_capacity))
         for job in jobs_to_start:
+            current_app.logger.info('Triggering start of the job {}.'.format(job.id))
             start_scan(job)
         spare_capacity -= len(jobs_to_start)
     # Remove old jobs and requests.
@@ -235,6 +242,8 @@ def do_scan_management():
             seconds=scan_job_time_to_live)
     old_jobs_finished = list(ScanJob.query.filter(ScanJob.status=='working',
         ScanJob.status_changed < scan_job_time_threshold))
+    if len(old_jobs_finished) > 0:
+        current_app.logger.info('Removing {} old jobs.'.format(len(old_jobs_finished)))
     for job in old_jobs_finished:
         db.session.delete(job)
     db.session.commit()
@@ -244,6 +253,8 @@ def do_scan_management():
             seconds=scrape_request_time_to_live)
     old_reqs_finished = list(ScrapeRequest.query.filter(ScrapeRequest.status=='working',
         ScrapeRequest.status_changed < scrape_request_time_threshold))
+    if len(old_reqs_finished) > 0:
+        current_app.logger.info('Removing {} old scrape reqs.'.format(len(old_reqs_finished)))
     for req in old_reqs_finished:
         db.session.delete(req)
     db.session.commit()

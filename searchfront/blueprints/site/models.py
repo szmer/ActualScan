@@ -8,10 +8,17 @@ sites_tags = db.Table('sites_tags',
 #    web
 #    reddit
 
+### Possible site/tag levels:
+#    base
+#    community
+#    --- private not implemented
+
 class Tag(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(256), nullable=False)
-    # (also a sites backref)
+    description = db.Column(db.String(1024), nullable=False)
+    level = db.Column(db.String(12), nullable=False)
+    # (there's also a sites backref)
 
     def __repr__(self):
         """
@@ -22,6 +29,7 @@ class Tag(db.Model):
 # TODO subreddit sites and similar special cases
 class Site(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    level = db.Column(db.String(12), nullable=False)
     homepage_url = db.Column(db.String(8192), nullable=False)
     # Homepage url w/o protocol and www, or /r/subreddit
     site_name = db.Column(db.String(512), nullable=False)

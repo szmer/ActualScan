@@ -31,23 +31,26 @@ def db(app):
     _db.drop_all()
     _db.create_all()
 
-    existing_tags = list(Tag.query.filter_by(name='fun'))
+    fun_tag_dict = {'name':'fun', 'level':'base', 'description':'Sites containing fun things.'}
+    existing_tags = list(Tag.query.filter_by(**fun_tag_dict))
     if len(existing_tags) == 0:
-        tag_fun = Tag(name='fun')
+        tag_fun = Tag(**fun_tag_dict)
         _db.session.add(tag_fun)
         _db.session.commit()
     else:
         tag_fun = existing_tags[0]
-    existing_tags = list(Tag.query.filter_by(name='games'))
+    games_tag_dict = {'name':'games', 'level':'base', 'description':'Games of all kinds.'}
+    existing_tags = list(Tag.query.filter_by(**games_tag_dict))
     if len(existing_tags) == 0:
-        tag_games = Tag(name='games')
+        tag_games = Tag(**games_tag_dict)
         _db.session.add(tag_games)
         _db.session.commit()
     else:
         tag_games = existing_tags[0]
-    existing_tags = list(Tag.query.filter_by(name='reddit'))
+    reddit_tag_dict = {'name':'reddit', 'level':'base', 'description':'Various subreddits.'}
+    existing_tags = list(Tag.query.filter_by(**reddit_tag_dict))
     if len(existing_tags) == 0:
-        tag_reddit = Tag(name='reddit')
+        tag_reddit = Tag(**reddit_tag_dict)
         _db.session.add(tag_reddit)
         _db.session.commit()
     else:
@@ -66,6 +69,7 @@ def db(app):
     existing_sites = list(Site.query.filter_by(homepage_url='https://szymonrutkowski.pl/blog'))
     if len(existing_sites) == 0:
         site = Site(homepage_url='http://quotes.toscrape.com',
+                level='base',
                 search_pointer='http://quotes.toscrape.com/tag/|||fat|||+|||cat|||/page/1',
                 source_type='blog', site_name='quotes.toscrape.com',
                 site_type='web',
@@ -79,6 +83,7 @@ def db(app):
     existing_sites = list(Site.query.filter_by(homepage_url='https://reddit.com/r/test'))
     if len(existing_sites) == 0:
         site = Site(homepage_url='https://reddit.com/r/test',
+                level='base',
                 search_pointer='test',
                 source_type='forums', site_name='/r/test',
                 site_type='reddit',

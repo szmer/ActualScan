@@ -99,21 +99,19 @@ class TestScanSchedule(object):
         # NOTE we currently need a long time due to toscrap.com redirections.
         for i in range(120*2): # wait up to 120 sec
             sleep(0.5)
-            #assert scrapyp.process.poll() is None
-            solr_response_json = solr_search_json('site_name:quotes.toscrape.com')
-            if ('response' in solr_response_json and 'docs' in solr_response_json['response']
-                and len(solr_response_json['response']['docs']) > 0):
+            # We check requests status instead of Solr directly to avoid racing with updating those
+            # statuses.
+            requests_committed = list(ScrapeRequest.query.filter_by(job_id=job.id,
+                status='committed'))
+            if len(requests_committed) >= 2:
                 break
+        solr_response_json = solr_search_json('site_name:quotes.toscrape.com')
         assert 'response' in solr_response_json and 'docs' in solr_response_json['response']
         assert len(solr_response_json['response']['docs']) > 0
         # TODO ensure that we have site tags, and not query tags in the index!
 
-        # Find the done requests in the DB.
-        requests = list(ScrapeRequest.query.filter_by(job_id=job.id))
-        assert len(requests) >= 2
-        assert len([req for req in requests if req.status == 'ran']) >= 2
-        assert len([req for req in requests if req.is_search == True]) == 1
-        assert len([req for req in requests if req.source_type == 'blog']) >= 2
+        assert len([req for req in requests_committed if req.is_search == True]) == 1
+        assert len([req for req in requests_committed if req.source_type == 'blog']) >= 2
 
     def test_reddit_scan(self, app, db, redditp):
         # Clean up entries from the test domain in Solr (note that slashes must be escaped in the
@@ -149,19 +147,20 @@ class TestScanSchedule(object):
         job = ScanJob.query.get(job_id)
         for i in range(120*2): # wait up to 120 sec
             sleep(0.5)
-            #assert redditp.process.poll() is None
-            solr_response_json = solr_search_json('site_name:\\/r\\/test')
-            if ('response' in solr_response_json and 'docs' in solr_response_json['response']
-                and len(solr_response_json['response']['docs']) > 0):
+            # We check requests status instead of Solr directly to avoid racing with updating those
+            # statuses.
+            requests_committed = list(ScrapeRequest.query.filter_by(job_id=job.id,
+                status='committed'))
+            if len(requests_committed) >= 2:
                 break
+        solr_response_json = solr_search_json('site_name:\\/r\\/test')
         assert 'response' in solr_response_json and 'docs' in solr_response_json['response']
         assert len(solr_response_json['response']['docs']) > 0
 
-        # Find the done requests in the DB.
+        # Specifically, we cannot expect the search request to already commit (there may be more
+        # submissions and it commits only after all sites for Reddit).
         requests = list(ScrapeRequest.query.filter_by(job_id=job.id))
-        assert len(requests) >= 2
-        assert len([req for req in requests if req.status == 'ran']) >= 2
         assert len([req for req in requests if req.is_search == True]) == 1
-        assert len([req for req in requests if req.source_type == 'forums']) >= 2
+        assert len([req for req in requests if req.source_type != 'forums']) == 0
 
 ### TODO test handling 404 responses
