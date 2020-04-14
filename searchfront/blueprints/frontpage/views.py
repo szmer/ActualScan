@@ -36,7 +36,7 @@ def scanresults():
         # NOTE We establish empty ('') user for guests.
         # NOTE 2 the tags in form should be aut-converted to Tag objects.
         job = request_scan('', scan_query,
-                ','.join([tag.name for tag in form.query_tags.data]))
+                [tag.name for tag in form.query_tags.data])
         do_scan_management() # KLUDGE KLUDGE (no rate limiting here!)
         progress_info = scan_progress_info(job)
     if (('skip_scan' in request.args and request.args['skip_scan'])

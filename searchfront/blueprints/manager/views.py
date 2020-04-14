@@ -1,6 +1,5 @@
 from flask import Blueprint, redirect, url_for, request
 from flask_admin import AdminIndexView
-from flask_admin.form import SecureForm
 from flask_admin.contrib.sqla import ModelView
 from flask_security import current_user
 
@@ -10,7 +9,11 @@ class ManagerView():
     """
     A generic ModelView class for any manager model.
     """
-    form_base_class = SecureForm
+    # NOTE FlaskWTF used by Flask-Admin already include CSRF protection, so flask_admin's SecureForm
+    # only breaks this by duplicating csrf_token fields
+    #form_base_class = SecureForm
+
+    list_template = 'manager/admin_list.html'
     edit_template = 'manager/admin_edit.html'
     create_template = 'manager/admin_create.html'
 
@@ -20,13 +23,23 @@ class ManagerView():
             return redirect(url_for('security.login', next=url_for(request.endpoint)))
 
 class ManagerLoginRequired():
+    """A helper class to create views accessible only to users that are logged in"""
     def is_accessible(self):
         return (current_user.is_active and
                 current_user.is_authenticated)
 
 class ManagerAdminRequired():
+    """A helper class to create views accessible only to admins."""
     def is_accessible(self):
         return current_user.has_role('admin')
+
+class ManagerRegisteredOnly():
+    """
+    A helper class to create views accessible only to users with the registered role (with
+    permissions appropriate for them).
+    """
+    def is_accessible(self):
+        return current_user.has_role('registered') or current_user.has_role('admin')
 
 # Our superclasses have to be first to actually overwrite the defaults.
 class ManagerIndexView(ManagerView, ManagerLoginRequired, AdminIndexView):

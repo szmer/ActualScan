@@ -2,6 +2,10 @@
 {% import 'admin/lib.html' as lib %}
 {% from 'manager/admin_lib.html' import admin_extra with context %}
 
+{# don't duplicate any includes #}
+{% block head %}
+{% endblock %}
+
 {# use a version of extra with btn-secondary #}
 {% block create_form %}
     {{ lib.render_form(form, return_url, admin_extra(), form_opts) }}

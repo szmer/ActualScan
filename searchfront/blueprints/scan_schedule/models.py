@@ -33,7 +33,13 @@ class ScanJob(db.Model):
     # bother with native Postgres arrays.
     # NOTE we currently *require* tags in scan jobs
     query_tags = db.Column(db.String(8192), nullable=False)
-    requests = db.relationship('ScrapeRequest', backref=db.backref('job', lazy=True), lazy=True)
+    requests = db.relationship('ScrapeRequest',
+            # ensure that deleting the job also deletes all the orphaned requests
+            backref=db.backref('job', lazy=True, cascade='all, delete-orphan',
+                single_parent=True),
+            cascade='all, delete-orphan',
+            single_parent=True,
+            lazy=True)
     # These counts should be filled out when starting the job; they're needed for progress reporting
     website_count = db.Column(db.Integer)
     subreddit_count = db.Column(db.Integer)

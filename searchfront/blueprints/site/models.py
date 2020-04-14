@@ -15,7 +15,7 @@ sites_tags = db.Table('sites_tags',
 
 class Tag(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(256), nullable=False)
+    name = db.Column(db.String(256), nullable=False, unique=True)
     description = db.Column(db.String(1024), nullable=False)
     level = db.Column(db.String(12), nullable=False)
     # (there's also a sites backref)
@@ -30,9 +30,9 @@ class Tag(db.Model):
 class Site(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     level = db.Column(db.String(12), nullable=False)
-    homepage_url = db.Column(db.String(8192), nullable=False)
+    homepage_url = db.Column(db.String(8192), nullable=False, unique=True)
     # Homepage url w/o protocol and www, or /r/subreddit
-    site_name = db.Column(db.String(512), nullable=False)
+    site_name = db.Column(db.String(512), nullable=False, unique=True)
     # An url with search for "fat cat", represented as |||fat||| |||cat|||
     # For Reddit, the subreddit name without /r/
     search_pointer = db.Column(db.String(8192), nullable=False)

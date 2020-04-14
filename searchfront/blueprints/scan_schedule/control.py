@@ -18,12 +18,15 @@ def request_scan(user_id, query_phrase : str, query_tags : list, force_new=False
     query_tags_str = ','.join(query_tags)
     job_id = ScanJob.identifier(user_id, query_phrase, query_tags_str)
     job = ScanJob.query.get(job_id)
+    if job is not None and force_new:
+        db.session.delete(job) # should cascade to the scrape requests
+        db.session.commit()
+        job = None
     if job is None:
-        job = ScanJob(id=job_id, query_phrase=query_phrase, query_tags=query_tags_str, status='waiting')
+        job = ScanJob(id=job_id, query_phrase=query_phrase, query_tags=query_tags_str,
+                status='waiting')
         db.session.add(job)
         db.session.commit()
-    elif force_new:
-        raise ValueError('Scan job {} already exists, but was asked to recreate it'.format(job_id))
     return job
 
 def start_scan(scan_job):

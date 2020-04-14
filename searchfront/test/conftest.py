@@ -1,8 +1,9 @@
 import pytest
+from flask_security.utils import hash_password
 
 from flask_instance import settings
 from searchfront.app import create_app
-from searchfront.extensions import db as _db
+from searchfront.extensions import db as _db, user_datastore
 from searchfront.scrapy_process import scrapyp as _scrapyp
 from searchfront.reddit_process import redditp as _redditp
 
@@ -20,7 +21,12 @@ def app():
     }
     _app = create_app(settings_override=params)
     _app.config.from_object('flask_config.settings')
+    # NOTE ???? it seems that it's important for these to be set AFTER the app creation, or the
+    # WTForms CSRF based tests (as frontpage/test_views) will fail
     _app.config['WTF_CSRF_ENABLED'] = False
+    _app.config['CSRF_ENABLED'] = False
+    _app.config['DEBUG_TB_ENABLED'] = False
+    _app.config['ENV'] = 'production'
     context = _app.app_context()
     context.push()
     yield _app
@@ -28,7 +34,6 @@ def app():
 
 @pytest.fixture(scope='session')
 def db(app):
-    _db.drop_all()
     _db.create_all()
 
     fun_tag_dict = {'name':'fun', 'level':'base', 'description':'Sites containing fun things.'}
@@ -65,8 +70,8 @@ def db(app):
             _db.session.add(new_config_row)
             _db.session.commit()
 
-    # TODO remove the site afterwards
-    existing_sites = list(Site.query.filter_by(homepage_url='https://szymonrutkowski.pl/blog'))
+    # TODO remove the site afterwards?
+    existing_sites = list(Site.query.filter_by(site_name='quotes.toscrape.com'))
     if len(existing_sites) == 0:
         site = Site(homepage_url='http://quotes.toscrape.com',
                 level='base',
@@ -80,7 +85,7 @@ def db(app):
         assert tag_fun in existing_sites[0].tags
         assert tag_games in existing_sites[0].tags 
     # We neet a small subreddit to use minimal amount of data.
-    existing_sites = list(Site.query.filter_by(homepage_url='https://reddit.com/r/test'))
+    existing_sites = list(Site.query.filter_by(site_name='/r/test'))
     if len(existing_sites) == 0:
         site = Site(homepage_url='https://reddit.com/r/test',
                 level='base',
@@ -95,6 +100,19 @@ def db(app):
         assert tag_reddit in existing_sites[0].tags
 
     return _db
+
+@pytest.yield_fixture(scope='session')
+def example_user(db):
+    user = user_datastore.get_user('test@example.com')
+    if not user:
+        user = user_datastore.create_user(email='test@example.com',
+                password=hash_password('password'))
+    db.session.commit()
+    user_datastore.add_role_to_user('test@example.com', 'registered')
+    db.session.commit()
+    yield user
+    db.session.delete(user)
+    db.session.commit()
 
 @pytest.yield_fixture(scope='session')
 def scrapyp():

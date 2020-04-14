@@ -28,12 +28,12 @@ from flask_admin.contrib.sqla import ModelView
 class ModelViewWithRels(ModelView):
     column_hide_backrefs = False
 
-from searchfront.blueprints.manager import ManagerView
+from searchfront.blueprints.manager import ManagerView, ManagerAdminRequired, ManagerRegisteredOnly
 from searchfront.blueprints.site import Tag
-class SiteModelView(ManagerView, ModelViewWithRels):
+class SiteModelView(ManagerView, ManagerAdminRequired, ModelViewWithRels):
     #
     # To display tags properly in the view.
-    column_list = ('homepage_url', 'site_name', 'search_pointer', 'source_type', 'site_type',
+    column_list = ('homepage_url', 'site_name', 'level', 'search_pointer', 'source_type', 'site_type',
             'tags')
     # We have to add the Tag.name here to make flask-admin aware of the relation?
     column_searchable_list = ('site_name', 'source_type', 'site_type', Tag.name)
@@ -52,11 +52,51 @@ class SiteModelView(ManagerView, ModelViewWithRels):
                 ('forums', 'forums'), # db and display value
                 ('media', 'media'),
                 ('blog', 'blog'),
-                ]}
+                ],
+            'level': [
+                ('base', 'base'),
+                ('community', 'community')
+                ]
+            }
 
     # See potentially these for filtering proposed tags
     # https://stackoverflow.com/questions/35139397/filtering-the-drop-downs-in-flask-admin-before-it-gets-to-the-user
     # https://stackoverflow.com/questions/40381086/how-to-customize-flask-admin-queryselectmultiplefield-choice/56462018#56462018
 
-class TagModelView(ManagerView, ModelViewWithRels):
+class SiteModelViewForRegistered(ManagerRegisteredOnly, SiteModelView):
+    can_delete = False
+
+    form_choices = {
+            'site_type': [
+                ('web', 'web'), # db and display value
+                ('reddit', 'reddit'),
+                ],
+            'source_type': [
+                ('forums', 'forums'), # db and display value
+                ('media', 'media'),
+                ('blog', 'blog'),
+                ],
+            'level': [
+                ('community', 'community')
+                ]
+            }
+
+class TagModelView(ManagerView, ManagerAdminRequired, ModelViewWithRels):
+    column_list = ('name', 'description', 'level')
     form_excluded_columns = ('sites',)
+
+    form_choices = {
+            'level': [
+                ('base', 'base'),
+                ('community', 'community')
+                ]
+            }
+
+class TagModelViewForRegistered(ManagerRegisteredOnly, TagModelView):
+    can_delete = False
+
+    form_choices = {
+            'level': [
+                ('community', 'community')
+                ]
+            }

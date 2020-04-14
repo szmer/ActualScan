@@ -3,7 +3,8 @@ from flask_security.utils import hash_password
 
 from flask_bootstrap import Bootstrap
 from searchfront.extensions import (
-        debug_toolbar, db, csrf, security, user_datastore, admin, SiteModelView, TagModelView
+        debug_toolbar, db, csrf, security, user_datastore, admin,
+        SiteModelView, TagModelView, SiteModelViewForRegistered, TagModelViewForRegistered
         )
 from searchfront.scrapy_process import scrapyp
 from searchfront.reddit_process import redditp
@@ -31,6 +32,7 @@ def create_app(settings_override=None):
     app.register_blueprint(account)
     app.register_blueprint(manager)
     extensions(app)
+    install_admin(app, db)
 
     @app.before_first_request
     def init_db():
@@ -83,18 +85,29 @@ def create_app(settings_override=None):
         if redditp.process.poll() is not None:
             app.logger.warning('Reddit process is not running on start of the flask app.')
 
-    # The admin panel setup.
-    admin.add_view(ManagerAdminView(AppUser, db.session))
-    # TODO add authorization requirements!!!
-    admin.add_view(SiteModelView(Site, db.session, endpoint='manager_site', name='Sites'))
-    admin.add_view(TagModelView(Tag, db.session, endpoint='manager_tag', name='Tags'))
-
     return app
 
 def extensions(app):
     Bootstrap(app)
     debug_toolbar.init_app(app)
     db.init_app(app)
+    #if app.config['WTF_CSRF_ENABLED']:
     csrf.init_app(app)
     security.init_app(app, datastore=user_datastore)
+
+def install_admin(app, db):
     admin.init_app(app)
+
+    # The admin panel setup.
+    admin.add_view(ManagerAdminView(AppUser, db.session))
+    admin.add_view(ManagerAdminView(ScanJob, db.session))
+    admin.add_view(ManagerAdminView(ScrapeRequest, db.session))
+    # Admin views with versions for various roles.
+    admin.add_view(SiteModelViewForRegistered(Site, db.session, endpoint='manager_site_registered',
+        name='Sites'))
+    admin.add_view(TagModelViewForRegistered(Tag, db.session, endpoint='manager_tag_registered',
+        name='Tags'))
+    admin.add_view(SiteModelView(Site, db.session, endpoint='manager_site', name='Sites (A)'))
+    admin.add_view(TagModelView(Tag, db.session, endpoint='manager_tag', name='Tags (A)'))
+
+    return admin

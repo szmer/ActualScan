@@ -19,6 +19,8 @@ To skip tests requiring many network connections:
 docker-compose exec website pytest -k "not with_network" searchfront
 ```
 
+Use the ` --log-cli-level=10` flag to capture all logging for all tests (also the ones that pass).
+
 # Installing frontend packages
 
 - add to `package.json` in the webpack directory

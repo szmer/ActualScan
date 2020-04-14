@@ -38,7 +38,7 @@ class TestScanSchedule(object):
         if existing_job:
             terminate_scan(existing_job)
         prescan_time = datetime.now(timezone.utc)
-        request_scan('ex@example.com', 'NabuchodonozorKopieJeftego?', ['fun'])
+        request_scan('ex@example.com', 'NabuchodonozorKopieJeftego?', ['fun'], force_new=True)
 
         # Ensure that the job is present, was just created and is inspectable.
         job = ScanJob.query.get(job_id)
@@ -55,7 +55,7 @@ class TestScanSchedule(object):
         progress_info = scan_progress_info(job)
         assert 'phase' in progress_info
         assert progress_info['phase'] in ['search', 'crawl', 'done']
-        reqs = list(ScrapeRequest.query.filter_by(job_id=job.id))
+        reqs = list(ScrapeRequest.query.filter_by(job_id=job_id))
         # (avoid request type cross-contamination)
         assert 'quotes.toscrape.com' in [req.site_name for req in reqs]
         assert '/r/test' in [req.site_name for req in reqs]
@@ -89,19 +89,18 @@ class TestScanSchedule(object):
         existing_job = ScanJob.query.get(job_id)
         if existing_job:
             terminate_scan(existing_job)
-        request_scan('ex@example.com', 'inspirational', ['games'])
+        request_scan('ex@example.com', 'inspirational', ['games'], force_new=True)
 
         # This should start the scan.
         do_scan_management()
 
         # Check the completion.
-        job = ScanJob.query.get(job_id)
         # NOTE we currently need a long time due to toscrap.com redirections.
         for i in range(120*2): # wait up to 120 sec
             sleep(0.5)
             # We check requests status instead of Solr directly to avoid racing with updating those
             # statuses.
-            requests_committed = list(ScrapeRequest.query.filter_by(job_id=job.id,
+            requests_committed = list(ScrapeRequest.query.filter_by(job_id=job_id,
                 status='committed'))
             if len(requests_committed) >= 2:
                 break
@@ -138,18 +137,17 @@ class TestScanSchedule(object):
         existing_job = ScanJob.query.get(job_id)
         if existing_job:
             terminate_scan(existing_job)
-        request_scan('ex@example.com', 'jour', ['reddit'])
+        request_scan('ex@example.com', 'jour', ['reddit'], force_new=True)
 
         # This should start the scan.
         do_scan_management()
 
         # Check the completion.
-        job = ScanJob.query.get(job_id)
         for i in range(120*2): # wait up to 120 sec
             sleep(0.5)
             # We check requests status instead of Solr directly to avoid racing with updating those
             # statuses.
-            requests_committed = list(ScrapeRequest.query.filter_by(job_id=job.id,
+            requests_committed = list(ScrapeRequest.query.filter_by(job_id=job_id,
                 status='committed'))
             if len(requests_committed) >= 2:
                 break
@@ -159,7 +157,7 @@ class TestScanSchedule(object):
 
         # Specifically, we cannot expect the search request to already commit (there may be more
         # submissions and it commits only after all sites for Reddit).
-        requests = list(ScrapeRequest.query.filter_by(job_id=job.id))
+        requests = list(ScrapeRequest.query.filter_by(job_id=job_id))
         assert len([req for req in requests if req.is_search == True]) == 1
         assert len([req for req in requests if req.source_type != 'forums']) == 0
 
