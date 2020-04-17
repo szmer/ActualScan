@@ -1,6 +1,10 @@
 {% extends 'layouts/base.html' %}
 {% from "macros/form.html" import render_field, render_selectmultiple_field %}
 {% block container %}
+<div class="text-center">
+<img src="{{ url_for('static', filename='logo1.png') }}" alt="ActualScan" style="width: 90%; margin: 40px">
+</div>
+
 <form>
    <dl>
    {{ render_field(form.scan_query, show_errors) }}
@@ -8,7 +12,7 @@
    {{ form.csrf_token }}
    </dl>
 
-   <button name="skip_scan" value="true" type="submit" class="btn btn-primary">Search</button>
-   <button type="submit" class="btn btn-primary">Scan</button>
+   <button name="skip_scan" value="true" type="submit" class="btn btn-primary btn-lg">Search the index</button>
+   <button type="submit" class="btn btn-primary btn-lg">Scan the Web</button>
 </form>
 {% endblock %}

@@ -13,6 +13,6 @@ def tag_choices():
 
 class PublicScanForm(FlaskForm):
     scan_query = StringField('Search for', validators=[InputRequired()])
-    query_tags = QuerySelectMultipleField('Scan sites with these tags',
+    query_tags = QuerySelectMultipleField('On sites with these tags',
             validators=[InputRequired()],
             query_factory=tag_choices)
