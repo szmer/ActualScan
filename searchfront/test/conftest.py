@@ -34,9 +34,10 @@ def app():
 
 @pytest.fixture(scope='session')
 def db(app):
+    _db.drop_all() # this seems to be needed to update schema in Python-side models
     _db.create_all()
 
-    fun_tag_dict = {'name':'fun', 'level':'base', 'description':'Sites containing fun things.'}
+    fun_tag_dict = {'name':'fun', 'level':100000, 'description':'Sites containing fun things.'}
     existing_tags = list(Tag.query.filter_by(**fun_tag_dict))
     if len(existing_tags) == 0:
         tag_fun = Tag(**fun_tag_dict)
@@ -44,7 +45,7 @@ def db(app):
         _db.session.commit()
     else:
         tag_fun = existing_tags[0]
-    games_tag_dict = {'name':'games', 'level':'base', 'description':'Games of all kinds.'}
+    games_tag_dict = {'name':'games', 'level':100000, 'description':'Games of all kinds.'}
     existing_tags = list(Tag.query.filter_by(**games_tag_dict))
     if len(existing_tags) == 0:
         tag_games = Tag(**games_tag_dict)
@@ -52,7 +53,7 @@ def db(app):
         _db.session.commit()
     else:
         tag_games = existing_tags[0]
-    reddit_tag_dict = {'name':'reddit', 'level':'base', 'description':'Various subreddits.'}
+    reddit_tag_dict = {'name':'reddit', 'level':100000, 'description':'Various subreddits.'}
     existing_tags = list(Tag.query.filter_by(**reddit_tag_dict))
     if len(existing_tags) == 0:
         tag_reddit = Tag(**reddit_tag_dict)
@@ -74,7 +75,7 @@ def db(app):
     existing_sites = list(Site.query.filter_by(site_name='quotes.toscrape.com'))
     if len(existing_sites) == 0:
         site = Site(homepage_url='http://quotes.toscrape.com',
-                level='base',
+                level=100000,
                 search_pointer='http://quotes.toscrape.com/tag/|||fat|||+|||cat|||/page/1',
                 source_type='blog', site_name='quotes.toscrape.com',
                 site_type='web',
@@ -88,7 +89,7 @@ def db(app):
     existing_sites = list(Site.query.filter_by(site_name='/r/test'))
     if len(existing_sites) == 0:
         site = Site(homepage_url='https://reddit.com/r/test',
-                level='base',
+                level=100000,
                 search_pointer='test',
                 source_type='forums', site_name='/r/test',
                 site_type='reddit',

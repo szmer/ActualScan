@@ -1,0 +1,14 @@
+{% extends 'manager/admin_list.html' %}
+
+{# Also add the column for the header row, for the edit suggestion links #}
+{% block list_row_actions_header %}
+{{ super() }}
+<th class="column-header">Edit</th>
+{% endblock %}
+
+{% block list_row_actions_column scoped %}
+{{ super() }}
+<td>
+   <a href="{{ url_for('manager.add_change_request') }}?subject=tag: {{ get_pk_value(row) }}">suggest change</a>
+</td>
+{% endblock %}

@@ -1,10 +1,15 @@
+# Flask
 DEBUG = True
 TEMPLATES_AUTO_RELOAD = True
 
+# Flask WTF
 WTF_CSRF_ENABLED = True
 
+# Flask Debug Toolbar
+#DEBUG_TB_ENABLED = False
 DEBUG_TB_INTERCEPT_REDIRECTS = False
 
+# Flask-Security
 SECURITY_REGISTERABLE = True
 SECURITY_CHANGEABLE = True
 
@@ -22,4 +27,9 @@ LIVECONFIG_START_VALUES = {
         # These multipliers are used to estimate how many scrape requests will a site generate.
         'subreddit_estimation_multiplier': 75 * 100, # submissions * comments per submission
         'website_estimation_multiplier': 50,
+
+        'site_level_threshold_base': 1000,
+        'site_level_threshold_community': 0,
+        'tag_level_threshold_base': 1000,
+        'tag_level_threshold_community': 0,
         }

@@ -1,4 +1,11 @@
+from flask_security import current_user
+
 from searchfront.extensions import db
+
+def current_user_id():
+    if hasattr(current_user, 'id') and current_user.id:
+        return current_user.id
+    return None
 
 sites_tags = db.Table('sites_tags',
         db.Column('site_id', db.Integer(), db.ForeignKey('site.id')),
@@ -16,20 +23,20 @@ sites_tags = db.Table('sites_tags',
 class Tag(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(256), nullable=False, unique=True)
-    description = db.Column(db.String(1024), nullable=False)
-    level = db.Column(db.String(12), nullable=False)
+    description = db.Column(db.String(1024))
+    level = db.Column(db.Integer, nullable=False, default=10)
+    creator_id = db.Column(db.Integer, db.ForeignKey('app_user.id'), default=current_user_id)
     # (there's also a sites backref)
 
     def __repr__(self):
         """
         Implementing __repr__ is beneficial for displaying in forms.
         """
-        return 'tag: \'{}\''.format(self.name)
+        return '/{}/'.format(self.name)
 
-# TODO subreddit sites and similar special cases
 class Site(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    level = db.Column(db.String(12), nullable=False)
+    level = db.Column(db.Integer, nullable=False, default=10)
     homepage_url = db.Column(db.String(8192), nullable=False, unique=True)
     # Homepage url w/o protocol and www, or /r/subreddit
     site_name = db.Column(db.String(512), nullable=False, unique=True)
@@ -40,7 +47,9 @@ class Site(db.Model):
     site_type = db.Column(db.String(32), nullable=False)
     tags = db.relationship('Tag', secondary=sites_tags,
             backref=db.backref('sites', lazy=True))
+    creator_id = db.Column(db.Integer, db.ForeignKey('app_user.id'), default=current_user_id)
 
+    # NOTE we should take urlencoding schemes into account
     MOCK_STR1 = '|||fat|||'
     MOCK_STR2 = '|||cat|||'
 
@@ -48,7 +57,7 @@ class Site(db.Model):
         """
         Implementing __repr__ is beneficial for displaying in forms.
         """
-        return 'site on {}'.format(self.site_name)
+        return 'site: {}'.format(self.site_name)
 
     def search_url_for(self, tokens):
         """

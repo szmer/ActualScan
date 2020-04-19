@@ -36,6 +36,7 @@ underlying processes (scrapyp, redditp).
 For problems with pytest:
 
 ```bash
+# Overview of what the pytest would do.
 docker-compose exec website pytest -m trace --trace searchfront
 docker-compose exec website pytest -v
 ```

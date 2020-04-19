@@ -6,7 +6,7 @@ from flask import Blueprint, redirect, render_template, request, url_for
 from flask import current_app # can be used for logging stuff if needed
 
 from searchfront.blueprints.frontpage.forms import PublicScanForm
-from searchfront.blueprints.scan_schedule import do_scan_management, request_scan, scan_progress_info
+from searchfront.blueprints.scan_schedule import request_scan, scan_progress_info
 
 frontpage = Blueprint('frontpage', __name__, template_folder='templates')
 
@@ -37,7 +37,6 @@ def scanresults():
         # NOTE 2 the tags in form should be aut-converted to Tag objects.
         job = request_scan('', scan_query,
                 [tag.name for tag in form.query_tags.data])
-        do_scan_management() # KLUDGE KLUDGE (no rate limiting here!)
         progress_info = scan_progress_info(job)
     if (('skip_scan' in request.args and request.args['skip_scan'])
         or ('phase' in progress_info and progress_info['phase'] == 'finished')):

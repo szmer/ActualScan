@@ -1,0 +1,46 @@
+{% extends 'layouts/base.html' %}
+{% from "macros/form.html" import render_field %}
+
+{% block container %}
+<h2>{% if site %}{{ site }}{% endif %}{% if tag %}{{ tag }}{% endif %}</h2>
+
+{% if form.subject.errors %}
+<div class="alert alert-danger" role="alert">
+{% for error in form.subject.errors %}
+<p>{{ error }}</p>
+{% endfor %}
+</div>
+{% endif %}
+
+<div class="my-3">
+{% if site %}
+<table>
+   <tr><th scope="col">Site name</th><td>{{ site.site_name }}</td></tr>
+   <tr><th scope="col">Homepage address</th><td>{{ site.homepage_url }}</td></tr>
+   <tr><th scope="col">Search pointer</th><td>{{ site.search_pointer }}</td></tr>
+   <tr><th scope="col">Source type</th><td>{{ site.source_type }}</td></tr>
+   <tr><th scope="col">Site type</th><td>{{ site.site_type }}</td></tr>
+</table>
+{% endif %}
+{% if tag %}
+<table>
+   <tr><th scope="col">Name</th><td>{{ tag.name }}</td></tr>
+   <tr><th scope="col">Description</th><td>{{ tag.description }}</td></tr>
+</table>
+{% endif %}
+</div>
+
+<form>
+   <dl>
+   {{ form.csrf_token }}
+   {{ render_field(form.subject, show_errors) }}
+   {{ render_field(form.content, show_errors) }}
+   </dl>
+
+   <button type="submit" class="btn btn-primary btn-lg">Submit</button>
+</form>
+
+<script>
+    document.write('<a href="' + document.referrer + '">Back</a>');
+</script>
+{% endblock %}

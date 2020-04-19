@@ -1,9 +1,50 @@
-from flask import Blueprint, redirect, url_for, request
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_admin import AdminIndexView
 from flask_admin.contrib.sqla import ModelView
 from flask_security import current_user
+from wtforms.validators import ValidationError
+
+from searchfront.extensions import db
+from searchfront.blueprints.site import Site, Tag
+from searchfront.blueprints.manager.models import ChangeRequest
+from searchfront.blueprints.manager.forms import ChangeRequestForm
 
 manager = Blueprint('manager', __name__, template_folder='templates')
+
+@manager.route('/change_request')
+def add_change_request():
+    # Get the form data.
+    if request.method == 'GET':
+        form = ChangeRequestForm(formdata=request.args)
+    else:
+        form = ChangeRequestForm(formdata=request.form)
+
+    # Extract the object in question.
+    tag, site = None, None
+    try:
+        subject_type, id = form.extract_subject_id(form.subject.data)
+        if subject_type == 'site':
+            site = Site.query.get(id)
+        if subject_type == 'tag':
+            tag = Tag.query.get(id)
+    except ValidationError:
+        pass
+
+    # Put the request into the database if the form validates.
+    if form.validate():
+        change_req = ChangeRequest(subject=repr(site or tag), content=form.content.data,
+                creator=current_user)
+        db.session.add(change_req)
+        db.session.commit()
+        flash('Thank you for your report!')
+        if tag:
+            return redirect(url_for('manager_tag.index_view'))
+        else:
+            return redirect(url_for('manager_site.index_view'))
+
+    # Show the form with info on the object about which there is the change request.
+    return render_template('manager/add_change_request.html', form=form, tag=tag, site=site,
+            show_errors=bool(form.content.data))
 
 class ManagerView():
     """
@@ -50,4 +91,8 @@ class ManagerIndexView(ManagerView, ManagerLoginRequired, AdminIndexView):
 
 class ManagerAdminView(ManagerView, ManagerAdminRequired, ModelView):
     """A manager view accessible only to admins."""
-    pass
+    can_create = True
+    can_delete = True
+    can_edit = True
+
+    can_view_details = True

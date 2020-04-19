@@ -4,7 +4,8 @@ from flask_security.utils import hash_password
 from flask_bootstrap import Bootstrap
 from searchfront.extensions import (
         debug_toolbar, db, csrf, security, user_datastore, admin,
-        SiteModelView, TagModelView, SiteModelViewForRegistered, TagModelViewForRegistered
+        SiteModelView, TagModelView, SiteModelViewForRegistered, TagModelViewForRegistered,
+        ChangeRequestModelView
         )
 from searchfront.scrapy_process import scrapyp
 from searchfront.reddit_process import redditp
@@ -12,7 +13,7 @@ from searchfront.reddit_process import redditp
 # Import blueprints now as some of them may require setting up extensions beforehand.
 from searchfront.blueprints.frontpage import frontpage
 from searchfront.blueprints.account import account, AppUser
-from searchfront.blueprints.manager import manager, ManagerAdminView
+from searchfront.blueprints.manager import manager, ManagerAdminView, ChangeRequest
 from searchfront.blueprints.live_config import LiveConfigValue
 from searchfront.blueprints.site import Site, Tag
 from searchfront.blueprints.scan_schedule import ScanJob, ScrapeRequest
@@ -55,6 +56,7 @@ def create_app(settings_override=None):
             # Add the root user.
             if not user_datastore.get_user(app.config['INIT_USER_EMAIL']):
                 user_datastore.create_user(email=app.config['INIT_USER_EMAIL'],
+                        handle='admin',
                         password=hash_password(app.config['INIT_USER_PASSWORD']))
             db.session.commit()
             user_datastore.add_role_to_user(app.config['INIT_USER_EMAIL'], 'admin')
@@ -64,7 +66,8 @@ def create_app(settings_override=None):
             if app.config['ENV'] == 'development':
                 if not user_datastore.get_user('john@example.com'):
                     user_datastore.create_user(email='john@example.com',
-                            password=hash_password('password'))
+                            password=hash_password('password'),
+                            handle='john')
                 db.session.commit()
                 user_datastore.add_role_to_user('john@example.com', 'registered')
                 db.session.commit()
@@ -98,16 +101,26 @@ def extensions(app):
 def install_admin(app, db):
     admin.init_app(app)
 
-    # The admin panel setup.
-    admin.add_view(ManagerAdminView(AppUser, db.session))
-    admin.add_view(ManagerAdminView(ScanJob, db.session))
-    admin.add_view(ManagerAdminView(ScrapeRequest, db.session))
-    # Admin views with versions for various roles.
-    admin.add_view(SiteModelViewForRegistered(Site, db.session, endpoint='manager_site_registered',
+    # Views for the registered users.
+    admin.add_view(SiteModelViewForRegistered(Site, db.session, endpoint='manager_site',
         name='Sites'))
-    admin.add_view(TagModelViewForRegistered(Tag, db.session, endpoint='manager_tag_registered',
+    admin.add_view(TagModelViewForRegistered(Tag, db.session, endpoint='manager_tag',
         name='Tags'))
-    admin.add_view(SiteModelView(Site, db.session, endpoint='manager_site', name='Sites (A)'))
-    admin.add_view(TagModelView(Tag, db.session, endpoint='manager_tag', name='Tags (A)'))
+    # NOTE We could add a view for own suggestions with this solution: https://stackoverflow.com/questions/26349773/flask-admin-default-filters
+
+    # Moderation.
+    admin.add_view(ChangeRequestModelView(ChangeRequest, db.session,
+        name='Suggestions (M)', category='Moderation'))
+    admin.add_view(SiteModelView(Site, db.session, endpoint='manager_site_adm', name='Sites (M)',
+        category='Moderation'))
+    admin.add_view(TagModelView(Tag, db.session, endpoint='manager_tag_adm', name='Tags (M)',
+        category='Moderation'))
+
+    # Scan schedule control.
+    admin.add_view(ManagerAdminView(ScanJob, db.session, category='Scans'))
+    admin.add_view(ManagerAdminView(ScrapeRequest, db.session, category='Scans'))
+
+    # The true admin level.
+    admin.add_view(ManagerAdminView(AppUser, db.session))
 
     return admin
