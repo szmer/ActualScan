@@ -1,0 +1,14 @@
+## Broker settings.
+broker_url = 'redis://:pasword@redis:6379/0'
+
+# List of modules to import when the Celery worker starts.
+imports = ('searchfront.celery_control.tasks',)
+
+## The result backed.
+result_backend = 'redis://:password@redis:6379/0'
+task_annotations = {'tasks.add': {'rate_limit': '10/s'}}
+
+# (these are the defaults)
+accept_content = ['json']
+task_serializer = 'json'
+result_serializer = 'json'

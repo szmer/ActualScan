@@ -30,6 +30,8 @@
                 :date_post #'media-date
                 :author #'media-author
                 :meta-burner #'general-meta-burner)
+          ;; When interpreting search pages, we interpret each found link as a document with only
+          ;; the permalink.
           (list "searchpage"
                 :skip-p #'general-skip-p
                 :doc-startp #'searchpage-doc-startp

@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 import http.client
-from logging import debug, info, warning
+from logging import debug, warning
 import urllib
 from urllib.parse import urlparse
 
@@ -87,5 +87,3 @@ def update_request_status(db_session, request, new_status, failure_comment=None)
     if failure_comment is not None:
         request.failure_comment = failure_comment
     db_session.commit()
-    info('Status of the request for {} ({}) changed to {}'.format(request.target, request.job_id,
-        new_status))

@@ -1,3 +1,5 @@
+import logging
+
 from flask import Flask
 from flask_security.utils import hash_password
 
@@ -28,6 +30,9 @@ def create_app(settings_override=None):
 
     if settings_override:
         app.config.update(settings_override)
+
+    app.logger.addHandler(logging.StreamHandler())
+    app.logger.setLevel(app.config['LOG_LEVEL'])
 
     app.register_blueprint(frontpage)
     app.register_blueprint(account)

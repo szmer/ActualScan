@@ -32,4 +32,4 @@ class TestFrontpageViews(object):
             # We establish empty ('') user for guests.
             test_job = ScanJob.query.get(job_id)
             assert test_job is not None
-            terminate_scan(test_job)
+            terminate_scan(test_job.id)

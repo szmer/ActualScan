@@ -27,6 +27,10 @@ Flask-WTF==0.14.3
 # not currently used, breaks Flask-WTF
 WTForms-SQLAlchemy==0.1
 
+# Celery.
+celery==4.4.2
+redis==3.4.1
+
 # Scrapy.
 Scrapy==1.8.0
 simpleflock==0.0.3

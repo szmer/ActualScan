@@ -37,7 +37,7 @@ def scanresults():
         # NOTE 2 the tags in form should be aut-converted to Tag objects.
         job = request_scan('', scan_query,
                 [tag.name for tag in form.query_tags.data])
-        progress_info = scan_progress_info(job)
+        progress_info = scan_progress_info(job.id)
     if (('skip_scan' in request.args and request.args['skip_scan'])
         or ('phase' in progress_info and progress_info['phase'] == 'finished')):
         try:

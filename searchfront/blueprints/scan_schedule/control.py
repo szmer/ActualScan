@@ -1,5 +1,3 @@
-from datetime import datetime, timedelta, timezone
-
 from flask import current_app
 from sqlalchemy import func
 
@@ -73,14 +71,21 @@ def start_scan(scan_job):
     scan_job.change_status('working')
     scan_job.website_count = website_count
     scan_job.subreddit_count = subreddit_count
+    db.session.add(scan_job)
     db.session.commit()
     # TODO failure
 
-def terminate_scan(scan_job):
+#
+# NOTE the following also get the job ids, as they are meant to be called by a client function which
+# may have an outdated version of the object.
+#
+
+def terminate_scan(scan_job_id):
     """
     Terminate the scan job. All waiting scrape requests are cancelled; scheduled ones will still be
     made unless we restart Scrapy.
     """
+    scan_job = ScanJob.query.get(scan_job_id)
     waiting_requests = [req for req in scan_job.requests if req.status == 'waiting']
     for req in waiting_requests:
         req.change_status('cancelled')
@@ -88,14 +93,23 @@ def terminate_scan(scan_job):
     scan_job.change_status('terminated')
     db.session.commit()
 
-def scan_progress_info(scan_job):
+def scan_progress_info(scan_job_id):
     """
-    A dictionary: 'phase' ('waiting', 'search', 'crawl' or appropriate ScanJob status), possibly
-    also 'fails', 'last_url', 'dl_proportion'. Note that dl_proportion reflects proportion of the
-    pages to be crawled or the search pages depending on the phase.
+    A dictionary: 'phase' ('waiting', 'search', 'crawl', 'unexisting' or appropriate ScanJob
+    status), possibly also 'fails', 'last_url', 'dl_proportion'. Note that dl_proportion reflects
+    proportion of the pages to be crawled or the search pages depending on the phase.
     """
+    scan_job = ScanJob.query.get(scan_job_id)
+    if scan_job is None:
+        current_app.logger.debug('Returning status unexisting for the job'.format(scan_job_id))
+        return {'phase': 'unexisting'}
     if scan_job.status in ['waiting', 'finished', 'terminated', 'rejected']:
+        current_app.logger.debug('Returning status {} for the job'.format(scan_job.status,
+            scan_job_id))
         return {'phase': scan_job.status}
+
+    # Otherwise, we try do determine "crawl" or "search" and the detailed progress info.
+
     # TODO possibly optimize queries
     # Count the committed search and crawl (non-search) requests.
     committed_reddit_search_count = ScrapeRequest.query.filter_by(
@@ -206,59 +220,3 @@ def scan_progress_info(scan_job):
             # TODO test that it's the target, not ScrapeRequest object
             'last_url': done_request[0].target if len(done_request) > 0 else None,
             'dl_proportion': dl_proportion}
-
-def do_scan_management():
-    """
-    Returns a dictionary: {}.
-    - Marks jobs as finished if all their scrape request have ran.
-    - If there is spare capacity to run jobs, runs them.
-    - Removes the old jobs and requests (as configured in live config).
-    """
-    current_app.logger.info('Running scan management...')
-    # Mark finished jobs.
-    jobs_working = list(ScanJob.query.filter_by(status='working'))
-    for job in jobs_working:
-        requests_waiting = [req for req in job.requests if req.status in ['waiting', 'scheduled',
-            'ran']]
-        if len(requests_waiting) > 0:
-            continue
-        # We want to ensure that some requests are actually present even if finished to prevent
-        # race conditions with jobs just being started.
-        elif len(job.requests) > 0:
-            current_app.logger.info('Job {} marked as finished.'.format(job.id))
-            job.change_status('finished')
-    db.session.commit()
-    # Run new jobs if possible.
-    concurrent_jobs_allowed = int(LiveConfigValue.query.get('concurrent_jobs_allowed').value)
-    spare_capacity = concurrent_jobs_allowed - ScanJob.query.filter_by(status='working').count()
-    if spare_capacity > 0:
-        # TODO an explicit queue? currently just a naive FIFO
-        jobs_to_start = list(ScanJob.query.filter_by(status='waiting').order_by(
-            ScanJob.status_changed.asc()).limit(spare_capacity))
-        for job in jobs_to_start:
-            current_app.logger.info('Triggering start of the job {}.'.format(job.id))
-            start_scan(job)
-        spare_capacity -= len(jobs_to_start)
-    # Remove old jobs and requests.
-    scan_job_time_to_live = int(LiveConfigValue.query.get('scan_job_time_to_live').value)
-    scan_job_time_threshold = datetime.now(timezone.utc) - timedelta(
-            seconds=scan_job_time_to_live)
-    old_jobs_finished = list(ScanJob.query.filter(ScanJob.status=='working',
-        ScanJob.status_changed < scan_job_time_threshold))
-    if len(old_jobs_finished) > 0:
-        current_app.logger.info('Removing {} old jobs.'.format(len(old_jobs_finished)))
-    for job in old_jobs_finished:
-        db.session.delete(job)
-    db.session.commit()
-    scrape_request_time_to_live = int(LiveConfigValue.query.get(
-        'scrape_request_time_to_live').value)
-    scrape_request_time_threshold = datetime.now(timezone.utc) - timedelta(
-            seconds=scrape_request_time_to_live)
-    old_reqs_finished = list(ScrapeRequest.query.filter(ScrapeRequest.status=='working',
-        ScrapeRequest.status_changed < scrape_request_time_threshold))
-    if len(old_reqs_finished) > 0:
-        current_app.logger.info('Removing {} old scrape reqs.'.format(len(old_reqs_finished)))
-    for req in old_reqs_finished:
-        db.session.delete(req)
-    db.session.commit()
-    return {'spare_capacity': spare_capacity}

@@ -26,6 +26,10 @@ tags
 flask_instance/settings.py
 scrapies/genscrap/genscrap/flask_instance
 
+# Actual settings for Reddis, Celery (leave examples)
+celeryconfig.py
+redis.conf
+
 ## Webpack
 webpack/node_modules
 webpack/yarn-error.log

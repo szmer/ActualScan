@@ -1,3 +1,5 @@
+from flask import current_app
+
 from searchfront.lib import now_time
 from searchfront.extensions import db
 
@@ -54,6 +56,7 @@ class ScanJob(db.Model):
         self.status = status
         self.last_checked = now_time()
         self.status_changed = now_time()
+        current_app.logger.debug('Status of the job {} being changed to {}'.format(self.id, status))
 
     @staticmethod
     def identifier(user_id, phrase, tags):
@@ -101,3 +104,5 @@ class ScrapeRequest(db.Model):
     def change_status(self, status):
         self.status = status
         self.status_changed = now_time()
+        current_app.logger.debug('Status of the request for {} ({}) being changed to {}'.format(
+            self.target, self.job_id, status))

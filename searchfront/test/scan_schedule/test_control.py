@@ -5,10 +5,11 @@ from time import sleep
 import urllib.parse
 
 import pytest
+from sqlalchemy.orm.session import Session
 
 from searchfront.blueprints.scan_schedule.models import ScanJob, ScrapeRequest
 from searchfront.blueprints.scan_schedule.control import (request_scan, terminate_scan,
-        scan_progress_info, do_scan_management)
+        scan_progress_info)
 
 def solr_search_json(query):
     query_str = '/solr/lookupy/select?q=' + urllib.parse.quote(query, safe='\\')
@@ -36,23 +37,23 @@ class TestScanSchedule(object):
         job_id = ScanJob.identifier('ex@example.com', 'NabuchodonozorKopieJeftego?', ['fun'])
         existing_job = ScanJob.query.get(job_id)
         if existing_job:
-            terminate_scan(existing_job)
+            terminate_scan(existing_job.id)
         prescan_time = datetime.now(timezone.utc)
         request_scan('ex@example.com', 'NabuchodonozorKopieJeftego?', ['fun'], force_new=True)
 
         # Ensure that the job is present, was just created and is inspectable.
         job = ScanJob.query.get(job_id)
         assert job.last_checked >= prescan_time
-        progress_info = scan_progress_info(job)
-        assert 'phase' in progress_info
-        assert progress_info['phase'] == 'waiting'
 
-        # This should start the scan.
-        scheduling_info = do_scan_management()
-        assert 'spare_capacity' in scheduling_info
+        # NOTE It's important to invalidate the object, get the updated one next time.
+        session = Session.object_session(job)
+        session.commit()
+
+        # This should start the scan, given that the Celery task works.
+        sleep(2.0)
 
         # Test the status.
-        progress_info = scan_progress_info(job)
+        progress_info = scan_progress_info(job_id)
         assert 'phase' in progress_info
         assert progress_info['phase'] in ['search', 'crawl', 'done']
         reqs = list(ScrapeRequest.query.filter_by(job_id=job_id))
@@ -61,12 +62,14 @@ class TestScanSchedule(object):
         assert '/r/test' in [req.site_name for req in reqs]
 
         # Terminate it immediately.
-        terminate_scan(job)
+        terminate_scan(job_id)
+        job = ScanJob.query.get(job_id)
         assert job.status == 'terminated'
         job_reqs = list(job.requests)
         assert len(job_reqs) > 0
-        assert set([req.status for req in job_reqs]) <= set(['ran', 'failed', 'cancelled'])
-        progress_info = scan_progress_info(job)
+        assert set([req.status for req in job_reqs]) <= set(['ran', 'committed', 'failed',
+            'cancelled'])
+        progress_info = scan_progress_info(job_id)
         assert progress_info['phase'] in ['terminated', 'finished']
 
     # NOTE NOTE This test assumes that we are using a test database. Particularly no legitimate
@@ -88,11 +91,11 @@ class TestScanSchedule(object):
         job_id = ScanJob.identifier('ex@example.com', 'inspirational', ['games'])
         existing_job = ScanJob.query.get(job_id)
         if existing_job:
-            terminate_scan(existing_job)
+            terminate_scan(existing_job.id)
         request_scan('ex@example.com', 'inspirational', ['games'], force_new=True)
 
-        # This should start the scan.
-        do_scan_management()
+        # This should start the scan, given that the Celery task works.
+        sleep(1.5)
 
         # Check the completion.
         # NOTE we currently need a long time due to toscrap.com redirections.
@@ -136,11 +139,11 @@ class TestScanSchedule(object):
         job_id = ScanJob.identifier('ex@example.com', 'jour', ['reddit'])
         existing_job = ScanJob.query.get(job_id)
         if existing_job:
-            terminate_scan(existing_job)
+            terminate_scan(existing_job.id)
         request_scan('ex@example.com', 'jour', ['reddit'], force_new=True)
 
-        # This should start the scan.
-        do_scan_management()
+        # This should start the scan, given that the Celery task works.
+        sleep(1.5)
 
         # Check the completion.
         for i in range(120*2): # wait up to 120 sec
