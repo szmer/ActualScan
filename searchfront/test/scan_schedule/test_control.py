@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 import http.client
 import json
+#import logging
 from time import sleep
 import urllib.parse
 
@@ -72,8 +73,8 @@ class TestScanSchedule(object):
         progress_info = scan_progress_info(job_id)
         assert progress_info['phase'] in ['terminated', 'finished']
 
-    # NOTE NOTE This test assumes that we are using a test database. Particularly no legitimate
-    # scan jobs are present and no stray do_scan_management calls will be made.
+    # NOTE NOTE This test assumes that we are using a test database. Particularly no conflicting
+    # legitimate scan jobs are present.
     def test_perform_scan(self, app, db, scrapyp):
         # Clean up entries from the test domain in Solr.
         req_data = '{"delete": {"query": "site_name:quotes.toscrape.com"}, "commit": {}}'
@@ -98,22 +99,31 @@ class TestScanSchedule(object):
         sleep(1.5)
 
         # Check the completion.
+        proportions = []
         # NOTE we currently need a long time due to toscrap.com redirections.
         for i in range(120*2): # wait up to 120 sec
             sleep(0.5)
+            progress_info = scan_progress_info(job_id)
+            proportions.append(progress_info['dl_proportion'])
             # We check requests status instead of Solr directly to avoid racing with updating those
             # statuses.
             requests_committed = list(ScrapeRequest.query.filter_by(job_id=job_id,
                 status='committed'))
-            if len(requests_committed) >= 2:
+            if len(requests_committed) >= 6: # two searches (prioritized), four crawls
                 break
         solr_response_json = solr_search_json('site_name:quotes.toscrape.com')
         assert 'response' in solr_response_json and 'docs' in solr_response_json['response']
         assert len(solr_response_json['response']['docs']) > 0
         # TODO ensure that we have site tags, and not query tags in the index!
 
-        assert len([req for req in requests_committed if req.is_search == True]) == 1
+        # We should also have the request for the second search page.
+        assert len([req for req in requests_committed if req.is_search == True]) == 2
         assert len([req for req in requests_committed if req.source_type == 'blog']) >= 2
+
+        # The reported proportion should never decrease.
+        assert all(x<=y for x, y in zip(proportions, proportions[1:]))
+
+        ### TODO test handling 404 responses
 
     def test_reddit_scan(self, app, db, redditp):
         # Clean up entries from the test domain in Solr (note that slashes must be escaped in the
@@ -146,13 +156,17 @@ class TestScanSchedule(object):
         sleep(1.5)
 
         # Check the completion.
+        proportions = []
         for i in range(120*2): # wait up to 120 sec
             sleep(0.5)
+            progress_info = scan_progress_info(job_id)
+            progress_info = scan_progress_info(job_id)
+            proportions.append(progress_info['dl_proportion'])
             # We check requests status instead of Solr directly to avoid racing with updating those
             # statuses.
             requests_committed = list(ScrapeRequest.query.filter_by(job_id=job_id,
                 status='committed'))
-            if len(requests_committed) >= 2:
+            if len(requests_committed) >= 5:
                 break
         solr_response_json = solr_search_json('site_name:\\/r\\/test')
         assert 'response' in solr_response_json and 'docs' in solr_response_json['response']
@@ -164,4 +178,5 @@ class TestScanSchedule(object):
         assert len([req for req in requests if req.is_search == True]) == 1
         assert len([req for req in requests if req.source_type != 'forums']) == 0
 
-### TODO test handling 404 responses
+        # The reported proportion should never decrease.
+        assert all(x<=y for x, y in zip(proportions, proportions[1:]))

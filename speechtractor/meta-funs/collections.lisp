@@ -33,8 +33,9 @@
           ;; When interpreting search pages, we interpret each found link as a document with only
           ;; the permalink.
           (list "searchpage"
-                :skip-p #'general-skip-p
+                ;:skip-p #'general-skip-p
                 :doc-startp #'searchpage-doc-startp
+                :is_search #'searchpage-searchp
                 :url #'searchpage-permalink)
           ;; Empty defaults.
           (list "test"

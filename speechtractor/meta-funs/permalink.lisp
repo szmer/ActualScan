@@ -63,5 +63,6 @@
      (plump:attribute node "href"))
     ;; Toscrape test
     ((and (equalp "a" (plump:tag-name node))
-          (equalp "(about)" (plump:render-text node)))
+          (or (equalp "(about)" (plump:render-text node))
+              (search "Next" (plump:render-text node))))
      (plump:attribute node "href"))))

@@ -23,7 +23,8 @@
 (defparameter *skipped-tags*
   ;; TODO merge with skip-p maybe?
   ;; Apparently some people (fashionspot) can wrap everything in a "form"
-  '("head" "meta" "script" "style" "iframe" "footer" "nav" "aside"))
+  ;; We need reading "nav" for search pages
+  '("head" "meta" "script" "style" "iframe" "footer" "aside"))
 
 (defparameter *max-link-density-default* 0.2)
 (defparameter *length-low-default* 60) ; changed from less realistic 70

@@ -5,6 +5,7 @@
     (unless (and (plump:has-attribute node "data-imodoptions");fashionspot wraps posts in such form
                  (equalp "#ModerationSelect option" (plump:attribute node "data-imodoptions")))
       (equalp "form" (plump:tag-name node)))
+    (equalp "nav" (plump:tag-name node))
     (and (plump:has-attribute node "id")
          (or
            (search "gdpr" (plump:attribute node "id"))

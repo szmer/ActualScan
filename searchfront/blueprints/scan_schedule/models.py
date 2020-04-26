@@ -14,7 +14,7 @@ from searchfront.extensions import db
 #    terminated
 #
 ### Possible request statuses:
-#    waiting
+#    waiting # only known, not in the Scrapy queue
 #    scheduled
 #    ran
 #    committed (two m's, to t's!)

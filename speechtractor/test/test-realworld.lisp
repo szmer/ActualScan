@@ -563,14 +563,17 @@
   (when speechtractor::*server-running-p*
     (let* ((response (request-test-page "quotestoscrape-search.html" "searchpage"))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
-      (is (= 10 (length parsed-docs)))
+      (is (= 11 (length parsed-docs)))
       ;; Here we really only care about URLs.
       (is (eq nil
               (find-if (lambda (doc) (null (cdr (assoc :url doc)))) parsed-docs)))
       (is (equalp "/author/Albert-Einstein"
                   (cdr (assoc :url (first parsed-docs)))))
       (is (equalp "/author/Helen-Keller"
-                  (cdr (assoc :url (car (last parsed-docs)))))))))
+                  (cdr (assoc :url (first (last parsed-docs 2))))))
+      (is (equalp "/tag/inspirational/page/2/"
+                  (cdr (assoc :url (car (last parsed-docs))))))
+      (is (assoc :is--search (car (last parsed-docs)))))))
 
 (deftest x-quotestoscrape-author ()
   (when speechtractor::*server-running-p*

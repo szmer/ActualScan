@@ -126,6 +126,7 @@ def install_admin(app, db):
     admin.add_view(ManagerAdminView(ScrapeRequest, db.session, category='Scans'))
 
     # The true admin level.
-    admin.add_view(ManagerAdminView(AppUser, db.session))
+    admin.add_view(ManagerAdminView(AppUser, db.session, name='Users'))
+    admin.add_view(ManagerAdminView(LiveConfigValue, db.session, name='Conf'))
 
     return admin

@@ -95,4 +95,6 @@ class ManagerAdminView(ManagerView, ManagerAdminRequired, ModelView):
     can_delete = True
     can_edit = True
 
+    column_display_pk = True
+
     can_view_details = True

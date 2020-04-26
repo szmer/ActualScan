@@ -90,7 +90,8 @@ class GeneralSpider(scrapy.Spider):
                         for attr
                         in REQUEST_META}
             url = full_url(scrape_request.target, scrape_request.site_url)
-            yield scrapy.Request(url=url, callback=self.parse, meta=meta, errback=self.fail)
+            yield scrapy.Request(url=url, callback=self.parse, meta=meta, errback=self.fail,
+                    priority=5 if 'is_search' in meta and meta['is_search'] else 0)
             requests_done = True
         if not requests_done:
             yield scrapy.Request(url=SOLR_PING_URL, callback=self.monitoring_parse,
@@ -156,11 +157,15 @@ class GeneralSpider(scrapy.Spider):
         # Handling search pages.
         if response.meta['is_search']:
             if stractor_response_json is not None and stractor_response_json:
-                # TODO go to the next page!
                 for found_page in stractor_response_json:
                     if 'url' in found_page:
-                        scrape_request = ScrapeRequest(target=found_page['url'], is_search=False,
-                                job_id=response.meta['job_id'], status='waiting',
+                        is_page_search = (True
+                                if 'is_search' in found_page and found_page['is_search']
+                                else False)
+                        scrape_request = ScrapeRequest(target=found_page['url'],
+                                is_search=is_page_search,
+                                job_id=response.meta['job_id'],
+                                status='scheduled',
                                 status_changed=datetime.now(timezone.utc),
                                 source_type=response.meta['source_type'],
                                 query_tags=response.meta['query_tags'],
@@ -169,12 +174,15 @@ class GeneralSpider(scrapy.Spider):
                                 site_url=response.meta['site_url'],
                                 site_id=response.meta['site_id'],
                                 save_copies=response.meta['save_copies'])
+                        info('Created a scrape request for {} from search, for {}'.format(
+                            found_page['url'], response.meta['job_id']))
                         pg_session.add(scrape_request)
                         pg_session.commit()
                         yield response.follow(found_page['url'],
                                 callback=self.parse,
                                 meta={attr: getattr(scrape_request, attr) for attr
-                                    in REQUEST_META})
+                                    in REQUEST_META},
+                                priority=5 if is_page_search else 0)
                 update_request_status(pg_session, db_request, 'committed')
             else:
                 update_request_status(pg_session, db_request, 'failed',

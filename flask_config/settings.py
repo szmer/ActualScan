@@ -30,6 +30,8 @@ LIVECONFIG_START_VALUES = {
         # These multipliers are used to estimate how many scrape requests will a site generate.
         'subreddit_estimation_multiplier': 75 * 100, # submissions * comments per submission
         'website_estimation_multiplier': 50,
+        # How many pages to crawl we expect from a random search page.
+        'search_page_yield_estimation': 10,
 
         'site_level_threshold_base': 1000,
         'site_level_threshold_community': 0,

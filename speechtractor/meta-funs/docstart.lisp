@@ -38,5 +38,7 @@
         (equalp "http://schema.org/CreativeWork" (plump:attribute node "itemtype")))
    (and (plump:has-attribute node "class")
         (or
+         ;; Test quotes.toscrape.com
+         (cl-ppcre:scan (boundary-regex "next") (plump:attribute node "class"))
          ;; Wordpress search
          (cl-ppcre:scan (boundary-regex "post") (plump:attribute node "class"))))))
