@@ -5,8 +5,8 @@ from celery import Celery
 
 from searchfront.app import create_app
 from searchfront.extensions import db
-from searchfront.blueprints.scan_schedule import ScanJob, ScrapeRequest
-from searchfront.blueprints.scan_schedule.control import start_scan
+from searchfront.blueprints.scan_schedule import ScanJob, ScrapeRequest, ScanPermission
+from searchfront.blueprints.scan_schedule.control import start_scan, spare_scan_capacity
 from searchfront.blueprints.live_config import LiveConfigValue
 
 celery_logger = logging.getLogger('searchfront_celery')
@@ -27,6 +27,16 @@ def do_scan_management():
     """
     with app.app_context():
         celery_logger.debug('Running scan management...')
+        # Remove expired scan permissions.
+        guest_scan_permission_time_to_live = int(LiveConfigValue.query.get(
+            'scan_job_time_to_live').value)
+        expiration_threshold = datetime.now(timezone.utc) - timedelta(
+                seconds=guest_scan_permission_time_to_live)
+        expired_permissions = ScanPermission.query.filter(
+                ScanPermission.time_issued < expiration_threshold)
+        if list(expired_permissions):
+            expired_permissions.delete(synchronize_session=False)
+            db.session.commit()
         # Mark finished jobs.
         jobs_working = list(ScanJob.query.filter_by(status='working'))
         for job in jobs_working:
@@ -41,8 +51,7 @@ def do_scan_management():
                 job.change_status('finished')
         db.session.commit()
         # Run new jobs if possible.
-        concurrent_jobs_allowed = int(LiveConfigValue.query.get('concurrent_jobs_allowed').value)
-        spare_capacity = concurrent_jobs_allowed - ScanJob.query.filter_by(status='working').count()
+        spare_capacity = spare_scan_capacity()
         celery_logger.debug('There is {} of spare capacity'.format(spare_capacity))
         if spare_capacity > 0:
             # TODO an explicit queue? currently just a naive FIFO

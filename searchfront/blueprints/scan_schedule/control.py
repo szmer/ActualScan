@@ -4,8 +4,32 @@ from sqlalchemy import func
 from searchfront.extensions import db
 
 from searchfront.blueprints.site import Tag
-from searchfront.blueprints.scan_schedule import ScanJob, ScrapeRequest
+from searchfront.blueprints.scan_schedule import ScanJob, ScrapeRequest, ScanPermission
 from searchfront.blueprints.live_config import LiveConfigValue
+
+def spare_scan_capacity():
+    """
+    Return the number of additional scan jobs we can accept right now.
+    """
+    concurrent_jobs_allowed = int(LiveConfigValue.query.get('concurrent_jobs_allowed').value)
+    spare_capacity = concurrent_jobs_allowed - ScanJob.query.filter(ScanJob.status.in_(
+        ['waiting', 'working'])).count()
+    return spare_capacity
+
+def maybe_issue_guest_scan_permission(ip_address):
+    """
+    Try to issue a guest scan permission for the ip_address, return a boolean indicating success
+    or failure.
+    """
+    guest_scan_permissions_threshold = int(
+                LiveConfigValue.query.get('guest_scan_permissions_threshold').value)
+    spare_capacity = spare_scan_capacity()
+    if spare_capacity >= guest_scan_permissions_threshold:
+        permission = ScanPermission(user_ip=ip_address)
+        db.session.add(permission)
+        db.session.commit()
+        return True
+    return False
 
 def request_scan(user_id, query_phrase : str, query_tags : list, force_new=False):
     """

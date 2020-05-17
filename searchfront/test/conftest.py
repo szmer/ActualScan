@@ -10,6 +10,9 @@ from searchfront.reddit_process import redditp as _redditp
 from searchfront.blueprints.site.models import Tag, Site
 from searchfront.blueprints.live_config import LiveConfigValue
 
+TEST_USER_EMAIL = 'test@example.com'
+TEST_USER_PASSWORD = 'password'
+
 @pytest.yield_fixture(scope='session')
 def app():
     # NOTE we use the production database because otherwise we would probably need a separate Scrapy
@@ -104,13 +107,19 @@ def db(app):
 
 @pytest.yield_fixture(scope='session')
 def example_user(db):
-    user = user_datastore.get_user('test@example.com')
+    # Create the roles if needed.
+    user_datastore.find_or_create_role(name='admin', description='Administrator')
+    user_datastore.find_or_create_role(name='registered', description='Registered user')
+    db.session.commit()
+
+    user = user_datastore.get_user(TEST_USER_EMAIL)
+    print(user)
     if not user:
-        user = user_datastore.create_user(email='test@example.com',
-                password=hash_password('password'))
-    db.session.commit()
-    user_datastore.add_role_to_user('test@example.com', 'registered')
-    db.session.commit()
+        user = user_datastore.create_user(email=TEST_USER_EMAIL,
+                password=hash_password(TEST_USER_PASSWORD))
+        db.session.commit()
+        user_datastore.add_role_to_user(user, 'registered')
+        db.session.commit()
     yield user
     db.session.delete(user)
     db.session.commit()

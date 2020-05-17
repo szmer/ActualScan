@@ -106,3 +106,11 @@ class ScrapeRequest(db.Model):
         self.status_changed = now_time()
         current_app.logger.debug('Status of the request for {} ({}) being changed to {}'.format(
             self.target, self.job_id, status))
+
+class ScanPermission(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('app_user.id'))
+    user_ip = db.Column(db.String(64))
+    time_issued = db.Column(db.DateTime(timezone=True), nullable=False, default=now_time)
+    is_used = db.Column(db.Boolean(), nullable=False, default=False)
+    # TODO permission level

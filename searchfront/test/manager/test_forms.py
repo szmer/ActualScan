@@ -2,7 +2,9 @@ import copy
 
 from flask import g, url_for
 
+from searchfront.extensions import user_datastore
 from searchfront.blueprints.site import Site, Tag
+from searchfront.test.conftest import TEST_USER_EMAIL, TEST_USER_PASSWORD
 
 def format_html_preview(text):
     text = str(text)
@@ -36,10 +38,10 @@ class TestManagerForms(object):
 
         with app.test_request_context():
             test_client = app.test_client()
-
             # Login.
-            test_client.post(url_for('security.login'), data={'email': 'test@example.com',
-                'password': 'password'})
+            response = test_client.post(url_for('security.login'), data={'email': TEST_USER_EMAIL,
+                'password': TEST_USER_PASSWORD})
+            assert 'Redirecting...' in response.data.decode('utf-8') # means success
 
             # Submitting a tag we are allowed to create ('community' level). 
             resp = test_client.post(url_for('manager_tag.create_view'),
@@ -84,8 +86,9 @@ class TestManagerForms(object):
             test_client = app.test_client()
 
             # Login.
-            test_client.post(url_for('security.login'), data={'email': 'test@example.com',
-                'password': 'password'})
+            response = test_client.post(url_for('security.login'), data={'email': TEST_USER_EMAIL,
+                'password': TEST_USER_PASSWORD})
+            assert 'Redirecting...' in response.data.decode('utf-8') # means success
 
             # Submitting a site. 
             resp = test_client.post(url_for('manager_site.create_view'),
@@ -98,6 +101,7 @@ class TestManagerForms(object):
 
             assert len(existing_sites) != 0
             site = existing_sites[0]
+            example_user = user_datastore.get_user(TEST_USER_EMAIL) # re-get from db
             print(site.creator_id, example_user.id)
             assert site.creator_id == example_user.id
             clear_test_site(db, test_site_dict)

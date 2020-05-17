@@ -53,7 +53,7 @@ def create_app(settings_override=None):
                     db.session.add(new_config_row)
                     db.session.commit()
 
-            # Create the roles.
+            # Create the roles (see also conftest).
             user_datastore.find_or_create_role(name='admin', description='Administrator')
             user_datastore.find_or_create_role(name='registered', description='Registered user')
             db.session.commit()
