@@ -5,7 +5,7 @@ from flask_security.utils import hash_password
 
 from flask_bootstrap import Bootstrap
 from searchfront.extensions import (
-        debug_toolbar, db, csrf, security, user_datastore, admin,
+        socketio, debug_toolbar, db, csrf, security, user_datastore, admin,
         SiteModelView, TagModelView, SiteModelViewForRegistered, TagModelViewForRegistered,
         ChangeRequestModelView
         )
@@ -18,10 +18,11 @@ from searchfront.blueprints.account import account, AppUser
 from searchfront.blueprints.manager import manager, ManagerAdminView, ChangeRequest
 from searchfront.blueprints.live_config import LiveConfigValue
 from searchfront.blueprints.site import Site, Tag
-from searchfront.blueprints.scan_schedule import ScanJob, ScrapeRequest
+from searchfront.blueprints.scan_schedule import (scan_schedule, handle_scan_progress,
+        ScanJob, ScrapeRequest)
 
 def create_app(settings_override=None):
-    app = Flask(__name__, instance_path='/searchfront/flask_instance',
+    app = Flask(__name__, instance_path='/flask_instance',
             instance_relative_config=True)
 
     app.config.from_object('flask_config.settings')
@@ -35,6 +36,7 @@ def create_app(settings_override=None):
     app.logger.setLevel(app.config['LOG_LEVEL'])
 
     app.register_blueprint(frontpage)
+    app.register_blueprint(scan_schedule)
     app.register_blueprint(account)
     app.register_blueprint(manager)
     extensions(app)
@@ -97,6 +99,7 @@ def create_app(settings_override=None):
 
 def extensions(app):
     Bootstrap(app)
+    socketio.init_app(app)
     debug_toolbar.init_app(app)
     db.init_app(app)
     #if app.config['WTF_CSRF_ENABLED']:
@@ -130,3 +133,6 @@ def install_admin(app, db):
     admin.add_view(ManagerAdminView(LiveConfigValue, db.session, name='Conf'))
 
     return admin
+
+if __name__ == '__main__':
+    socketio.run(create_app(), host='0.0.0.0', port=8000)

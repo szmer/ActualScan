@@ -2,14 +2,13 @@ import http.client
 import json
 from urllib.parse import quote
 
-from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask import current_app # can be used for logging stuff if needed
 from flask_security import current_user
 
-from searchfront.extensions import db
 from searchfront.blueprints.frontpage.forms import PublicScanForm
 from searchfront.blueprints.scan_schedule import (request_scan, scan_progress_info,
-        maybe_issue_guest_scan_permission, ScanPermission)
+        maybe_issue_guest_scan_permission, verify_scan_permission)
 
 frontpage = Blueprint('frontpage', __name__, template_folder='templates')
 
@@ -27,8 +26,8 @@ def home():
     return render_template('frontpage/home.html', form=form, show_errors=bool(request.args),
             can_scan=can_scan)
 
-def prepare_progress_info(scan_query, query_tags):
-    job = request_scan('', scan_query, query_tags)
+def prepare_progress_info(user_id, scan_query, query_tags, is_ip=False):
+    job = request_scan(user_id, scan_query, query_tags, is_ip=is_ip)
     progress_info = scan_progress_info(job.id)
     return progress_info
 
@@ -50,25 +49,15 @@ def scanresults():
 
     # Is an actual scan requested?
     if 'is_scan' in request.args and request.args['is_scan']:
-        scan_performed = False
+        scan_performed = verify_scan_permission(current_user, request.remote_addr)
         scan_finished = False
-        current_app.logger.debug('Is user authd in /results: {} (IP {})'.format(
-            current_user.is_authenticated, request.remote_addr))
-        if current_user.is_authenticated:
-            # TODO KLUDGE currently unlimited permission issuance for registered
-            scan_performed = True
-        scan_permission = list(ScanPermission.query.filter_by(user_ip=request.remote_addr,
-            is_used=False))
-        if len(scan_permission) > 0:
-            for perm in scan_permission: # expire the used permissions
-                perm.is_used = True
-                db.session.add(perm)
-                db.session.commit()
-            scan_performed = True
         # If the scan is being performed, check if it is finished and display progress information
         # if it's not.
         if scan_performed:
-            progress_info = prepare_progress_info(scan_query, query_tags)
+            progress_info = prepare_progress_info(
+                    (current_user.id if current_user.is_authenticated else request.remote_addr),
+                    scan_query, query_tags,
+                    is_ip=not current_user.is_authenticated)
             if ('phase' in progress_info and progress_info['phase'] == 'finished'):
                 scan_finished = True
             if not scan_finished:
@@ -100,9 +89,3 @@ def scanresults():
         error_data_resp = { 'phase': 'Internal error when processing the request.' }
         return render_template('frontpage/scanresults.html', status_data=error_data_resp,
                 is_good=False), 500
-
-@frontpage.route('/scanresults_progress')
-def scanresults_progress():
-    job_id = None # TODO
-    progress_info = scan_progress_info(job_id)
-    return jsonify(progress_info)

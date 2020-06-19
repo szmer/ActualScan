@@ -7,6 +7,37 @@ from searchfront.blueprints.site import Tag
 from searchfront.blueprints.scan_schedule import ScanJob, ScrapeRequest, ScanPermission
 from searchfront.blueprints.live_config import LiveConfigValue
 
+def verify_scan_permission(user, ip, specific_id=False):
+    current_app.logger.debug('Is user authd in /results: {} (IP {})'.format(
+        user.is_authenticated, ip))
+    # A logged in user.
+    if user.is_authenticated:
+        # TODO KLUDGE currently unlimited permission issuance for registered
+        if not specific_id:
+            return True
+        else:
+            job = ScanJob.query.get(specific_id)
+            if job is None:
+                return False
+            else:
+                return job.user_id == user.id
+    # A non-logged in user. Check if they have a scan permission issued.
+    if not specific_id: # try to use a permission
+        scan_permission = list(ScanPermission.query.filter_by(user_ip=ip, is_used=False))
+        if len(scan_permission) > 0:
+            for perm in scan_permission: # expire the used permissions
+                perm.is_used = True
+                db.session.add(perm)
+                db.session.commit()
+            return True
+    else: # try to find the matching job
+        job = ScanJob.query.get(specific_id)
+        if job is None:
+            return False
+        else:
+            return job.user_ip == ip
+    return False
+
 def spare_scan_capacity():
     """
     Return the number of additional scan jobs we can accept right now.
@@ -31,25 +62,39 @@ def maybe_issue_guest_scan_permission(ip_address):
         return True
     return False
 
-def request_scan(user_id, query_phrase : str, query_tags : list, force_new=False):
+def request_scan(user_id, query_phrase : str, query_tags : list, force_new=False, is_ip=False):
     """
     Put an awaiting scan job in the database. query_tags should be a list of strings. If force_new
     is set and the job already exists, a ValueError is raised. Return the ScanJob object.
+
+    Note that is_ip flag sets how to treat user_id parameter (as user ID in the DB, or as an IP
+    string).
     """
     # TODO also recreate the job if in an inactive status
     query_tags_str = ','.join(query_tags)
-    job_id = ScanJob.identifier(user_id, query_phrase, query_tags_str)
-    job = ScanJob.query.get(job_id)
-    if job is not None and force_new:
-        db.session.delete(job) # should cascade to the scrape requests
-        db.session.commit()
-        job = None
-    if job is None:
-        job = ScanJob(id=job_id, query_phrase=query_phrase, query_tags=query_tags_str,
-                status='waiting')
+    # Try to get already existing jobs with the same parameters TODO deduplicate them across users?
+    if not is_ip:
+        jobs = list(ScanJob.query.filter_by(query_phrase=query_phrase, query_tags=query_tags_str,
+                user_id=user_id))
+    else:
+        jobs = list(ScanJob.query.filter_by(query_phrase=query_phrase, query_tags=query_tags_str,
+                user_ip=user_id))
+    if jobs and force_new:
+        for job in jobs:
+            db.session.delete(job) # should cascade to the scrape requests
+            db.session.commit()
+        jobs = False
+    if not jobs:
+        if not is_ip:
+            job = ScanJob(user_id=user_id, query_phrase=query_phrase, query_tags=query_tags_str,
+                    status='waiting')
+        else:
+            job = ScanJob(user_ip=user_id, query_phrase=query_phrase, query_tags=query_tags_str,
+                    status='waiting')
         db.session.add(job)
         db.session.commit()
-    return job
+        jobs.append(job) # the return statement wants a list
+    return jobs[0]
 
 def start_scan(scan_job):
     """

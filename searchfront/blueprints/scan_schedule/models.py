@@ -24,7 +24,9 @@ from searchfront.extensions import db
 class ScanJob(db.Model):
     # Id should be formed from the user identification and the query (possibly hashed).
     # The job id is also used in reason_scraped in Solr.
-    id = db.Column(db.String(512), primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('app_user.id'))
+    user_ip = db.Column(db.String(64))
     status = db.Column(db.String(32), nullable=False)
     # The difference is that last checked indicates that there is user interest for the scan job,
     # and the status_changed fields stores when the status actually changed recently.
@@ -58,12 +60,6 @@ class ScanJob(db.Model):
         self.status_changed = now_time()
         current_app.logger.debug('Status of the job {} being changed to {}'.format(self.id, status))
 
-    @staticmethod
-    def identifier(user_id, phrase, tags):
-        if isinstance(tags, list):
-            tags = ','.join(tags)
-        return '{}@@{}@@{}'.format(user_id, phrase, tags)
-
 # TODO address re-crawl/update requests
 class ScrapeRequest(db.Model):
     """
@@ -94,7 +90,7 @@ class ScrapeRequest(db.Model):
     # comments yielded by the search from all submissions in the subreddit.
     lead_count = db.Column(db.Integer)
     # The job id is also used in reason_scraped in Solr.
-    job_id = db.Column(db.String, db.ForeignKey('scan_job.id'), nullable=False)
+    job_id = db.Column(db.Integer, db.ForeignKey('scan_job.id'), nullable=False)
     # (job field defined as a backref)
     status = db.Column(db.String(32), nullable=False)
     status_changed = db.Column(db.DateTime(timezone=True), nullable=False, default=now_time)

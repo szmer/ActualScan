@@ -1,3 +1,7 @@
+# Flask-SocketIO
+from flask_socketio import SocketIO
+socketio = SocketIO()
+
 # Flask-DebugToolbar
 from flask_debugtoolbar import DebugToolbarExtension
 debug_toolbar = DebugToolbarExtension()

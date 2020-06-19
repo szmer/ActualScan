@@ -1,12 +1,10 @@
 from flask import url_for
-import pytest
 
 from searchfront.test.conftest import TEST_USER_EMAIL, TEST_USER_PASSWORD
 from searchfront.blueprints.frontpage.forms import PublicScanForm
 from searchfront.blueprints.site import Tag
 from searchfront.blueprints.scan_schedule import ScanJob, ScanPermission
 from searchfront.blueprints.scan_schedule.control import terminate_scan
-from searchfront.blueprints.live_config import LiveConfigValue
 
 def format_html_preview(text):
     text = str(text)
@@ -16,17 +14,21 @@ def format_html_preview(text):
     else:
         return text[:3000]
 
-def delete_existing_job(job_id, db):
+def existing_jobs(db):
+    return list(ScanJob.query.filter_by(query_phrase='test query phrase',
+        query_tags='fun,games'))
+
+def delete_existing_jobs(db):
     """
     Delete the previous test job if it exists.
     """
-    existing_job = ScanJob.query.get(job_id)
-    if existing_job is not None:
-        db.session.delete(existing_job)
-        db.session.commit()
+    jobs = existing_jobs(db)
+    if jobs:
+        for job in jobs:
+            db.session.delete(job)
+            db.session.commit()
 
-def sample_job_id_form_data():
-    job_id = ScanJob.identifier('', 'test query phrase', 'fun,games')
+def sample_form_data():
     # These tags should be guaranteed to be present thanks to conftest initialization.
     fun_tag_id = list(Tag.query.filter_by(name='fun'))[0].id
     games_tag_id = list(Tag.query.filter_by(name='games'))[0].id
@@ -34,42 +36,7 @@ def sample_job_id_form_data():
         'scan_query': 'test query phrase',
         'query_tags': [fun_tag_id, games_tag_id]
         }
-    return job_id, form_data
-
-@pytest.fixture(scope='function')
-def always_issue_perms(db):
-    # Temporarily configure the app to always issue guest permissions.
-    free_perms_threshold = LiveConfigValue.query.get('guest_scan_permissions_threshold')
-    current_free_threshold = int(free_perms_threshold.value)
-    free_perms_threshold.value = 0
-    db.session.add(free_perms_threshold)
-    db.session.commit()
-
-    yield True
-
-    # Reset the threshold to the previous value.
-    free_perms_threshold = LiveConfigValue.query.get('guest_scan_permissions_threshold')
-    free_perms_threshold.value = current_free_threshold
-    db.session.add(free_perms_threshold)
-    db.session.commit()
-
-@pytest.fixture(scope='function')
-def never_issue_perms(db):
-    # Temporarily configure the app to never issue guest permissions.
-    free_perms_threshold = LiveConfigValue.query.get('guest_scan_permissions_threshold')
-    current_free_threshold = int(free_perms_threshold.value)
-    free_perms_threshold.value = 2 * int(LiveConfigValue.query.get(
-        'concurrent_jobs_allowed').value)
-    db.session.add(free_perms_threshold)
-    db.session.commit()
-
-    yield True
-
-    # Reset the threshold to the previous value.
-    free_perms_threshold = LiveConfigValue.query.get('guest_scan_permissions_threshold')
-    free_perms_threshold.value = current_free_threshold
-    db.session.add(free_perms_threshold)
-    db.session.commit()
+    return form_data
 
 class TestFrontpageViews(object):
     def test_scanresults_registered(self, app, db, example_user):
@@ -79,8 +46,8 @@ class TestFrontpageViews(object):
             db.session.delete(perm)
             db.session.commit()
 
-        job_id, form_data = sample_job_id_form_data()
-        delete_existing_job(job_id, db)
+        form_data = sample_form_data()
+        delete_existing_jobs(db)
         with app.test_request_context():
             test_client = app.test_client()
             # Login.
@@ -96,9 +63,9 @@ class TestFrontpageViews(object):
                 # unmodified"
                 **{field.name : field.object_data for field in test_form}
                 ))
-            test_job = ScanJob.query.get(job_id)
-            assert test_job is not None
-            terminate_scan(test_job.id)
+            test_jobs = existing_jobs(db)
+            assert test_jobs
+            terminate_scan(test_jobs[0].id)
             response_txt = response.data.decode('utf-8')
             assert 'Scan status' in response_txt
             assert not 'Sorry!' in response_txt
@@ -110,8 +77,8 @@ class TestFrontpageViews(object):
             db.session.delete(perm)
             db.session.commit()
 
-        job_id, form_data = sample_job_id_form_data()
-        delete_existing_job(job_id, db)
+        form_data = sample_form_data()
+        delete_existing_jobs(db)
         with app.test_request_context():
             test_client = app.test_client()
 
@@ -122,9 +89,9 @@ class TestFrontpageViews(object):
                 is_scan=True,
                 **{field.name : field.object_data for field in test_form}
                 ))
-            test_job = ScanJob.query.get(job_id)
-            assert test_job is not None
-            terminate_scan(test_job.id)
+            test_jobs = existing_jobs(db)
+            assert test_jobs
+            terminate_scan(test_jobs[0].id)
             response_txt = response.data.decode('utf-8')
             assert 'Scan status' in response_txt
             assert not 'Sorry!' in response_txt
@@ -136,8 +103,8 @@ class TestFrontpageViews(object):
             db.session.delete(perm)
             db.session.commit()
 
-        job_id, form_data = sample_job_id_form_data()
-        delete_existing_job(job_id, db)
+        form_data = sample_form_data()
+        delete_existing_jobs(db)
         with app.test_request_context():
             test_client = app.test_client()
 
@@ -148,8 +115,8 @@ class TestFrontpageViews(object):
                 is_scan=True,
                 **{field.name : field.object_data for field in test_form}
                 ))
-            test_job = ScanJob.query.get(job_id)
-            assert test_job is None # should NOT succeed
+            test_jobs = existing_jobs(db)
+            assert not test_jobs
             response_txt = response.data.decode('utf-8')
             assert 'Sorry!' in response_txt
             assert not 'Scan status' in response_txt

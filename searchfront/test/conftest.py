@@ -3,10 +3,11 @@ from flask_security.utils import hash_password
 
 from flask_instance import settings
 from searchfront.app import create_app
-from searchfront.extensions import db as _db, user_datastore
+from searchfront.extensions import db as _db, socketio as _socketio, user_datastore
 from searchfront.scrapy_process import scrapyp as _scrapyp
 from searchfront.reddit_process import redditp as _redditp
 
+from searchfront.blueprints.account import AppUser
 from searchfront.blueprints.site.models import Tag, Site
 from searchfront.blueprints.live_config import LiveConfigValue
 
@@ -34,6 +35,11 @@ def app():
     context.push()
     yield _app
     context.pop()
+
+@pytest.yield_fixture(scope='session')
+def socketio(app):
+    _socketio.init_app(app)
+    return _socketio
 
 @pytest.fixture(scope='session')
 def db(app):
@@ -119,9 +125,10 @@ def example_user(db):
                 password=hash_password(TEST_USER_PASSWORD))
         db.session.commit()
         user_datastore.add_role_to_user(user, 'registered')
+        db.session.expunge(user)
         db.session.commit()
     yield user
-    db.session.delete(user)
+    AppUser.query.filter_by(email=TEST_USER_EMAIL).delete(synchronize_session=False)
     db.session.commit()
 
 @pytest.yield_fixture(scope='session')
@@ -137,3 +144,38 @@ def redditp():
         _redditp.run()
 
     return _redditp
+
+@pytest.fixture(scope='function')
+def always_issue_perms(db):
+    # Temporarily configure the app to always issue guest permissions.
+    free_perms_threshold = LiveConfigValue.query.get('guest_scan_permissions_threshold')
+    current_free_threshold = int(free_perms_threshold.value)
+    free_perms_threshold.value = 0
+    db.session.add(free_perms_threshold)
+    db.session.commit()
+
+    yield True
+
+    # Reset the threshold to the previous value.
+    free_perms_threshold = LiveConfigValue.query.get('guest_scan_permissions_threshold')
+    free_perms_threshold.value = current_free_threshold
+    db.session.add(free_perms_threshold)
+    db.session.commit()
+
+@pytest.fixture(scope='function')
+def never_issue_perms(db):
+    # Temporarily configure the app to never issue guest permissions.
+    free_perms_threshold = LiveConfigValue.query.get('guest_scan_permissions_threshold')
+    current_free_threshold = int(free_perms_threshold.value)
+    free_perms_threshold.value = 2 * int(LiveConfigValue.query.get(
+        'concurrent_jobs_allowed').value)
+    db.session.add(free_perms_threshold)
+    db.session.commit()
+
+    yield True
+
+    # Reset the threshold to the previous value.
+    free_perms_threshold = LiveConfigValue.query.get('guest_scan_permissions_threshold')
+    free_perms_threshold.value = current_free_threshold
+    db.session.add(free_perms_threshold)
+    db.session.commit()

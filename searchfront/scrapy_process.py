@@ -5,6 +5,6 @@ class ScrapyProcess(object):
 
     def run(self):
         self.process = subprocess.Popen(['scrapy', 'crawl', 'general', '-L', 'INFO'],
-                cwd='/searchfront/scrapies/genscrap')
+                cwd='/scrapies/genscrap')
 
 scrapyp = ScrapyProcess()

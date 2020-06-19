@@ -38,10 +38,15 @@ class TestManagerForms(object):
 
         with app.test_request_context():
             test_client = app.test_client()
+            with test_client.session_transaction() as sess:
+                sess["user_id"] = 1
             # Login.
-            response = test_client.post(url_for('security.login'), data={'email': TEST_USER_EMAIL,
-                'password': TEST_USER_PASSWORD})
-            assert 'Redirecting...' in response.data.decode('utf-8') # means success
+            resp= test_client.post(url_for('security.login'), data={'email': TEST_USER_EMAIL,
+                'password': TEST_USER_PASSWORD}, follow_redirects=True)
+            app.logger.debug(
+                    'Response when logging in: {}...'.
+                    format(format_html_preview(resp.data)))
+            #assert 'Redirecting...' in resp.data.decode('utf-8') # means success
 
             # Submitting a tag we are allowed to create ('community' level). 
             resp = test_client.post(url_for('manager_tag.create_view'),

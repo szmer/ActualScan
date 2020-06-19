@@ -22,8 +22,8 @@ def solr_search_json(query):
     return get_response_json
 
 @pytest.mark.with_network
-class TestScanSchedule(object):
-    def test_scan_environment(self, db, scrapyp, redditp):
+class TestScanScheduleControl(object):
+    def test_scan_environment(self, db, scrapyp, redditp, example_user):
         # Check if Scrapy and Speechtractor are up.
         assert scrapyp.process.poll() is None # a call to the Subprocess object
         assert redditp.process.poll() is None # a call to the Subprocess object
@@ -35,18 +35,18 @@ class TestScanSchedule(object):
 
         # Create the scan job.
         # Note that all test site types are "fun".
-        job_id = ScanJob.identifier('ex@example.com', 'NabuchodonozorKopieJeftego?', ['fun'])
-        existing_job = ScanJob.query.get(job_id)
-        if existing_job:
-            terminate_scan(existing_job.id)
+        existing_jobs = list(ScanJob.query.filter_by(query_phrase='NabuchodonozorKopieJeftego?',
+                query_tags='fun', user_id=example_user.id))
+        if existing_jobs:
+            terminate_scan(existing_jobs[0].id)
         prescan_time = datetime.now(timezone.utc)
-        request_scan('ex@example.com', 'NabuchodonozorKopieJeftego?', ['fun'], force_new=True)
+        job = request_scan(example_user.id, 'NabuchodonozorKopieJeftego?', ['fun'], force_new=True)
 
         # Ensure that the job is present, was just created and is inspectable.
-        job = ScanJob.query.get(job_id)
         assert job.last_checked >= prescan_time
 
         # NOTE It's important to invalidate the object, get the updated one next time.
+        job_id = job.id
         session = Session.object_session(job)
         session.commit()
 
@@ -54,7 +54,7 @@ class TestScanSchedule(object):
         sleep(2.0)
 
         # Test the status.
-        progress_info = scan_progress_info(job_id)
+        progress_info = scan_progress_info(job.id)
         assert 'phase' in progress_info
         assert progress_info['phase'] in ['search', 'crawl', 'done']
         reqs = list(ScrapeRequest.query.filter_by(job_id=job_id))
@@ -75,7 +75,7 @@ class TestScanSchedule(object):
 
     # NOTE NOTE This test assumes that we are using a test database. Particularly no conflicting
     # legitimate scan jobs are present.
-    def test_perform_scan(self, app, db, scrapyp):
+    def test_perform_scan(self, app, db, scrapyp, example_user):
         # Clean up entries from the test domain in Solr.
         req_data = '{"delete": {"query": "site_name:quotes.toscrape.com"}, "commit": {}}'
         del_conn = http.client.HTTPConnection('solr', port=8983)
@@ -89,11 +89,11 @@ class TestScanSchedule(object):
         assert solr_response_json['response']['numFound'] == 0
 
         # Create the scan job.
-        job_id = ScanJob.identifier('ex@example.com', 'inspirational', ['games'])
-        existing_job = ScanJob.query.get(job_id)
-        if existing_job:
-            terminate_scan(existing_job.id)
-        request_scan('ex@example.com', 'inspirational', ['games'], force_new=True)
+        existing_jobs = list(ScanJob.query.filter_by(query_phrase='inspirational', query_tags='games',
+                user_id=example_user.id))
+        if existing_jobs:
+            terminate_scan(existing_jobs[0].id)
+        job = request_scan(example_user.id, 'inspirational', ['games'], force_new=True)
 
         # This should start the scan, given that the Celery task works.
         sleep(1.5)
@@ -103,11 +103,11 @@ class TestScanSchedule(object):
         # NOTE we currently need a long time due to toscrap.com redirections.
         for i in range(120*2): # wait up to 120 sec
             sleep(0.5)
-            progress_info = scan_progress_info(job_id)
+            progress_info = scan_progress_info(job.id)
             proportions.append(progress_info['dl_proportion'])
             # We check requests status instead of Solr directly to avoid racing with updating those
             # statuses.
-            requests_committed = list(ScrapeRequest.query.filter_by(job_id=job_id,
+            requests_committed = list(ScrapeRequest.query.filter_by(job_id=job.id,
                 status='committed'))
             if len(requests_committed) >= 6: # two searches (prioritized), four crawls
                 break
@@ -125,7 +125,7 @@ class TestScanSchedule(object):
 
         ### TODO test handling 404 responses
 
-    def test_reddit_scan(self, app, db, redditp):
+    def test_reddit_scan(self, app, db, redditp, example_user):
         # Clean up entries from the test domain in Solr (note that slashes must be escaped in the
         # query)
         req_data = ('{"delete": {"query": "site_name:\\"'
@@ -146,11 +146,11 @@ class TestScanSchedule(object):
 
         # Create the scan job.
         # ("jour" seems to have at least one submission with comments)
-        job_id = ScanJob.identifier('ex@example.com', 'jour', ['reddit'])
-        existing_job = ScanJob.query.get(job_id)
-        if existing_job:
-            terminate_scan(existing_job.id)
-        request_scan('ex@example.com', 'jour', ['reddit'], force_new=True)
+        existing_jobs = list(ScanJob.query.filter_by(query_phrase='jour', query_tags='reddit',
+                user_id=example_user.id))
+        if existing_jobs:
+            terminate_scan(existing_jobs[0].id)
+        job = request_scan(example_user.id, 'jour', ['reddit'], force_new=True)
 
         # This should start the scan, given that the Celery task works.
         sleep(1.5)
@@ -159,12 +159,11 @@ class TestScanSchedule(object):
         proportions = []
         for i in range(120*2): # wait up to 120 sec
             sleep(0.5)
-            progress_info = scan_progress_info(job_id)
-            progress_info = scan_progress_info(job_id)
+            progress_info = scan_progress_info(job.id)
             proportions.append(progress_info['dl_proportion'])
             # We check requests status instead of Solr directly to avoid racing with updating those
             # statuses.
-            requests_committed = list(ScrapeRequest.query.filter_by(job_id=job_id,
+            requests_committed = list(ScrapeRequest.query.filter_by(job_id=job.id,
                 status='committed'))
             if len(requests_committed) >= 5:
                 break
@@ -174,7 +173,7 @@ class TestScanSchedule(object):
 
         # Specifically, we cannot expect the search request to already commit (there may be more
         # submissions and it commits only after all sites for Reddit).
-        requests = list(ScrapeRequest.query.filter_by(job_id=job_id))
+        requests = list(ScrapeRequest.query.filter_by(job_id=job.id))
         assert len([req for req in requests if req.is_search == True]) == 1
         assert len([req for req in requests if req.source_type != 'forums']) == 0
 
