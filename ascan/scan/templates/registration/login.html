@@ -1,0 +1,12 @@
+{% extends 'scan/base.html' %}
+{% load bootstrap4 %}
+
+{% block page_title %}Login{% endblock %}
+
+{% block container %}
+<form method="POST">
+  {% csrf_token %}
+  {% bootstrap_form form %}
+  <button type="submit">Login</button>
+</form>
+{% endblock %}

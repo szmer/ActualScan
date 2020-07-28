@@ -1,13 +1,19 @@
 import argparse
 from datetime import datetime, timezone
 import json
-from logging import debug, getLogger, info
+import logging
+from logging import getLogger
 import re
 
+# Connect to Django.
+import sys
+sys.path.append('/ascan')
+import os
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ascan.settings')
+from django.core.wsgi import get_wsgi_application
+application = get_wsgi_application()
+
 import praw
-from sqlalchemy.ext.automap import automap_base
-from sqlalchemy.orm import Session
-from sqlalchemy import create_engine
 
 # Basic NLP.
 from sentence_splitter import SentenceSplitter
@@ -20,11 +26,14 @@ from mdx_linkify.mdx_linkify import LinkifyExtension
 # performance bottleneck is elsewhere.
 from bs4 import BeautifulSoup
 
+from scan.models import Site, ScrapeRequest
+from dynamic_preferences.registries import global_preferences_registry
+
 # We need to get one module deeper comparing to the general spider, because we're outside of the
 # Scrapy project.
-from genscrap.genscrap.lib import date_fmt, solr_update, site_id_tags, update_request_status
+from genscrap.genscrap.lib import date_fmt, solr_update, update_request_status
 from genscrap.genscrap.flask_instance.settings import (
-        SQLALCHEMY_DATABASE_URI, REDDIT_UA, REDDIT_CLIENT, REDDIT_SECRET
+        REDDIT_UA, REDDIT_CLIENT, REDDIT_SECRET
         )
 #
 # Read command line args.
@@ -34,28 +43,17 @@ argparser = argparse.ArgumentParser(description=
 argparser.add_argument('-L', '--loglevel', help='Logging level.')
 
 args = argparser.parse_args()
+logger = getLogger()
+logging.basicConfig()
 if args.loglevel:
-    logger = getLogger()
     logger.setLevel(args.loglevel)
+logger.info('Starting the Reddit scraper.')
 
 #
 # Config constants.
 #
 MARKDOWN_EXTENSIONS = ['fenced_code', 'tables', StrikethroughExtension(), LinkifyExtension()]
 SEARCH_LIMIT = 100
-
-#
-# Postgres connection & ORM setup.
-#
-AutomapBase = automap_base()
-pg_engine = create_engine(SQLALCHEMY_DATABASE_URI)
-# Reflect the tables.
-AutomapBase.prepare(pg_engine, reflect=True)
-
-ScrapeRequest = AutomapBase.classes.scrape_request
-LiveConfigValue = AutomapBase.classes.live_config_value
-Site = AutomapBase.classes.site
-pg_session = Session(pg_engine)
 
 #
 # Utility functions.
@@ -94,8 +92,8 @@ def format_text(text):
     return result
 
 def make_scrape_request(target, job_id, status='ran'):
-    info('Ran a Reddit scrape request for {} ({})'.format(target, job_id))
-    return ScrapeRequest(target=target,
+    logger.info('Ran a Reddit scrape request for {} ({})'.format(target, job_id))
+    return ScrapeRequest.objects.create(target=target,
             is_search=False,
             job_id=search_scrape_request.job_id, status=status,
             status_changed=datetime.now(timezone.utc),
@@ -110,27 +108,26 @@ def make_scrape_request(target, job_id, status='ran'):
 #
 # Monitor for new search ScrapeRequests and handle them.
 #
-debug('Reddit scraper loading configuration.')
-REDDIT_SEARCH_DEPTH = int(pg_session.query(LiveConfigValue).get('reddit_search_depth').value)
-REDDIT_MANY_COMMENTS_THRESHOLD = int(pg_session.query(LiveConfigValue).get(
-    'reddit_many_comments_threshold').value)
-REDDIT_MANY_COMMENTS_MINSCORE_RATIO = int(pg_session.query(LiveConfigValue).get(
-    'reddit_many_comments_minscore_ratio').value)
+logger.debug('Reddit scraper loading configuration.')
+global_preferences = global_preferences_registry.manager()
+REDDIT_SEARCH_DEPTH = global_preferences['reddit_search_depth']
+REDDIT_MANY_COMMENTS_THRESHOLD = global_preferences['reddit_many_comments_threshold']
+REDDIT_MANY_COMMENTS_MINSCORE_RATIO = global_preferences['reddit_many_comments_minscore_ratio']
 
-debug('Reddit scraper connecting to Reddit.')
+logger.debug('Reddit scraper connecting to Reddit.')
 reddit = praw.Reddit(user_agent=REDDIT_UA, client_id=REDDIT_CLIENT, client_secret=REDDIT_SECRET)
 # This looks for new awaiting ScrapeRequests in the database, put there by start_scan from
 # scan schedule control, from a ScanJob.
-debug('Reddit scraper running.')
+logger.debug('Reddit scraper running.')
 while True:
     # Get new search requests.
-    search_scrape_requests_waiting = list(pg_session.query(ScrapeRequest).filter(
-        ScrapeRequest.site_type == 'reddit',
-        ScrapeRequest.status == 'waiting',
-        ScrapeRequest.is_search == True))
+    search_scrape_requests_waiting = ScrapeRequest.objects.filter(
+        site_type='reddit',
+        status='waiting',
+        is_search=True)
     # Run the respective searches, effectively for pairs: (subreddit, query).
     for search_scrape_request in search_scrape_requests_waiting:
-        debug('Processing the scrape request for {} in {}'.format(
+        logger.debug('Processing the scrape request for {} in {}'.format(
             search_scrape_request.target, search_scrape_request.job_id))
         search_phrase = search_scrape_request.target[len('[reddit] '):]
         try:
@@ -138,7 +135,8 @@ while True:
         except:
             continue
         subreddit = reddit.subreddit(subreddit_name)
-        subreddit_tags = site_id_tags(search_scrape_request.site_id, pg_session)
+        subreddit_tags = [tag.name for tag in Site.objects.get(
+            id=search_scrape_request.site_id).tags.all()]
 
         submissions = subreddit.search('title:{} OR selftext:{}'.format(
             search_phrase, search_phrase), sort='comments', limit=REDDIT_SEARCH_DEPTH)
@@ -151,15 +149,12 @@ while True:
                 continue
             submission_scrape_request = make_scrape_request(submission.permalink,
                     search_scrape_request.job_id, status='scheduled')
-            pg_session.add(submission_scrape_request)
-            pg_session.commit()
             submissions_list.append(submission)
             submission_requests[submission.permalink] = submission_scrape_request.id
         comments_count = sum([subm.num_comments for subm in submissions_list])
         search_scrape_request.lead_count = comments_count
-        pg_session.commit()
         # Only now mark the search request as ran - we now know the load of requests it introduces.
-        update_request_status(pg_session, search_scrape_request, 'ran')
+        update_request_status(search_scrape_request, 'ran')
 
         # Scrape request level submission deduplication. TODO just consult with Solr!
         downloaded_submissions = set()
@@ -171,9 +166,11 @@ while True:
                 continue
             # Add to the dedup and to the database.
             downloaded_submissions.add(submission.permalink)
-            submission_scrape_request = pg_session.query(ScrapeRequest).get(
+            submission_scrape_request = ScrapeRequest.objects.get(id=
                     submission_requests[submission.permalink])
-            update_request_status(pg_session, submission_scrape_request, 'ran')
+            if submission_scrape_request.status == 'cancelled':
+                continue
+            update_request_status(submission_scrape_request, 'ran')
             # Load all the 'load more's.
             submission.comments.replace_more(limit=None)
             # Apply some rules for deleting comments on the top level.
@@ -198,7 +195,7 @@ while True:
                 if ok(submission, 'permalink'):
                     submission_obj['url'] = 'https://reddit.com'+submission.permalink
                 else:
-                    update_request_status(pg_session, submission_scrape_request, 'failed',
+                    update_request_status(submission_scrape_request, 'failed',
                             failure_comment='no permalink')
                     continue
                 submission_obj['real_doc'] = 'self'
@@ -215,20 +212,18 @@ while True:
                 # Send to Solr.
                 solr_json_text = json.dumps([submission_obj])
                 solr_update(solr_json_text, req_id=submission_scrape_request.id,
-                        req_class=ScrapeRequest, pg_session=pg_session)
-                update_request_status(pg_session, submission_scrape_request, 'committed')
+                        req_class=ScrapeRequest)
+                update_request_status(submission_scrape_request, 'committed')
             # Make the comment's object (Solr documents).
             for comment in submission.comments.list():
                 # Notify the database.
                 comment_scrape_request = make_scrape_request(comment.permalink,
                     search_scrape_request.job_id)
-                pg_session.add(comment_scrape_request)
-                pg_session.commit()
                 # Having a permalink is crucial to even indexing the comment.
                 if ok(comment, 'permalink'):
                     comment_permalink = 'https://reddit.com'+comment.permalink
                 else:
-                    update_request_status(pg_session, comment_scrape_request, 'failed',
+                    update_request_status(comment_scrape_request, 'failed',
                             failure_comment='no permalink')
                     continue
                 comment_obj = {'reason_scraped': search_scrape_request.job_id, 'source_type': 'f',
@@ -237,11 +232,11 @@ while True:
                 if ok(comment, 'body'):
                     comment_obj['text'] = format_text(comment.body)
                     if not comment_obj['text']:
-                        update_request_status(pg_session, comment_scrape_request, 'failed',
+                        update_request_status(comment_scrape_request, 'failed',
                                 failure_comment='no extractable text')
                         continue
                 else:
-                    update_request_status(pg_session, comment_scrape_request, 'failed',
+                    update_request_status(comment_scrape_request, 'failed',
                             failure_comment='no text body')
                     continue
                 # TODO ? it would be better to set here the link to whole discussion set on this comment
@@ -259,11 +254,11 @@ while True:
                 # Send to Solr (this needs a manual commit).
                 solr_json_text = json.dumps([comment_obj])
                 solr_update(solr_json_text, req_id=comment_scrape_request.id,
-                        req_class=ScrapeRequest, pg_session=pg_session)
+                        req_class=ScrapeRequest)
                 # Do the manual commit.
                 solr_update('{"commit": {}}', req_id=comment_scrape_request.id,
-                        req_class=ScrapeRequest, pg_session=pg_session)
-                update_request_status(pg_session, comment_scrape_request, 'committed')
-        update_request_status(pg_session, search_scrape_request, 'committed')
+                        req_class=ScrapeRequest)
+                update_request_status(comment_scrape_request, 'committed')
+        update_request_status(search_scrape_request, 'committed')
 
-debug('Reddit scraper exited.')
+logger.debug('Reddit scraper exited.')

@@ -37,3 +37,8 @@ webpack/package-lock.json
 
 ## Pycache
 *__pycache__*
+
+## Django
+ascan/scan/migrations/
+ascan/manager/migrations/
+ascan/staticfiles/admin/

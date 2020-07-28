@@ -7,11 +7,10 @@ COPY requirements.txt requirements.txt
 COPY setup.py setup.py
 RUN pip install -r requirements.txt
 
-COPY flask_config flask_config
 COPY pytest.ini pytest.ini
 COPY celeryconfig.py celeryconfig.py
 
-COPY searchfront searchfront
+COPY scrapies scrapies
 
 RUN pip install --editable .
 

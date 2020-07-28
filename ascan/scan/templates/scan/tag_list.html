@@ -1,0 +1,25 @@
+{% extends 'scan/base.html' %}
+{% load bootstrap4 %}
+
+{% block page_title %}Tags{% endblock %}
+
+{% block container %}
+<h2>Tags</h2>
+<div class="card-deck">
+   <div class="card mb-4" style="width: 18rem;">
+     <div class="card-body">
+        <h4 class="card-title"><a href="/manager/maketag/">Add a new tag</a></h4>
+     </div>
+   </div>
+
+   {% for tag in tags %}
+   <div class="card mb-4" style="width: 18rem;">
+     <div class="card-body">
+        <h5 class="card-title">{{ tag.name }}</h5>
+        <p class="card-text">{{ tag.description }}</p>
+       <a href="/manager/tag/{{ tag.id }}/" class="card-link">Details</a>
+     </div>
+   </div>
+   {% endfor %}
+</div>
+{% endblock %}

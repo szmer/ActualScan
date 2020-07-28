@@ -1,5 +1,13 @@
 # -*- coding: utf-8 -*-
 
+# Connect to Django.
+import sys
+sys.path.append('/ascan')
+import os
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ascan.settings')
+from django.core.wsgi import get_wsgi_application
+application = get_wsgi_application()
+
 # Scrapy settings for genscrap project
 #
 # For simplicity, this file contains only settings considered important or

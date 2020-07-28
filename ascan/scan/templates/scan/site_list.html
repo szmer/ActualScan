@@ -1,0 +1,34 @@
+{% extends 'scan/base.html' %}
+{% load bootstrap4 %}
+
+{% block page_title %}{% if tag %}{{ tag }} - {% endif %}Sites{% endblock %}
+
+{% block container %}
+<h2>Sites{% if tag %} tagged <a href="/manager/tag/{{ tag_id }}/">{{ tag }}</a>{% endif %}</h2>
+<div class="card-deck">
+   <div class="card mb-4" style="width: 18rem;">
+     <div class="card-body">
+        <h4 class="card-title"><a href="/manager/makesite/">Add a new site</a></h4>
+     </div>
+   </div>
+
+   {% for site in sites %}
+   <div class="card mb-4" style="width: 18rem;">
+     <div class="card-body">
+        <h5 class="card-title">{{ site.site_name }}</h5>
+        <h6 class="card-subtitle mb-2 text-muted">
+           <strong>{{ site.source_type }}</strong>
+           {% for tag in site.tags.all %}
+           <a href="/manager/tagsites/{{ tag }}/">{{ tag }}</a>
+            {% endfor %}
+        </h6>
+       <p class="card-text">
+       Homepage:
+       <a href="{{site.homepage_url}}">{{site.homepage_url}}</a>
+       </p>
+       <a href="/manager/site/{{ site.id }}/" class="card-link">Details</a>
+     </div>
+   </div>
+   {% endfor %}
+</div>
+{% endblock %}

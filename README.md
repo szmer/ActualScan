@@ -7,19 +7,27 @@ Overwritten Flask-Security templates are inside the account blueprint, inside `t
 
 Testing currently creates some example sites and tags.
 
+# Killing all containers
+
+```bash
+docker kill $(docker ps -q)
+```
+
+# Running migrations
+
+```bash
+docker-compose run website python manage.py makemigrations
+docker-compose run website python manage.py migrate auth
+docker-compose run website python manage.py migrate scan xxxx
+docker-compose run website python manage.py migrate
+```
+
 # Testing
 
 ```bash
-docker-compose exec website pytest --capture=sys searchfront
+docker-compose build website
+docker-compose run website python manage.py test scan
 ```
-
-To skip tests requiring many network connections:
-
-```bash
-docker-compose exec website pytest -k "not with_network" searchfront
-```
-
-Use the ` --log-cli-level=10` flag to capture all logging for all tests (also the ones that pass).
 
 # Installing frontend packages
 

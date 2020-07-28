@@ -49,11 +49,10 @@ def stractor_reading(text, source_type):
         return stractor_response.status
     return stractor_response.read().decode('utf-8')
 
-def solr_update(req_body, req_id=None, req_class=False, pg_session=False):
+def solr_update(req_body, req_id=None, req_class=False):
     """
     Send req_body as payload to Solr, optionally updating the req_id ScrapeRequest (or other given
-    req_class) on failure. You need to pass an SQLAlchemy pg_session for this. Return a boolean
-    indicating success or failure.
+    req_class) on failure. Return a boolean indicating success or failure.
     """
     # Recreate the connection each time to avoid getting stuck in bad states.
     solr_conn = http.client.HTTPConnection('solr', port=8983, timeout=10)
@@ -64,26 +63,16 @@ def solr_update(req_body, req_id=None, req_class=False, pg_session=False):
     debug('Solr response: {}'.format(solr_response.status))
     if solr_response.status != 200:
         if req_id is not None:
-            db_request = pg_session.query(req_class).get(req_id)
+            db_request = req_class.objects.get(id=req_id)
             db_request.status = 'failed'
             db_request.failure_comment = 'Could not reach Solr, status code {}'.format(
                     solr_response.status)
-            pg_session.commit()
         return False
     return True
 
-def site_id_tags(site_id, pg_session):
-    """
-    Retrieve the list of site tags for the site_id with pg_session.
-    """
-    query = ('SELECT name FROM tag WHERE id IN (SELECT tag_id FROM sites_tags'
-            ' WHERE site_id = {})').format(site_id)
-    tag_rows = pg_session.execute(query)
-    return [row[0] for row in tag_rows]
-
-def update_request_status(db_session, request, new_status, failure_comment=None):
+def update_request_status(request, new_status, failure_comment=None):
     request.status = new_status
     request.status_changed = datetime.now(timezone.utc)
     if failure_comment is not None:
         request.failure_comment = failure_comment
-    db_session.commit()
+    request.save()

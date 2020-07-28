@@ -6,15 +6,11 @@ import os, os.path
 import simpleflock
 
 import scrapy
-from sqlalchemy.ext.automap import automap_base
-from sqlalchemy.orm import Session
-from sqlalchemy import create_engine
 
-from genscrap.flask_instance.settings import SQLALCHEMY_DATABASE_URI 
+from scan.models import Site, ScrapeRequest
+
 from genscrap.lib import (
-        write_to_file, stractor_reading, timestamp_now, full_url, solr_update, site_id_tags,
-        update_request_status
-        )
+        write_to_file, stractor_reading, timestamp_now, full_url, solr_update, update_request_status)
 
 FILEDB_PATH = ''
 # Note it's the original port, not the one mapped by docker-compose.
@@ -22,18 +18,6 @@ SOLR_NETLOC = 'solr:8983'
 SOLR_PING_URL = 'http://solr:8983/solr/lookupy/admin/ping'
 REQUEST_META = ['id', 'is_search', 'job_id', 'query_tags', 'save_copies', 'site_name', 'site_url',
         'site_id', 'source_type']
-
-#
-# Postgres connection & ORM setup.
-#
-AutomapBase = automap_base()
-pg_engine = create_engine(SQLALCHEMY_DATABASE_URI)
-# Reflect the tables.
-AutomapBase.prepare(pg_engine, reflect=True)
-
-ScrapeRequest = AutomapBase.classes.scrape_request
-Site = AutomapBase.classes.site
-pg_session = Session(pg_engine)
 
 #
 # The spider.
@@ -81,11 +65,11 @@ class GeneralSpider(scrapy.Spider):
         Scrapy parse function for Solr dummy monitoring requests - we want to search Postgres for
         new requests.
         """
-        scrape_requests_waiting = list(pg_session.query(ScrapeRequest).filter_by(
-            status='waiting', site_type='web'))
+        scrape_requests_waiting = ScrapeRequest.objects.filter(
+            status='waiting', site_type='web')
         requests_done = False
         for scrape_request in scrape_requests_waiting:
-            update_request_status(pg_session, scrape_request, 'scheduled')
+            update_request_status(scrape_request, 'scheduled')
             meta = {attr: getattr(scrape_request, attr)
                         for attr
                         in REQUEST_META}
@@ -105,8 +89,8 @@ class GeneralSpider(scrapy.Spider):
         stractor_output = stractor_reading(html_text, source_type)
         # Speechtractor failures.
         if isinstance(stractor_output, int):
-            update_request_status(pg_session,
-                    pg_session.query(ScrapeRequest).get(request_id),
+            update_request_status(
+                    ScrapeRequest.objects.get(id=request_id),
                     'failed',
                     failure_comment='Could not reach Speechtractor, status code {}'.format(
                         stractor_output))
@@ -119,10 +103,10 @@ class GeneralSpider(scrapy.Spider):
         """
         # Notify of failures if needed.
         if status != 200:
-            update_request_status(pg_session, db_request, 'failed',
+            update_request_status(db_request, 'failed',
                     failure_comment='Status code: {}'.format(status))
         else:
-            update_request_status(pg_session, db_request, 'ran')
+            update_request_status(db_request, 'ran')
         if status != 200:
             return False
         return True
@@ -132,14 +116,16 @@ class GeneralSpider(scrapy.Spider):
         The "regular" Scrapy parse function for search pages and indexed pages. The former should
         yield some new Scrapy Requests to follow.
         """
-        db_request = pg_session.query(ScrapeRequest).get(response.meta['id'])
+        db_request = ScrapeRequest.objects.get(id=response.meta['id'])
+        if db_request.status == 'cancelled':
+            return
         # Update the status of the request (ran, failed).
         ok = self.status_notify_db(db_request, response.status)
         if not ok:
             return
 
         # Check if a new monitoring request is necessary. TODO check jobs instead maybe?
-        scrape_requests_waiting_count = pg_session.query(ScrapeRequest).filter_by(
+        scrape_requests_waiting_count = ScrapeRequest.objects.filter(
             status='waiting', site_type='web').count()
         if scrape_requests_waiting_count == 0:
             yield scrapy.Request(url=SOLR_PING_URL, callback=self.monitoring_parse,
@@ -162,7 +148,7 @@ class GeneralSpider(scrapy.Spider):
                         is_page_search = (True
                                 if 'is_search' in found_page and found_page['is_search']
                                 else False)
-                        scrape_request = ScrapeRequest(target=found_page['url'],
+                        scrape_request = ScrapeRequest.objects.create(target=found_page['url'],
                                 is_search=is_page_search,
                                 job_id=response.meta['job_id'],
                                 status='scheduled',
@@ -176,22 +162,21 @@ class GeneralSpider(scrapy.Spider):
                                 save_copies=response.meta['save_copies'])
                         info('Created a scrape request for {} from search, for {}'.format(
                             found_page['url'], response.meta['job_id']))
-                        pg_session.add(scrape_request)
-                        pg_session.commit()
                         yield response.follow(found_page['url'],
                                 callback=self.parse,
                                 meta={attr: getattr(scrape_request, attr) for attr
                                     in REQUEST_META},
                                 priority=5 if is_page_search else 0)
-                update_request_status(pg_session, db_request, 'committed')
+                update_request_status(db_request, 'committed')
             else:
-                update_request_status(pg_session, db_request, 'failed',
+                update_request_status(db_request, 'failed',
                         failure_comment='empty Speechtractor response')
                 info('Got empty Speechractor response: {} for search target: {}'.format(
                     stractor_response_json, response.url))
         # The actual page indexing.
         else:
-            site_tags = site_id_tags(response.meta['site_id'], pg_session)
+            site_tags = [tag.name for tag in Site.objects.get(
+                id=response.meta['site_id']).tags.all()]
             if stractor_response_json is not None and stractor_response_json:
                 for doc in stractor_response_json:
                     doc['date_retr'] = timestamp_now()
@@ -203,20 +188,20 @@ class GeneralSpider(scrapy.Spider):
                     else:
                         doc['real_doc'] = response.url
                     doc['url'] = full_url(doc['url'], response.meta['site_url'])
-                    doc['tags'] = site_tags,
+                    doc['tags'] = site_tags
                     doc['reason_scraped'] = response.meta['job_id']
                 # This sends documents to solr with default settings. We need to do a manual commit
                 # afterwards.
                 solr_json_text = json.dumps(stractor_response_json)
                 solr_update(solr_json_text, req_id=response.meta['id'],
-                        req_class=ScrapeRequest, pg_session=pg_session)
+                        req_class=ScrapeRequest)
                 # Do the manual commit.
                 # TODO commit one doc in one go with {add: {doc:}} json structure
                 solr_update('{"commit": {}}', req_id=response.meta['id'],
-                        req_class=ScrapeRequest, pg_session=pg_session)
-                update_request_status(pg_session, db_request, 'committed')
+                        req_class=ScrapeRequest)
+                update_request_status(db_request, 'committed')
             else:
-                update_request_status(pg_session, db_request, 'failed',
+                update_request_status(db_request, 'failed',
                         failure_comment='empty Speechtractor response')
                 info('Got empty Speechractor response: {} for scraping target: {}'.format(
                     stractor_response_json, response.url))

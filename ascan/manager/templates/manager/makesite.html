@@ -1,0 +1,14 @@
+{% extends 'scan/base.html' %}
+{% load bootstrap4 %}
+
+{% block page_title %}Add a site{% endblock %}
+
+{% block container %}
+<form method="POST">
+   <dl>
+   {% csrf_token %}
+   {% bootstrap_form form %}
+   <button type="submit" class="btn btn-primary">Add the site</button>
+   </dl>
+</form>
+{% endblock %}

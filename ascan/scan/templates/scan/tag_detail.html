@@ -1,0 +1,19 @@
+{% extends 'scan/base.html' %}
+{% load bootstrap4 %}
+
+{% block page_title %}Tag {{ tag.name }}{% endblock %}
+
+{% block container %}
+<h2>Tag {{ tag.name }}</h2>
+<table class="table">
+   <tr>
+      <th scope="row">Description</th>
+      <td>{{ tag.description }}</td>
+   </tr>
+  </tr>
+   <tr>
+      <th scope="row">Added by</th>
+      <td>{% if tag.creator %}{{ tag.creator.username }}{% endif %}</td>
+   </tr>
+</table>
+{% endblock %}
