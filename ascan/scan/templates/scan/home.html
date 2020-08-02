@@ -4,6 +4,11 @@
 
 {% block page_title %}Search{% endblock %}
 
+{% block scripts %}
+<script type="application/javascript" src="{% static 'scan/js/datepicker.min.js' %}"></script>
+<link rel="stylesheet" href="{% static 'scan/css/datepicker.min.css' %}">
+{% endblock %}
+
 {% block container %}
 <div class="text-center">
 <img src="{% static 'scan/logo1.png' %}" alt="ActualScan" style="width: 90%; margin: 40px">

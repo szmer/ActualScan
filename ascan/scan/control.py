@@ -57,8 +57,8 @@ def maybe_issue_guest_scan_permission(ip_address):
         return True
     return False
 
-def request_scan(user_id, query_phrase : str, query_tags : list, force_new=False, is_ip=False,
-        is_privileged=False):
+def request_scan(user_id, query_phrase : str, query_tags : list, minimal_level=0, force_new=False,
+        is_ip=False, is_privileged=False):
     """
     Put an awaiting scan job in the database. query_tags should be a list of strings. If force_new
     is set and the job already exists, a ValueError is raised. Return the ScanJob object.
@@ -73,17 +73,18 @@ def request_scan(user_id, query_phrase : str, query_tags : list, force_new=False
     if is_privileged:
         # Try to find still working jobs.
         jobs = ScanJob.objects.filter(query_phrase=query_phrase, query_tags=query_tags_str,
-                status__in=['waiting', 'working'])
+                status__in=['waiting', 'working'], minimal_level=minimal_level)
         if not jobs:
             # TODO let them choose if the scan should be new
             time_threshold = datetime.now() - timedelta(minutes=5)
             jobs = ScanJob.objects.filter(query_phrase=query_phrase, query_tags=query_tags_str,
-                    status='finished', status_changed__gte=time_threshold)
+                    status='finished', status_changed__gte=time_threshold,
+                    minimal_level=minimal_level)
     # Non-privileged users can start a scan every 30 minutes. TODO notify them
     else:
         time_threshold = datetime.now() - timedelta(minutes=30)
         jobs = ScanJob.objects.filter(query_phrase=query_phrase, query_tags=query_tags_str,
-                status_changed__gte=time_threshold)
+                minimal_level=minimal_level, status_changed__gte=time_threshold)
     debug('The user is privileged: {}, number of jobs found:'.format(is_privileged,
         0 if not jobs else len(jobs)))
     if jobs and force_new:
@@ -113,7 +114,7 @@ def start_scan(scan_job):
     website_count = 0
     subreddit_count = 0
     for tag in tags:
-        for site in tag.sites.all():
+        for site in tag.sites.filter(level__gte=scan_job.minimal_level).all():
             if not site in sites_queried:
                 sites_queried.add(site) # a site can belong to multiple tags
                 info('Starting requests for site (tag {}, scan job {})'.
@@ -165,7 +166,7 @@ def terminate_scan(scan_job_id):
 
 def scan_progress_info(scan_job_id):
     """
-    A dictionary: 'phase' ('waiting', 'search', 'crawl', 'unexisting' or appropriate ScanJob
+    A dictionary: 'phase' ('waiting', 'crawl', 'unexisting' or appropriate ScanJob
     status), possibly also 'fails', 'last_url', 'dl_proportion'. Note that dl_proportion reflects
     proportion of the pages to be crawled or the search pages depending on the phase.
     """
@@ -318,6 +319,6 @@ def scan_progress_info(scan_job_id):
     done_request = ScrapeRequest.objects.filter(
             status__in=['committed', 'failed'], job=scan_job).order_by('-status_changed')[:1]
     return {'phase': phase, 'fails': fails_count,
-            # TODO test that it's the target as string, not ScrapeRequest object
-            'last_url': done_request[0].target if len(done_request) > 0 else None,
+            'last_url': (done_request[0].site_url + '/' + done_request[0].target
+                if len(done_request) > 0 else None),
             'dl_proportion': dl_proportion}

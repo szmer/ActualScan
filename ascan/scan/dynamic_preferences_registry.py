@@ -90,6 +90,11 @@ class SiteLevelThresholdBase(IntegerPreference):
     default = 1000
     required = True
 @global_preferences_registry.register
+class SiteLevelThresholdRespected(IntegerPreference):
+    name = 'site_level_threshold_respected'
+    default = 50
+    required = True
+@global_preferences_registry.register
 class SiteLevelThresholdCommunity(IntegerPreference):
     name = 'site_level_threshold_community'
     default = 0
@@ -100,7 +105,19 @@ class TagLevelThresholdBase(IntegerPreference):
     default = 1000
     required = True
 @global_preferences_registry.register
+class TagLevelThresholdRespected(IntegerPreference):
+    name = 'tag_level_threshold_respected'
+    default = 50
+    required = True
+@global_preferences_registry.register
 class TagLevelThresholdCommunity(IntegerPreference):
     name = 'tag_level_threshold_community'
     default = 0
+    required = True
+
+
+@global_preferences_registry.register
+class DefaultScanTimedeltaStart(IntegerPreference):
+    name = 'default_scan_timedelta_start'
+    default = 52*10 # in weeks
     required = True

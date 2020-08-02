@@ -10,8 +10,8 @@ import sys
 sys.path.append('/ascan')
 import os
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ascan.settings')
-from django.core.wsgi import get_wsgi_application
-application = get_wsgi_application()
+import django
+django.setup()
 
 import praw
 

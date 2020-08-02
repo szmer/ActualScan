@@ -90,6 +90,7 @@ class ScanJob(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     user_ip = models.CharField(max_length=64, null=True, blank=True)
     status = models.CharField(max_length=32)
+    minimal_level = models.IntegerField(default=0)
     # The difference is that last checked indicates that there is user interest for the scan job,
     # and the status_changed fields stores when the status actually changed recently.
     last_checked = models.DateTimeField(auto_now=True)

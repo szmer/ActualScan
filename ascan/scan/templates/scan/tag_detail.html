@@ -1,5 +1,6 @@
 {% extends 'scan/base.html' %}
 {% load bootstrap4 %}
+{% load scan_extras %}
 
 {% block page_title %}Tag {{ tag.name }}{% endblock %}
 
@@ -7,13 +8,18 @@
 <h2>Tag {{ tag.name }}</h2>
 <table class="table">
    <tr>
+      <th scope="row">Level</th>
+      <td>{{ tag.level | format_tag_level }}</td>
+   </tr>
+   <tr>
       <th scope="row">Description</th>
       <td>{{ tag.description }}</td>
    </tr>
-  </tr>
    <tr>
       <th scope="row">Added by</th>
       <td>{% if tag.creator %}{{ tag.creator.username }}{% endif %}</td>
    </tr>
 </table>
+
+<a href="/manager/tagsites/{{ tag.name }}/">See tagged sites</a>
 {% endblock %}

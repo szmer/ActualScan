@@ -134,9 +134,6 @@ STATICFILES_DIRS = [
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# ASGI - Django channels
-ASGI_APPLICATION = "ascan.routing.application"
-
 LOGGING = {
         'version': 1,
         'handlers': {
@@ -149,7 +146,7 @@ LOGGING = {
                 'handlers': [
                     'console',
                     ],
-                'level': 'INFO'
+                'level': 'WARNING'
                 },
             }
         }
@@ -165,3 +162,6 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+# ASGI - Django channels
+ASGI_APPLICATION = "ascan.routing.application"

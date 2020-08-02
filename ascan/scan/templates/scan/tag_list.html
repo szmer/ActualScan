@@ -1,5 +1,6 @@
 {% extends 'scan/base.html' %}
 {% load bootstrap4 %}
+{% load scan_extras %}
 
 {% block page_title %}Tags{% endblock %}
 
@@ -17,7 +18,12 @@
      <div class="card-body">
         <h5 class="card-title">{{ tag.name }}</h5>
         <p class="card-text">{{ tag.description }}</p>
+        <p class="card-text">
+        Level:
+        <strong>{{ tag.level | format_tag_level }}</strong>
+        </p>
        <a href="/manager/tag/{{ tag.id }}/" class="card-link">Details</a>
+       <a href="/manager/tagsites/{{ tag.name }}/" class="card-link">Sites</a>
      </div>
    </div>
    {% endfor %}

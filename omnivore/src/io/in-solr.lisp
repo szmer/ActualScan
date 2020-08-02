@@ -1,13 +1,29 @@
 (in-package :omnivore)
 
-(defun solr-tokens (address port core query)
+(defun solr-tokens (address port core query &key (start-date nil) (end-date nil) (undated nil))
   ;;; One of general KLUDGE s is that there is no corpus object here.
   "The second value contains statistics got directly from Solr."
+  (assert (not (and end-date (not start-date))))
   (let* ((http-query (format nil
                                (concatenate 'string
                                             "http://~A:~A/solr/~A/select?q=~A"
                                             ;; KLUDGE to test tags
                                             ;-"%20AND%20tags:entrepreneur"
+                                            ;; Set the start date.
+                                            (if start-date
+                                                (concatenate
+                                                  'string
+                                                  ;; NOTE it has to be in a format recognized by Solr
+                                                  ;; (datestamp or some verbal descriptions)
+                                                  ;; %5B %5D = [ ]
+                                                  (format nil "&fq=date_post:%5B~a%20TO%20~a%5D"
+                                                        start-date
+                                                        (or end-date "NOW"))
+                                                  ;; apparently that's how you detect empty fields
+                                                  ;; in AND/OR constructions
+                                                  (if undated "%20OR%20(*:*%20NOT%20date_post:*)"
+                                                      ""))
+                                                "")
                                             ;; Get those fields, but no text (only highlights).
                                             "&fl=url,author,title,date_post,date_retr,site_name"
                                             ;; Enable highliting in text.

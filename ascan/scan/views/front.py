@@ -11,6 +11,7 @@ from ipware import get_client_ip
 from scan.control import (maybe_issue_guest_scan_permission, request_scan, scan_progress_info,
         verify_scan_permission)
 from scan.forms import PublicScanForm
+from scan.utils import date_fmt, site_level_to_numeric
 
 @login_required
 def accountinfo(request):
@@ -34,9 +35,15 @@ def scanresults(request):
                 'errors': form.errors, 'is_good': False, 'result': False }
         return render(request, 'scan/scanresults.html', context=context, status=400)
 
+    # Unpacking the form data.
     scan_query = form.cleaned_data['scan_query']
     query_tags = [tag.name for tag in form.cleaned_data['query_tags']]
-    debug('query tags: {}'.format(query_tags))
+    start_date = date_fmt(form.cleaned_data['start_date'])
+    end_date = date_fmt(form.cleaned_data['end_date'])
+    allow_undated = form.cleaned_data['allow_undated']
+    minimal_level = site_level_to_numeric(form.cleaned_data['minimal_level'])
+    debug('query tags: {}, minimal level: {}'.format(query_tags, minimal_level))
+    debug('start time: {}, end time: {}'.format(start_date, end_date))
 
     # Is an actual scan requested?
     if 'is_scan' in request.GET and request.GET['is_scan']:
@@ -49,6 +56,7 @@ def scanresults(request):
             job = request_scan((request.user.id if request.user.is_authenticated
                 else get_client_ip(request)),
                 scan_query, query_tags,
+                minimal_level=minimal_level,
                 is_ip=not request.user.is_authenticated,
                 is_privileged=request.user.is_staff)
             progress_info = scan_progress_info(job.id)
@@ -72,8 +80,9 @@ def scanresults(request):
     try:
         omnivore_conn = http.client.HTTPConnection('omnivore', port=4242, timeout=10)
         # TODO query tags
-        omnivore_conn.request('GET', '/result?q={}'.format(quote(scan_query)),
-                headers={'Content-type': 'application/json'})
+        omnivore_conn.request('GET', '/result?q={}&sdate={}&edate={}&und={}'.format(
+            quote(scan_query), start_date, end_date, '1' if allow_undated else '0'),
+            headers={'Content-type': 'application/json'})
         omnivore_response = omnivore_conn.getresponse()
         omnivore_results = json.loads(omnivore_response.read())
         debug('Omnivore responded for {}: {}'.format(scan_query,

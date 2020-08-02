@@ -29,40 +29,28 @@ docker-compose build website
 docker-compose run website python manage.py test scan
 ```
 
-# Installing frontend packages
-
-- add to `package.json` in the webpack directory
-- run `npm install` (on the local machine)
-- add imports in `app/app.scss`, `app/app.js`
-- run `yarnpkg build`
-
 # Debugging
 
-You can use the `--capture=sys` flag in invoking pytest to print stdout/stderr prints, also from
-underlying processes (scrapyp, redditp).
+## Debugging containers
 
-For problems with pytest:
+You can add to the container options in docker-compose.yml:
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
 
-```bash
-# Overview of what the pytest would do.
-docker-compose exec website pytest -m trace --trace searchfront
-docker-compose exec website pytest -v
-```
+Run the container only with the default command, e.g.
+docker-compose run scrapy scrapy crawl general -L DEBUG --pdb
 
-## Debugging Flask
+You sometimes can also see logs with:
 
-Use this for accessing the main app logger from blueprints.
-
-```python
-from flask import current_app
-current_app.logger.info('hey')
-```
+docker-compose logs <container_name>
 
 ## Debugging Postgres
 
 ```bash
 docker-compose exec postgres psql -U teremin
 ```
+
+The container must be running for "exec" to work!
 
 Note that `while True` loops in the website container generally produce an unending stream of
 transaction, so it may have to be restarted.

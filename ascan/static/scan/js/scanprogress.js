@@ -11,12 +11,17 @@ scanSocket.onmessage = function(event) {
       try {
          var eventObj = JSON.parse(event['data'])
          if(eventObj['type'] == 'progress.info') {
-            progressObj = JSON.parse(eventObj['text'])['content']
+            var progressObj = JSON.parse(eventObj['text'])['content']
             document.getElementById('scan_phase').innerHTML = progressObj['phase']
-            document.getElementById('scan_fails').innerHTML = progressObj['fails']
-            document.getElementById('scan_last_url').innerHTML = progressObj['last_url']
-            document.getElementById('scan_dl_proportion').innerHTML = (parseFloat(
-               progressObj['dl_proportion']) * 100).toFixed(2) + '%'
+            if(progressObj['phase'] == 'crawl') {
+               document.getElementById('scan_fails').innerHTML = progressObj['fails']
+               document.getElementById('scan_last_url').innerHTML = progressObj['last_url']
+               document.getElementById('scan_dl_proportion').innerHTML = (parseFloat(
+                  progressObj['dl_proportion']) * 100).toFixed(2) + '%'
+            }
+            if(progressObj['phase'] == 'finished') {
+               window.location.href.replace('is_scan=true', '')
+            }
          }
          else {
             console.log('Unknown websocket event subject in '+JSON.stringify(eventObj))

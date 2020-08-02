@@ -48,7 +48,8 @@ def makesite(request):
                 site_name = re.sub('^www\\.', '', parsed_url.netloc)
                 r_position = site_form.instance.homepage_url.find('/r/')
                 # For reddit, the name is /r/+the subreddit name.
-                if r_position != -1 and re.search('[\\b\.]reddit[\\b\.]', site_name):
+                if r_position != -1 and (re.search('\\.reddit\\.com$', site_name)
+                        or re.search('^reddit\\.com$', site_name)):
                     site_form.instance.site_type = 'reddit'
                     site_form.instance.site_name = site_form.instance.homepage_url[r_position:]
                 else:

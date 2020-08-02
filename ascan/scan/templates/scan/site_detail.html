@@ -1,11 +1,16 @@
 {% extends 'scan/base.html' %}
 {% load bootstrap4 %}
+{% load scan_extras %}
 
 {% block page_title %}Site {{ site.site_name }}{% endblock %}
 
 {% block container %}
 <h2>Site {{ site.site_name }}</h2>
 <table class="table">
+   <tr>
+      <th scope="row">Level</th>
+      <td>{{ site.level | format_site_level }}</td>
+   </tr>
    <tr>
       <th scope="row">Site type</th>
       <td>{{ site.site_type }}</td>

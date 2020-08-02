@@ -5,8 +5,10 @@ import sys
 sys.path.append('/ascan')
 import os
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ascan.settings')
-from django.core.wsgi import get_wsgi_application
-application = get_wsgi_application()
+from channels.routing import get_default_application
+import django
+django.setup()
+application = get_default_application()
 
 # Scrapy settings for genscrap project
 #
@@ -72,9 +74,9 @@ DEFAULT_REQUEST_HEADERS = {
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
-#EXTENSIONS = {
-#    'scrapy.extensions.telnet.TelnetConsole': None,
-#}
+EXTENSIONS = {
+    'scrapy.extensions.telnet.TelnetConsole': None,
+}
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html

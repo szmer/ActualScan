@@ -11,6 +11,10 @@
 {% endif %}
 {% endblock %}
 
+{% block scripts %}
+<script type="application/javascript" src="{% static 'scan/js/chartist.min.js' %}"></script>
+{% endblock %}
+
 {% block container %}
 <h2>{{ scan_phrase }}</h2>
 
@@ -60,9 +64,17 @@
          </tr>
       </tbody>
    </table>
+   <div id='go_to_results'></div>
 
 {# If we have the result, show it. #}
 {% else %}
+{% if result.sentCount == 0 %}
+<div class="p-2">Sorry, we have no information for the specified parameters in the index.</div>
+<noscript><a class="btn btn-primary" href="/">Try something different</a></noscript>
+<script>document.write('<a class="btn btn-primary" href="javascript:history.go(-1)">Try something different</a>')</script>
+{% endif %}
+
+
 {% if result.years %}
 <div class="card">
   <div class="card-header">
