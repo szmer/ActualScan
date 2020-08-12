@@ -74,6 +74,13 @@
 <script>document.write('<a class="btn btn-primary" href="javascript:history.go(-1)">Try something different</a>')</script>
 {% endif %}
 
+{% if possible_feedback %}
+   <script type="text/javascript">
+      window.FEEDBACK_SITE = '{{ possible_feedback.site }}'
+      window.FEEDBACK_TAG = '{{ possible_feedback.tag }}'
+   </script>
+   <script type="application/javascript" src="{% static 'scan/js/feedback_prompt.js' %}"></script>
+{% endif %}
 
 {% if result.years %}
 <div class="card">
@@ -103,7 +110,9 @@
        <p class="card-text">{{ sent.text }}</p>
        <p class="card-text"><small class="text-muted">by {{ sent.author }}
           ({{ sent.date }})
-          at {{ sent.domain }} </small></p>
+          at {{ sent.domain }}</small>
+       {% include "widgets/feedback_prompt.html" with site_name=sent.domain %}
+       </p>
        </div>
        {% endfor %}
 </div>
@@ -123,6 +132,7 @@
                 <span class="card-text">{{ sent.text }}</span>
                 <small class="text-muted">by {{ sent.author }} ({{ sent.date }})
                    at {{ sent.domain }} </small>
+                {% include "widgets/feedback_prompt.html" with site_name=sent.domain %}
              </li>
              {% endfor %}
           </ul>
@@ -141,7 +151,9 @@
        <p class="card-text">{{ sent.text }}</p>
        <p class="card-text"><small class="text-muted">by {{ sent.author }}
           ({{ sent.date }})
-          at {{ sent.domain }} </small></p>
+          at {{ sent.domain }} </small>
+       {% include "widgets/feedback_prompt.html" with site_name=sent.domain %}
+       </p>
        </div>
        {% endfor %}
 </div>

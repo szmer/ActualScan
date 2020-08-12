@@ -1,0 +1,14 @@
+.link-trust-base {
+   font-weight: bold;
+}
+.link-trust-respected {
+}
+.link-trust-community {
+   font-style: italic;
+}
+.link-trust-spam {
+   font-size: small;
+}
+.feedback-prompt {
+   font-size: small;
+}

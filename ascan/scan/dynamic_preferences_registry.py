@@ -1,4 +1,4 @@
-from dynamic_preferences.types import IntegerPreference
+from dynamic_preferences.types import IntegerPreference, FloatPreference
 from dynamic_preferences.registries import global_preferences_registry
 
 # we create some section objects to link related preferences together
@@ -37,7 +37,6 @@ class GuestsScanPermissionsThreshold(IntegerPreference):
     default = 10
     required = True
 
-# how many potential jobs have to be idle to start to issue guest permissions
 @global_preferences_registry.register
 class GuestsScanPermissionTimeToLive(IntegerPreference):
     name = 'guest_scan_permission_time_to_live'
@@ -83,41 +82,54 @@ class SearchPageYieldEstimation(IntegerPreference):
     default = 10
     required = True
 
-# thresholds translating numerical site/tag levels to descriptive levels
+# thresholds translating numerical site/tag link levels to descriptive levels
 @global_preferences_registry.register
-class SiteLevelThresholdBase(IntegerPreference):
-    name = 'site_level_threshold_base'
+class TrustLevelThresholdBase(IntegerPreference):
+    name = 'trust_level_threshold_base'
     default = 1000
     required = True
 @global_preferences_registry.register
-class SiteLevelThresholdRespected(IntegerPreference):
-    name = 'site_level_threshold_respected'
+class TrustLevelThresholdRespected(IntegerPreference):
+    name = 'trust_level_threshold_respected'
     default = 50
     required = True
 @global_preferences_registry.register
-class SiteLevelThresholdCommunity(IntegerPreference):
-    name = 'site_level_threshold_community'
-    default = 0
-    required = True
-@global_preferences_registry.register
-class TagLevelThresholdBase(IntegerPreference):
-    name = 'tag_level_threshold_base'
-    default = 1000
-    required = True
-@global_preferences_registry.register
-class TagLevelThresholdRespected(IntegerPreference):
-    name = 'tag_level_threshold_respected'
-    default = 50
-    required = True
-@global_preferences_registry.register
-class TagLevelThresholdCommunity(IntegerPreference):
-    name = 'tag_level_threshold_community'
+class TrustLevelThresholdCommunity(IntegerPreference):
+    name = 'trust_level_threshold_community'
     default = 0
     required = True
 
-
+# How far back in time should the default scan/index search reach.
 @global_preferences_registry.register
 class DefaultScanTimedeltaStart(IntegerPreference):
     name = 'default_scan_timedelta_start'
     default = 52*10 # in weeks
+    required = True
+
+@global_preferences_registry.register
+class FeedbackPermissionTimeToExist(IntegerPreference):
+    name = 'feedback_permission_time_to_exist'
+    default = 60*60*24*30 # a month (in seconds) before it's deleted from db
+    required = True
+
+# How many times a user can vote on a site (existing permissions from DB are accounted)
+@global_preferences_registry.register
+class SiteFeedbackCountPerUser(IntegerPreference):
+    name = 'site_feedback_count_per_user'
+    default = 2
+    required = True
+
+# How many times we can get feedback for a site-tag connection globally. This should affect IPs and
+# the users with non-established trust.
+@global_preferences_registry.register
+class LinkFeedbackCountGlobally(IntegerPreference):
+    name = 'link_feedback_count_globally'
+    default = 300
+    required = True
+
+# For what proportion of index queries should we try to give an option of feedback.
+@global_preferences_registry.register
+class FeedbackAskFrequency(FloatPreference):
+    name = 'feedback_ask_frequency'
+    default = 0.5
     required = True

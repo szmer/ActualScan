@@ -1,6 +1,5 @@
 {% extends 'scan/base.html' %}
 {% load bootstrap4 %}
-{% load scan_extras %}
 
 {% block page_title %}{% if tag %}{{ tag }} - {% endif %}Sites{% endblock %}
 
@@ -14,26 +13,7 @@
    </div>
 
    {% for site in sites %}
-   <div class="card mb-4" style="width: 18rem;">
-     <div class="card-body">
-        <h5 class="card-title">{{ site.site_name }}</h5>
-        <h6 class="card-subtitle mb-2 text-muted">
-           <strong>{{ site.source_type }}</strong>
-           {% for tag in site.tags.all %}
-           <a href="/manager/tag/{{ tag.id }}/">{{ tag }}</a>
-            {% endfor %}
-        </h6>
-       <p class="card-text">
-       Level:
-       <strong>{{ site.level | format_site_level }}</strong>
-       </p>
-       <p class="card-text">
-       Homepage:
-       <a href="{{site.homepage_url}}">{{site.homepage_url}}</a>
-       </p>
-       <a href="/manager/site/{{ site.id }}/" class="card-link">Details</a>
-     </div>
-   </div>
+   {% include 'scan/site_snippet.html' with site=site %}
    {% endfor %}
 </div>
 {% endblock %}

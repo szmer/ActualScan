@@ -9,7 +9,7 @@ urlpatterns = [
     path('tags/', views.TagList.as_view(), name='tags'),
     path('site/<int:pk>/', views.SiteDetails.as_view(), name='site'),
     path('tag/<int:pk>/', views.TagDetails.as_view(), name='tag'),
-    path('tagsites/<tag>/', views.TagSiteList.as_view(), name='tagsites'),
+    path('tagsites/<str:tag_name>/', views.tagsites, name='tagsites'),
     path('makesite/', views.makesite, name='makesite'),
     path('maketag/', views.maketag, name='maketag'),
 ]

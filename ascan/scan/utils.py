@@ -6,10 +6,6 @@ def date_fmt(time_obj):
     """
     return time_obj.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-def site_level_to_numeric(str_level):
+def trust_level_to_numeric(str_level):
     global_preferences = global_preferences_registry.manager()
-    return global_preferences['site_level_threshold_'+str_level]
-
-def tag_level_to_numeric(str_level):
-    global_preferences = global_preferences_registry.manager()
-    return global_preferences['tag_level_threshold_'+str_level]
+    return global_preferences['trust_level_threshold_'+str_level]

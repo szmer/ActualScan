@@ -7,5 +7,6 @@ import scan.consumers
 application = ProtocolTypeRouter({
     "websocket": AuthMiddlewareStack(URLRouter([
         path("ws/scanprogr/", scan.consumers.ScanProgressConsumer),
+        path("ws/tagfeedback/", scan.consumers.RelevanceFeedbackConsumer),
     ])),
 })

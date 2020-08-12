@@ -65,7 +65,7 @@
 
 (defun sites-stats (tv-sentences &key (max-entries 5) (others-name "others"))
   (let ((result (multiple-value-bind (register flush)
-                  (make-cumulator)
+                  (make-cumulator :keep-freq 3)
                   (dolist (sent tv-sentences)
                     (let ((site-name (read-attribute sent "site_name")))
                       (when site-name (funcall register site-name))))

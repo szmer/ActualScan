@@ -14,8 +14,8 @@
                              (or (read-attribute sent "creator") "someone")
                              (read-attribute sent "site_name")))
         (cons :url (read-attribute sent "url"))
-        (cons :domain (when (read-attribute sent "url")
-                        (purl:url-host (purl:url (read-attribute sent "url")))))))
+        (cons :domain (read-attribute sent "site_name"))))
+                      ;;  (purl:url-host (purl:url (read-attribute sent "url")))))))
 
 ;;; Clear what may remain from the earlier server objects
 (when (and (boundp '*server*) *server*) (hunchentoot:stop *server* :soft nil))

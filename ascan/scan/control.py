@@ -3,7 +3,7 @@ from logging import debug, info, error
 
 from django.db.models import Sum
 
-from scan.models import Tag, ScanJob, ScrapeRequest, ScanPermission
+from scan.models import Tag, ScanJob, ScrapeRequest, ScanPermission, FeedbackPermission
 
 from dynamic_preferences.registries import global_preferences_registry
 
@@ -57,13 +57,45 @@ def maybe_issue_guest_scan_permission(ip_address):
         return True
     return False
 
-def request_scan(user_id, query_phrase : str, query_tags : list, minimal_level=0, force_new=False,
+def maybe_issue_feedback_permission(user_iden, possible_subject_links, is_ip=False):
+    global_preferences = global_preferences_registry.manager()
+    affected_sites = [link.site for link in possible_subject_links]
+    if is_ip:
+        # no matter if used and from when (if they're unimportant, should be deleted)
+        prev_feedbacks = FeedbackPermission.objects.filter(user_ip=user_iden,
+                subject__site__in=affected_sites).all()
+    else:
+        prev_feedbacks = FeedbackPermission.objects.filter(user=user_iden,
+                subject__site__in=affected_sites).all()
+    # Collect how many times we got feedback on each site, to exclude ones that got
+    # many feedbacks.
+    site_feedback_counts = dict()
+    for feedback in prev_feedbacks:
+        if not feedback.subject.site in site_feedback_counts:
+            site_feedback_counts[feedback.subject.site] = 0
+        else:
+            site_feedback_counts[feedback.subject.site] += 1
+    # Go through the possible links and try to find one where feedback should be possible.
+    for link in possible_subject_links:
+        if (not link.site in site_feedback_counts
+                or site_feedback_counts[link.site] < global_preferences['site_feedback_count_per_user']):
+            # TODO apply this only to IPs and untrusted users
+            global_feedback_count = FeedbackPermission.objects.filter(subject=link).count()
+            if global_feedback_count < global_preferences['link_feedback_count_globally']:
+                if is_ip:
+                    FeedbackPermission.objects.create(user_ip=user_iden, subject=link)
+                else:
+                    FeedbackPermission.objects.create(user=user_iden, subject=link)
+                return link
+    return False
+
+def request_scan(user_iden, query_phrase : str, query_tags : list, minimal_level=0, force_new=False,
         is_ip=False, is_privileged=False):
     """
     Put an awaiting scan job in the database. query_tags should be a list of strings. If force_new
     is set and the job already exists, a ValueError is raised. Return the ScanJob object.
 
-    Note that is_ip flag sets how to treat user_id parameter (as user ID in the DB, or as an IP
+    Note that is_ip flag sets how to treat user_iden parameter (as user obj in the DB, or as an IP
     string).
     """
     # TODO also recreate the job if in an inactive status
@@ -92,10 +124,10 @@ def request_scan(user_id, query_phrase : str, query_tags : list, minimal_level=0
         jobs = False
     if not jobs:
         if not is_ip:
-            job = ScanJob.objects.create(user_id=user_id, query_phrase=query_phrase,
+            job = ScanJob.objects.create(user=user_iden, query_phrase=query_phrase,
                     query_tags=query_tags_str, status='waiting')
         else:
-            job = ScanJob.objects.create(user_ip=user_id, query_phrase=query_phrase,
+            job = ScanJob.objects.create(user_ip=user_iden, query_phrase=query_phrase,
                     query_tags=query_tags_str, status='waiting')
         jobs = [job] # the return statement wants a list
     return jobs[0]
@@ -114,7 +146,8 @@ def start_scan(scan_job):
     website_count = 0
     subreddit_count = 0
     for tag in tags:
-        for site in tag.sites.filter(level__gte=scan_job.minimal_level).all():
+        for site_link in tag.site_links.filter(level__gte=scan_job.minimal_level).all():
+            site = site_link.site
             if not site in sites_queried:
                 sites_queried.add(site) # a site can belong to multiple tags
                 info('Starting requests for site (tag {}, scan job {})'.

@@ -2,9 +2,48 @@ import json
 from logging import info, warning
 
 from asgiref.sync import async_to_sync
+from django.db.models import F
 from channels.consumer import SyncConsumer
 
 from scan.control import verify_scan_permission
+from scan.models import TagSiteLink, FeedbackPermission
+
+class RelevanceFeedbackConsumer(SyncConsumer):
+
+    def websocket_connect(self, event):
+        self.send({ 'type': 'websocket.accept' })
+
+    def websocket_disconnect(self, event):
+        self.send({ 'type': 'websocket.disconnected' })
+
+    def websocket_receive(self, event):
+        received_obj = json.loads(event['text'])
+        if received_obj['subject'] == 'tag_feedback':
+            link = TagSiteLink.objects.get(tag__name=received_obj['tag'],
+                    site__site_name=received_obj['site'])
+            level_updated = False
+            if link is not None:
+                if self.scope['user'].is_authenticated:
+                    feedback_perm = FeedbackPermission.objects.get(subject=link,
+                            is_used=False, user=self.scope['user'])
+                else:
+                    feedback_perm = FeedbackPermission.objects.get(subject=link,
+                            is_used=False, user_ip=self.scope['client'][0])
+                if feedback_perm is not None:
+                    feedback_perm.is_used = True
+                    feedback_perm.save()
+                    # Do it as an atomic action to avoid race conditions.
+                    TagSiteLink.objects.filter(tag__name=received_obj['tag'],
+                            site__site_name=received_obj['site']).update(level = (F('level')+1)
+                                    if received_obj['is_positive']
+                                    else (F('level')-1))
+                    level_updated = True
+            if not level_updated:
+                info('Refused to update the level for transmission {}, not found the tag-site link'
+                        ' or the permission'.format(event['text']))
+        else:
+            warning('Received a WebSocket transmission with an unknown subject: {}'.format(
+                received_obj))
 
 class ScanProgressConsumer(SyncConsumer):
 
@@ -32,7 +71,6 @@ class ScanProgressConsumer(SyncConsumer):
             else:
                 self.send({ 'type': 'websocket.send', 'text': 'inquiry_refused' })
         else:
-            self.send({ 'type': 'websocket.send', 'text': 'wut' })
             warning('Received a WebSocket transmission with an unknown subject: {}'.format(
                 received_obj))
 

@@ -10,6 +10,7 @@
       (list :sent-count (length tv-sentences)
             :typical (timed-execution (typical tv-sentences 10))
             :atypical (timed-execution (atypical tv-sentences 10))
+            ;; TODO get those directly from Solr with additional faceting?
             :sites-stats (timed-execution (sites-stats tv-sentences))
             :phrases (timed-execution
                       (phrases-info tv-sentences

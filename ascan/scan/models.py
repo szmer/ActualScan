@@ -4,28 +4,25 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.utils.timezone import now
 
-# NOTE we don't use explicit enums here, because we want the easy discoverability of schema on the
-# Scrapy side.
-#
-### Possible scam jobs statuses:
-#    waiting
-#    working
-#    finished
-#    rejected
-#    terminated
-#
-### Possible request statuses:
-#    waiting # only known, not in the Scrapy queue
-#    scheduled
-#    ran
-#    committed (two m's, to t's!)
-#    failed
-#    cancelled
+SCAN_JOB_STATUSES = [(x, x) for x in [
+    'waiting',
+    'working',
+    'finished',
+    'rejected',
+    'terminated'
+    ]]
+SCRAPE_REQUEST_STATUSES = [(x, x) for x in [
+    'waiting', # only known, not in the Scrapy queue
+    'scheduled',
+    'ran',
+    'committed', # (two m's, to t's!)
+    'failed',
+    'cancelled'
+    ]]
 
 class Tag(models.Model):
     name = models.CharField(max_length=256, unique=True)
     description = models.CharField(max_length=1024)
-    level = models.IntegerField(default=10)
     creator = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='tags', null=True)
 
     def __repr__(self):
@@ -35,7 +32,6 @@ class Tag(models.Model):
         return '/{}/'.format(self.name)
 
 class Site(models.Model):
-    level = models.IntegerField(default=10)
     homepage_url = models.CharField(max_length=8192)
     # Homepage url w/o protocol and www, or /r/subreddit
     site_name = models.CharField(max_length=512, unique=True)
@@ -46,7 +42,6 @@ class Site(models.Model):
             choices=[(v, v) for v in ['blog', 'forums', 'media', 'social']])
     site_type = models.CharField(max_length=32,
             choices=[(v, v) for v in ['web', 'reddit']])
-    tags = models.ManyToManyField(Tag, related_name='sites')
     creator = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='sites', null=True)
 
     # NOTE we should take urlencoding schemes into account
@@ -78,6 +73,17 @@ class Site(models.Model):
                 search_format += next_token_format
             return search_format.format(*tokens)
 
+class TagSiteLink(models.Model):
+    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name='tag_links')
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE, related_name='site_links')
+    level = models.IntegerField(default=10)
+
+    def __repr__(self):
+        return '{}->{}'.format(self.tag.name, self.site.site_name)
+
+    def __str__(self):
+        return '{}->{}'.format(self.tag.name, self.site.site_name)
+
 class ScanPermission(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     user_ip = models.CharField(max_length=64, null=True, blank=True)
@@ -89,7 +95,7 @@ class ScanJob(models.Model):
     # (The job id is also used in reason_scraped in Solr.)
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     user_ip = models.CharField(max_length=64, null=True, blank=True)
-    status = models.CharField(max_length=32)
+    status = models.CharField(max_length=32, choices=SCAN_JOB_STATUSES)
     minimal_level = models.IntegerField(default=0)
     # The difference is that last checked indicates that there is user interest for the scan job,
     # and the status_changed fields stores when the status actually changed recently.
@@ -145,7 +151,7 @@ class ScrapeRequest(models.Model):
     # The job id is also used in reason_scraped in Solr.
     job = models.ForeignKey(ScanJob, related_name='requests', on_delete=models.CASCADE)
     # (job field defined as a backref)
-    status = models.CharField(max_length=32)
+    status = models.CharField(max_length=32, choices=SCRAPE_REQUEST_STATUSES)
     status_changed = models.DateTimeField(auto_now_add=True)
     save_copies = models.BooleanField(default=False)
     failure_comment = models.CharField(max_length=2048)
@@ -155,3 +161,13 @@ class ScrapeRequest(models.Model):
         self.status_changed = now()
         self.save()
         debug('Status of the scrape request {} being changed to {}'.format(self.id, status))
+
+class FeedbackPermission(models.Model):
+    """
+    A permission to the specific user to give feedback on relevance of the specific site-tag link.
+    """
+    subject = models.ForeignKey(TagSiteLink, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    user_ip = models.CharField(max_length=64, null=True, blank=True)
+    time_issued = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)

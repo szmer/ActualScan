@@ -7,7 +7,7 @@ import channels.layers
 from celery import shared_task
 from dynamic_preferences.registries import global_preferences_registry
 
-from scan.models import ScanJob, ScrapeRequest, ScanPermission
+from scan.models import ScanJob, ScrapeRequest, ScanPermission, FeedbackPermission
 from scan.control import start_scan, spare_scan_capacity, scan_progress_info
 
 @shared_task
@@ -25,6 +25,10 @@ def do_scan_management():
             seconds=global_preferences['guest_scan_permission_time_to_live'])
     # __lte is less than (<)
     ScanPermission.objects.filter(time_issued__lte=expiration_threshold).delete()
+    # Similarly with the feedback permissions.
+    expiration_threshold = datetime.now(timezone.utc) - timedelta(
+            seconds=global_preferences['feedback_permission_time_to_exist'])
+    FeedbackPermission.objects.filter(time_issued__lte=expiration_threshold).delete()
     # Mark finished jobs and broadcast progress to WebSockets.
     channel_layer = channels.layers.get_channel_layer()
     for job in ScanJob.objects.all():

@@ -1,8 +1,10 @@
 from django.contrib import admin
 
-from .models import Site, Tag, ScrapeRequest, ScanJob, ScanPermission
+from .models import (
+        Site, Tag, TagSiteLink, ScrapeRequest, ScanJob, ScanPermission, FeedbackPermission
+        )
 
-class ScanPermissionAdmin(admin.ModelAdmin):
+class PermissionAdmin(admin.ModelAdmin):
     readonly_fields = ('time_issued',)
 
 class ScanJobAdmin(admin.ModelAdmin):
@@ -13,6 +15,8 @@ class ScrapeRequestAdmin(admin.ModelAdmin):
 
 admin.site.register(Site)
 admin.site.register(Tag)
-admin.site.register(ScanPermission, ScanPermissionAdmin)
+admin.site.register(TagSiteLink)
+admin.site.register(FeedbackPermission, PermissionAdmin)
+admin.site.register(ScanPermission, PermissionAdmin)
 admin.site.register(ScrapeRequest, ScrapeRequestAdmin)
 admin.site.register(ScanJob, ScanJobAdmin)

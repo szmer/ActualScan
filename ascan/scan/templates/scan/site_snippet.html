@@ -1,0 +1,19 @@
+{% load bootstrap4 %}
+{% load scan_extras %}
+<div class="card mb-4" style="width: 18rem;">
+     <div class="card-body">
+        <h5 class="card-title">{{ site.site_name }}</h5>
+        <h6 class="card-subtitle mb-3 text-muted">
+           <strong>{{ site.source_type }}</strong>
+           {% for tag_link in site.tag_links.all %}
+           <a href="/manager/tag/{{ tag_link.tag.id }}/" class="link-trust-{{ tag_link.level | format_trust_level }}">
+              {{ tag_link.tag.name }}
+           </a>
+            {% endfor %}
+        </h6>
+       <p class="card-text"><small>
+       <a href="{{site.homepage_url}}">{{site.homepage_url}}</a>
+       </small></p>
+       <a href="/manager/site/{{ site.id }}/" class="card-link">Details</a>
+     </div>
+   </div>
