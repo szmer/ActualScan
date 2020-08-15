@@ -7,6 +7,7 @@ channels-redis==3.0.0
 
 # Django extensions.
 django-bootstrap4==2.1.1
+django-crispy-forms==1.9.2
 django-ipware==2.1.0
 django-dynamic-preferences==1.9
 

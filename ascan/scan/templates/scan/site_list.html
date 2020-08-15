@@ -5,11 +5,11 @@
 
 {% block container %}
 <h2>Sites{% if tag %} tagged <a href="/manager/tag/{{ tag_id }}/">{{ tag }}</a>{% endif %}</h2>
-<div class="card-deck">
-   <div class="card mb-4" style="width: 18rem;">
-     <div class="card-body">
-        <h4 class="card-title"><a href="/manager/makesite/">Add a new site</a></h4>
-     </div>
+<div class="card-columns">
+   <div class="card mb-4">
+      <div class="card-body">
+         <h4 class="card-title"><a href="/manager/makesite/">Add a new site</a></h4>
+      </div>
    </div>
 
    {% for site in sites %}

@@ -2,6 +2,8 @@ from logging import info
 import re
 from urllib.parse import urlparse
 
+from django.core.validators import URLValidator
+from django.core.exceptions import ValidationError
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import Error, IntegrityError
@@ -12,6 +14,12 @@ from django.views.generic.detail import DetailView
 from manager.forms import SiteForm, TagForm
 from scan.models import Site, Tag, TagSiteLink
 from scan.templatetags.scan_extras import format_trust_level
+
+class HomeURLParsingError(Error):
+    pass
+
+class SearchURLParsingError(Error):
+    pass
 
 class SiteList(ListView):
     model = Site
@@ -41,20 +49,60 @@ def tagsites(request, tag_name):
 
 @login_required
 def makesite(request):
+    submitted = False
     if request.method == 'POST':
+        submitted = True
         site_form = SiteForm(request.POST)
         if site_form.is_valid():
             try:
                 # Derive the site name and type.
-                parsed_url = urlparse(site_form.instance.homepage_url)
-                site_name = re.sub('^www\\.', '', parsed_url.netloc)
                 r_position = site_form.instance.homepage_url.find('/r/')
-                # For reddit, the name is /r/+the subreddit name.
-                if r_position != -1 and (re.search('\\.reddit\\.com$', site_name)
-                        or re.search('^reddit\\.com$', site_name)):
+                # For reddit, the name is /r/+the subreddit name. The user can submit only the /r/
+                # part without the full URL.
+                if r_position != -1 and (
+                        re.search('^[^/]*\\.reddit\\.com/',
+                            site_form.instance.search_pointer)
+                        or re.search('^reddit\\.com',
+                            site_form.instance.search_pointer)
+                        or r_position == 0):
                     site_form.instance.site_type = 'reddit'
-                    site_form.instance.site_name = site_form.instance.homepage_url[r_position:]
+                    # Where does the subreddit name end.
+                    r_end = site_form.instance.homepage_url[r_position+len('/r/'):].find('/')
+                    if r_end != -1:
+                        r_end = len(site_form.instance.homepage_url[r_position:])
+                    site_form.instance.site_name = site_form.instance.homepage_url[r_position:r_end]
+                    site_form.instance.search_pointer = site_form.instance.site_name[len('/r/'):]
+                    site_form.instance.homepage_url = ('https://reddit.com'
+                            + site_form.instance.homepage_url[r_position:r_end])
+                    site_form.instance.source_type = 'forums' # regardless of the user's input
                 else:
+                    if not site_form.instance.homepage_url.startswith('http'):
+                        site_form.instance.homepage_url = 'http://' + site_form.instance.homepage_url
+                    if not site_form.instance.search_pointer.startswith('http'):
+                        site_form.instance.search_pointer = ('http://'
+                                + site_form.instance.search_pointer)
+                    validator = URLValidator()
+                    # Test that the search pointer is a valid URL.
+                    try:
+                        validator(site_form.instance.search_pointer)
+                        parsed_url = urlparse(site_form.instance.search_pointer)
+                    except ValidationError as e:
+                        raise SearchURLParsingError(site_form.instance.search_pointer, *e.args)
+                    except ValueError as e:
+                        raise SearchURLParsingError(site_form.instance.search_pointer, *e.args)
+                    if not (Site.MOCK_STR1 in parsed_url.path+parsed_url.params+parsed_url.query
+                            and Site.MOCK_STR2 in parsed_url.path+parsed_url.params+parsed_url.query):
+                        info(Site.MOCK_STR1+' '+parsed_url.path+parsed_url.params+parsed_url.query)
+                        raise SearchURLParsingError('no mock strs', site_form.instance.search_pointer)
+                    # Test and parse the homepage URL.
+                    try:
+                        validator(site_form.instance.homepage_url)
+                        parsed_url = urlparse(site_form.instance.homepage_url)
+                    except ValidationError as e:
+                        raise HomeURLParsingError(site_form.instance.homepage_url, *e.args)
+                    except ValueError as e:
+                        raise HomeURLParsingError(site_form.instance.homepage_url, *e.args)
+                    site_name = re.sub('^www\\.', '', parsed_url.netloc)
                     site_form.instance.site_type = 'web'
                     site_form.instance.site_name = site_name
 
@@ -78,15 +126,25 @@ def makesite(request):
 
                 # Return to the list of sites.
                 return redirect('manager:sites')
-            except ValueError as e:
+            except HomeURLParsingError as e:
                 info(e)
-                messages.add_message(request, messages.ERROR, 'There was a problem with the form.')
+                messages.add_message(request, messages.ERROR, 'We couldn\'t enter the address that'
+                        ' you\'ve provided: {}'.format(site_form.instance.homepage_url))
+            except SearchURLParsingError as e:
+                info(e)
+                messages.add_message(request, messages.ERROR, 'We couldn\'t use the search address'
+                        ' that you\'ve provided: {}'.format(site_form.instance.search_pointer))
             except IntegrityError as e:
                 info(e)
-                messages.add_message(request, messages.ERROR, 'Some site data seems duplicated.')
+                messages.add_message(request, messages.ERROR, 'Some site data seems to duplicate '
+                        'what we already have.')
+            except ValueError as e:
+                info(e)
+                messages.add_message(request, messages.ERROR, 'There was a technical error with the'
+                        'form.')
     else:
         site_form = SiteForm()
-    context = { 'form': site_form }
+    context = { 'form': site_form, 'site_form_submitted': submitted }
     return render(request, 'manager/makesite.html', context)
 
 @login_required

@@ -7,7 +7,7 @@
 {% block container %}
 <h2>Sites{% if tag %} tagged <a href="/manager/tag/{{ tag_id }}/">{{ tag }}</a>{% endif %}</h2>
 <h3>Base tier</h3>
-<div class="card-deck">
+<div class="card-columns">
    {% for site in base_sites %}
    {% include 'scan/site_snippet.html' with site=site %}
    {% endfor %}
@@ -15,7 +15,7 @@
 </div>
 
 <h3>Respected tier</h3>
-<div class="card-deck">
+<div class="card-columns">
    {% for site in respected_sites %}
    {% include 'scan/site_snippet.html' with site=site %}
    {% endfor %}
@@ -23,7 +23,7 @@
 </div>
 
 <h3>Community tier</h3>
-<div class="card-deck">
+<div class="card-columns">
    {% for site in community_sites %}
    {% include 'scan/site_snippet.html' with site=site %}
    {% endfor %}
@@ -31,7 +31,7 @@
 </div>
 
 <h3>Spam tier</h3>
-<div class="card-deck">
+<div class="card-columns">
    {% for site in spam_sites %}
    {% include 'scan/site_snippet.html' with site=site %}
    {% endfor %}

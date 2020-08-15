@@ -35,7 +35,7 @@ class Site(models.Model):
     homepage_url = models.CharField(max_length=8192)
     # Homepage url w/o protocol and www, or /r/subreddit
     site_name = models.CharField(max_length=512, unique=True)
-    # An url with search for "fat cat", represented as |||fat||| |||cat|||
+    # An url with search for "twenty cats"
     # For Reddit, the subreddit name without /r/
     search_pointer = models.CharField(max_length=8192)
     source_type = models.CharField(max_length=32,
@@ -45,8 +45,8 @@ class Site(models.Model):
     creator = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='sites', null=True)
 
     # NOTE we should take urlencoding schemes into account
-    MOCK_STR1 = '|||fat|||'
-    MOCK_STR2 = '|||cat|||'
+    MOCK_STR1 = 'twenty'
+    MOCK_STR2 = 'cats'
 
     def __repr__(self):
         return 'site: {}'.format(self.site_name)
@@ -119,6 +119,12 @@ class ScanJob(models.Model):
         self.save()
         debug('Status of the job {} being changed to {}'.format(self.id, status))
 
+    def __repr__(self):
+        return 'job {}/{}, {}'.format(self.query_phrase, self.query_tags, self.status)
+
+    def __str__(self):
+        return 'job {}/{}, {}'.format(self.query_phrase, self.query_tags, self.status)
+
 class ScrapeRequest(models.Model):
     """
     ScrapeRequest represents one page/URL to be scraped by Scrapy.
@@ -161,6 +167,12 @@ class ScrapeRequest(models.Model):
         self.status_changed = now()
         self.save()
         debug('Status of the scrape request {} being changed to {}'.format(self.id, status))
+
+    def __repr__(self):
+        return 'request {}, {}'.format(self.target, self.status)
+
+    def __str__(self):
+        return 'request {}, {}'.format(self.target, self.status)
 
 class FeedbackPermission(models.Model):
     """

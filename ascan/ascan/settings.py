@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.admin',
     'channels',
     'bootstrap4',
+    'crispy_forms',
     'dynamic_preferences',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -165,3 +166,6 @@ CHANNEL_LAYERS = {
 
 # ASGI - Django channels
 ASGI_APPLICATION = "ascan.routing.application"
+
+# Crispy forms.
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
