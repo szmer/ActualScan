@@ -20,7 +20,7 @@ scanSocket.onmessage = function(event) {
                   progressObj['dl_proportion']) * 100).toFixed(2) + '%'
             }
             if(progressObj['phase'] == 'finished') {
-               window.location.href.replace('is_scan=true', '')
+               window.location.href = window.location.href.replace('is_scan=true', '')
             }
          }
          else {

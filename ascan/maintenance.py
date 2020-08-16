@@ -1,16 +1,39 @@
+import argparse
 from datetime import datetime, timedelta, timezone
 import json
-from logging import debug, info, warning
+import logging
+from logging import getLogger, debug, info
+#
+# Read command line args.
+#
+argparser = argparse.ArgumentParser(description=
+        'Run the maintenance script running ActualScan DB maintenance task in loop.')
+argparser.add_argument('-L', '--loglevel', help='Logging level.')
+
+args = argparser.parse_args()
+logger = getLogger()
+logging.basicConfig()
+if args.loglevel:
+    logger.setLevel(args.loglevel)
+logger.info('Starting the maintenance loop.')
+
+# Connect to Django.
+import sys
+sys.path.append('/ascan')
+import os
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ascan.settings')
+import django
+django.setup()
+from channels.routing import get_default_application
+application = get_default_application()
 
 from asgiref.sync import async_to_sync
 import channels.layers
-from celery import shared_task
 from dynamic_preferences.registries import global_preferences_registry
 
 from scan.models import ScanJob, ScrapeRequest, ScanPermission, FeedbackPermission
 from scan.control import start_scan, spare_scan_capacity, scan_progress_info
 
-@shared_task
 def do_scan_management():
     """
     Returns a dictionary: {}.
@@ -43,7 +66,7 @@ def do_scan_management():
                             }),
                         })
         except Exception as e:
-            warning(e)
+            info('Websocket notification error: {}'.format(repr(e)))
         # The threshold to get scan jobs terminated due to timeout.
         scan_job_time_threshold = datetime.now(timezone.utc) - timedelta(
             seconds=global_preferences['scan_job_time_to_live'])
@@ -88,3 +111,6 @@ def do_scan_management():
         info('Removing {} old scrape reqs.'.format(len(old_reqs_finished)))
     old_reqs_finished.delete()
     return {'spare_capacity': spare_capacity}
+
+while True:
+    do_scan_management()

@@ -19,23 +19,17 @@ services:
      volumes:
         - ./ascan:/ascan
 
-  worker:
+  maintenance:
      build:
         context: .
         dockerfile: Dockerfile_website
-    # The command should read the config and the task list entry from celeryconfig.py
-    # 
-    # -B enables celery beat, from docs: "is is convenient if you’ll never run more than one worker
-    # node, but it’s not commonly used and for that reason isn’t recommended for production use"
-    # (but will do for now)
-     command: celery worker -B -E
+     command: python3 maintenance.py -L WARNING
      working_dir: /ascan
      env_file:
         - ".env"
      volumes:
         - ./ascan:/ascan
      depends_on:
-        - redis
         - website # to get DB initialization
 
   scrapy:
@@ -116,6 +110,7 @@ services:
      env_file:
         - '.env'
 
+   # Needed for Django Channels.
   redis:
     image: 'redis:6.0-rc'
     command: 'redis-server /usr/local/etc/redis/redis.conf'

@@ -76,6 +76,8 @@ DEFAULT_REQUEST_HEADERS = {
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
 EXTENSIONS = {
     'scrapy.extensions.telnet.TelnetConsole': None,
+    # don't close the spider on errors
+    'scrapy.extensions.closespider.CloseSpider': None
 }
 
 # Configure item pipelines

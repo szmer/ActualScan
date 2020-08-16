@@ -38,11 +38,26 @@ class GeneralSpider(scrapy.Spider):
         yield scrapy.Request(url=SOLR_PING_URL, callback=self.monitoring_parse,
                 errback=self.fail)
 
-    def fail(self, failure):
+    async def fail(self, failure):
         """
         This is to be called as errback for Scrapy requests to log HTTP, DNS errors etc.
         """
-        error(repr(failure))
+        error('Scrapy error deferred to errback: '.format(repr(failure)))
+
+        # Check if a new monitoring request is necessary. TODO check jobs instead maybe?
+        scrape_requests_waiting_count = await sync_to_async(ScrapeRequest.objects.filter(
+            status='waiting', site_type='web').count)()
+        if scrape_requests_waiting_count == 0:
+            yield scrapy.Request(url=SOLR_PING_URL, callback=self.monitoring_parse,
+                    errback=self.fail)
+
+        # Update the ScrapeRequest if possible.
+        db_request = await sync_to_async(list)(
+                ScrapeRequest.objects.filter(id=failure.request.meta['id']).all())
+        db_request = db_request[0]
+        await sync_to_async(update_request_status)(db_request, 'failed',
+                failure_comment='Scrapy reported {}'.format(repr(failure)))
+        
 
     def save_page_to_disk(self, db_path, url, page_html, meta):
         """
@@ -196,8 +211,14 @@ class GeneralSpider(scrapy.Spider):
             site_obj = await sync_to_async(list)(Site.objects.filter(
                 id=response.meta['site_id']).all())
             site_obj = site_obj[0]
-            site_tags = await sync_to_async(list)(site_obj.tags.all())
-            site_tags = [tag.name for tag in site_tags]
+            # We select_related to avoid Django complaining about getting tags in async.
+            site_tag_links = await sync_to_async(list)(site_obj.tag_links.select_related(
+                'tag').all())
+            try:
+                site_tags = [tag_link.tag.name for tag_link in site_tag_links]
+            except Exception as e:
+                info('{}: {}'.format(type(e).__name__, str(e)))
+                return
             if stractor_response_json is not None and stractor_response_json:
                 for doc in stractor_response_json:
                     doc['date_retr'] = timestamp_now()

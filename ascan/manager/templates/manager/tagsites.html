@@ -5,11 +5,11 @@
 {% block page_title %}Sites tagged {{ tag }}{% endblock %}
 
 {% block container %}
-<h2>Sites{% if tag %} tagged <a href="/manager/tag/{{ tag_id }}/">{{ tag }}</a>{% endif %}</h2>
+<h2>Sites{% if tag %} tagged <a href="/manager/tagname/{{ tag }}/">{{ tag }}</a>{% endif %}</h2>
 <h3>Base tier</h3>
 <div class="card-columns">
    {% for site in base_sites %}
-   {% include 'scan/site_snippet.html' with site=site %}
+   {% include 'widgets/site_snippet.html' with site=site %}
    {% endfor %}
    {% if not base_sites %}<div class="m-3">None yet.</div>{% endif %}
 </div>
@@ -17,7 +17,7 @@
 <h3>Respected tier</h3>
 <div class="card-columns">
    {% for site in respected_sites %}
-   {% include 'scan/site_snippet.html' with site=site %}
+   {% include 'widgets/site_snippet.html' with site=site %}
    {% endfor %}
    {% if not respected_sites %}<div class="m-3">None yet.</div>{% endif %}
 </div>
@@ -25,7 +25,7 @@
 <h3>Community tier</h3>
 <div class="card-columns">
    {% for site in community_sites %}
-   {% include 'scan/site_snippet.html' with site=site %}
+   {% include 'widgets/site_snippet.html' with site=site %}
    {% endfor %}
    {% if not community_sites %}<div class="m-3">None yet.</div>{% endif %}
 </div>
@@ -33,7 +33,7 @@
 <h3>Spam tier</h3>
 <div class="card-columns">
    {% for site in spam_sites %}
-   {% include 'scan/site_snippet.html' with site=site %}
+   {% include 'widgets/site_snippet.html' with site=site %}
    {% endfor %}
    {% if not spam_sites %}<div class="m-3">None yet.</div>{% endif %}
 {% endblock %}

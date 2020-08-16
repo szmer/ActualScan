@@ -120,10 +120,10 @@ class ScanJob(models.Model):
         debug('Status of the job {} being changed to {}'.format(self.id, status))
 
     def __repr__(self):
-        return 'job {}/{}, {}'.format(self.query_phrase, self.query_tags, self.status)
+        return '({})job {}/{}, {}'.format(self.pk, self.query_phrase, self.query_tags, self.status)
 
     def __str__(self):
-        return 'job {}/{}, {}'.format(self.query_phrase, self.query_tags, self.status)
+        return '({})job {}/{}, {}'.format(self.pk, self.query_phrase, self.query_tags, self.status)
 
 class ScrapeRequest(models.Model):
     """
@@ -169,10 +169,10 @@ class ScrapeRequest(models.Model):
         debug('Status of the scrape request {} being changed to {}'.format(self.id, status))
 
     def __repr__(self):
-        return 'request {}, {}'.format(self.target, self.status)
+        return '({})request {}, {}'.format(self.pk, self.target, self.status)
 
     def __str__(self):
-        return 'request {}, {}'.format(self.target, self.status)
+        return '({})request {}, {}'.format(self.pk, self.target, self.status)
 
 class FeedbackPermission(models.Model):
     """

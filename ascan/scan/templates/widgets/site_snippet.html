@@ -6,7 +6,7 @@
       <h6 class="card-subtitle mb-3 text-muted">
          <strong>{{ site.source_type }}</strong>
          {% for tag_link in site.tag_links.all %}
-         <a href="/manager/tag/{{ tag_link.tag.id }}/" class="link-trust-{{ tag_link.level | format_trust_level }}">
+         <a href="/manager/tagsites/{{ tag_link.tag.name }}/" class="link-trust-{{ tag_link.level | format_trust_level }}">
             {{ tag_link.tag.name }}
          </a>
          {% endfor %}

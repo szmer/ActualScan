@@ -37,6 +37,13 @@ class TagDetails(DetailView):
     model = Tag
     context_object_name = 'tag'
 
+def tagname(request, tag_name):
+    """
+    Look up the tag by name instead of the primary key.
+    """
+    tag = get_object_or_404(Tag, name=tag_name)
+    return render(request, 'scan/tag_detail.html', { 'tag': tag })
+
 def tagsites(request, tag_name):
     tag_site_links = get_object_or_404(Tag, name=tag_name).site_links.all()
     context = dict([(label, []) for label in ['base_sites', 'respected_sites', 'community_sites',
@@ -90,8 +97,9 @@ def makesite(request):
                         raise SearchURLParsingError(site_form.instance.search_pointer, *e.args)
                     except ValueError as e:
                         raise SearchURLParsingError(site_form.instance.search_pointer, *e.args)
-                    if not (Site.MOCK_STR1 in parsed_url.path+parsed_url.params+parsed_url.query
-                            and Site.MOCK_STR2 in parsed_url.path+parsed_url.params+parsed_url.query):
+                    url_later_part = (parsed_url.path+parsed_url.params+parsed_url.query
+                            +parsed_url.fragment)
+                    if not (Site.MOCK_STR1 in url_later_part and Site.MOCK_STR2 in url_later_part):
                         info(Site.MOCK_STR1+' '+parsed_url.path+parsed_url.params+parsed_url.query)
                         raise SearchURLParsingError('no mock strs', site_form.instance.search_pointer)
                     # Test and parse the homepage URL.

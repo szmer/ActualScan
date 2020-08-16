@@ -4,15 +4,17 @@
 
 {% block page_title %}{% if scan_phrase %}{{ scan_phrase }}{% else %}Searching{% endif %}{% endblock %}
 
-{# TODO add noscript when ready #}
 {% block metas %}
 {% if is_good and not result %}
+<noscript>
 <meta http-equiv="refresh" content="2">
+</noscript>
 {% endif %}
 {% endblock %}
 
 {% block scripts %}
 <script type="application/javascript" src="{% static 'scan/js/chartist.min.js' %}"></script>
+<link rel="stylesheet" href="{% static 'scan/css/chartist.min.css' %}">
 {% endblock %}
 
 {% block container %}
@@ -59,8 +61,8 @@
          <td id='scan_last_url'>{% if status_data.last_url %}{{ status_data.last_url }}{% else %}-{% endif %}</td>
          </tr>
          <tr>
-         <th scope="row">% done (estimated)</th>
-         <td id='scan_dl_proportion'>{% if status_data.dl_proportion %}{{ status_data.dl_proportion }}{% else %}-{% endif %}</td>
+         <th scope="row">at least % done (estimated)</th>
+         <td id='scan_dl_proportion'>{% if status_data.dl_proportion %}{% widthratio status_data.dl_proportion 1 100 %}%{% else %}-{% endif %}</td>
          </tr>
       </tbody>
    </table>
@@ -69,7 +71,7 @@
 {# If we have the result, show it. #}
 {% else %}
 {% if result.sentCount == 0 %}
-<div class="p-2">Sorry, we have no information for the specified parameters in the index.</div>
+<div class="p-2">Sorry, we have no sufficient information for the specified parameters in the index.</div>
 <noscript><a class="btn btn-primary" href="/">Try something different</a></noscript>
 <script>document.write('<a class="btn btn-primary" href="javascript:history.go(-1)">Try something different</a>')</script>
 {% endif %}
@@ -87,7 +89,9 @@
   <div class="card-header">
     Trend
   </div>
-  <div class="ct-chart-trend ct-golden-section"></div>
+  <div class="chart">
+  <div id="ct-chart-trend" class="ct-chart ct-golden-section"></div>
+  </div>
 </div>
 {% endif %}
 
@@ -96,7 +100,7 @@
   <div class="card-header">
     Sites
   </div>
-  <div class="ct-chart-sites ct-golden-section"></div>
+  <div id="ct-chart-sites" class="ct-chart ct-golden-section"></div>
 </div>
 {% endif %}
 
@@ -185,13 +189,13 @@ var sitesData = {
    labels: [{% for site in result.sitesStats %}'{{ site.site }}',{% endfor %}],
    series: [{% for site in result.sitesStats %}{{ site.frequency }},{% endfor %}]
 };
-new Chartist.Pie('.ct-chart-sites', sitesData, chartOptions, chartResponsiveOptions);
+new Chartist.Pie('#ct-chart-sites', sitesData, chartOptions, chartResponsiveOptions);
 {% endif %}
 
 {% if result.years %}
 var years = [{% for y in result.years %}'{{ y }}',{% endfor %}];
 var yearCounts = [{% for c in result.yearCounts %}{{ c }},{% endfor %}];
-new Chartist.Line('.ct-chart-trend', {labels: years, series: [yearCounts]}, chartOptions);
+new Chartist.Line('#ct-chart-trend', {labels: years, series: [yearCounts]}, chartOptions);
 {% endif %}
 </script>
 

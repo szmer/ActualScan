@@ -20,7 +20,7 @@ Scrapy==2.2.1
 simpleflock==0.0.3
 
 # Reddit scraper.
-praw==6.5.1
+praw==7.1.0
 Markdown==3.2.1
 markdown-strikethrough==0.1.1
 mdx-linkify==1.4

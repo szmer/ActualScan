@@ -14,6 +14,9 @@ import django
 django.setup()
 
 import praw
+from praw.models import Comment, Submission
+from praw.exceptions import PRAWException
+from prawcore.exceptions import NotFound, ServerError
 
 # Basic NLP.
 from sentence_splitter import SentenceSplitter
@@ -105,6 +108,102 @@ def make_scrape_request(target, job_id, status='ran'):
             site_type='reddit',
             save_copies=search_scrape_request.save_copies)
 
+def process_submission(submission, submission_scrape_request, subreddit_tags=None):
+    if subreddit_tags is None:
+        subreddit_tags = [tag_link.tag.name for tag_link in Site.objects.get(
+            id=submission_scrape_request.site_id).tag_links.all()]
+    try:
+        if ok(submission, 'selftext'):
+            submission_obj = {'reason_scraped': submission_scrape_request.job_id,
+                    'source_type': 'f',
+                    'date_retr': date_fmt(datetime.now(tz=timezone.utc)),
+                    'tags': subreddit_tags }
+            submission_obj['text'] = format_text(submission.selftext)
+            if ok(submission, 'permalink'):
+                submission_obj['url'] = 'https://reddit.com'+submission.permalink
+            else:
+                update_request_status(submission_scrape_request, 'failed',
+                        failure_comment='no permalink')
+                return
+            submission_obj['real_doc'] = 'self'
+            if ok(submission, 'author'):
+                submission_obj['author'] = submission.author.name
+            if ok(submission, 'created_utc'):
+                time_obj = datetime.fromtimestamp(submission.created_utc)
+                submission_obj['date_post'] = date_fmt(time_obj)
+            if ok(submission, 'subreddit'):
+                if ok(submission.subreddit, 'display_name'):
+                    submission_obj['site_name'] = '/r/' + submission.subreddit.display_name
+                if ok(submission.subreddit, 'over_18') and submission.subreddit.over_18:
+                    submission_obj['adult_b'] = True
+            # Send to Solr.
+            solr_json_text = json.dumps([submission_obj])
+            solr_update(solr_json_text, req_id=submission_scrape_request.id,
+                    req_class=ScrapeRequest)
+            update_request_status(submission_scrape_request, 'committed')
+
+            # Make the comment objects (Solr documents).
+            for comment in submission.comments.list():
+                # Notify the database.
+                comment_scrape_request = make_scrape_request(comment.permalink,
+                           submission_scrape_request.job_id)
+                process_comment(comment, comment_scrape_request,
+                        subreddit_tags=subreddit_tags)
+    except (PRAWException, NotFound, ServerError) as e:
+        update_request_status(submission_scrape_request, 'failed',
+                failure_comment='{}: {}'.format(type(e).__name__, str(e)))
+
+def process_comment(comment, comment_scrape_request, subreddit_tags=None):
+    if subreddit_tags is None:
+        subreddit_tags = [tag_link.tag.name for tag_link in Site.objects.get(
+            id=comment_scrape_request.site_id).tag_links.all()]
+    try:
+        # Having a permalink is crucial to even indexing the comment.
+        if ok(comment, 'permalink'):
+            comment_permalink = 'https://reddit.com'+comment.permalink
+        else:
+            update_request_status(comment_scrape_request, 'failed',
+                    failure_comment='no permalink')
+            return
+        comment_obj = {'reason_scraped': comment_scrape_request.job_id,
+                'source_type': 'f',
+                'date_retr': date_fmt(datetime.now(tz=timezone.utc)),
+                'url': comment_permalink, 'tags': subreddit_tags }
+        if ok(comment, 'body'):
+            comment_obj['text'] = format_text(comment.body)
+            if not comment_obj['text']:
+                update_request_status(comment_scrape_request, 'failed',
+                        failure_comment='no extractable text')
+                return
+        else:
+            update_request_status(comment_scrape_request, 'failed',
+                    failure_comment='no text body')
+            return
+        # TODO ? it would be better to set here the link to whole discussion set on this
+        # particular comment
+        comment_obj['real_doc'] = 'https://reddit.com'+comment.submission.permalink
+        if ok(comment, 'author'):
+            comment_obj['author'] = comment.author.name
+        if ok(comment, 'created_utc'):
+            time_obj = datetime.fromtimestamp(comment.created_utc)
+            comment_obj['date_post'] = date_fmt(time_obj)
+        if ok(comment, 'subreddit'):
+            if ok(comment.subreddit, 'display_name'):
+                comment_obj['site_name'] = '/r/' + comment.subreddit.display_name
+            if ok(comment.subreddit, 'over_18') and comment.subreddit.over_18:
+                comment_obj['adult_b'] = True
+        # Send to Solr (this needs a manual commit).
+        solr_json_text = json.dumps([comment_obj])
+        solr_update(solr_json_text, req_id=comment_scrape_request.id,
+                req_class=ScrapeRequest)
+        # Do the manual commit.
+        solr_update('{"commit": {}}', req_id=comment_scrape_request.id,
+                req_class=ScrapeRequest)
+        update_request_status(comment_scrape_request, 'committed')
+    except (PRAWException, NotFound, ServerError) as e:
+        update_request_status(comment_scrape_request, 'failed',
+                failure_comment='{}: {}'.format(type(e).__name__, str(e)))
+
 #
 # Monitor for new search ScrapeRequests and handle them.
 #
@@ -114,11 +213,25 @@ REDDIT_SEARCH_DEPTH = global_preferences['reddit_search_depth']
 REDDIT_MANY_COMMENTS_THRESHOLD = global_preferences['reddit_many_comments_threshold']
 REDDIT_MANY_COMMENTS_MINSCORE_RATIO = global_preferences['reddit_many_comments_minscore_ratio']
 
-logger.debug('Reddit scraper connecting to Reddit.')
+logger.info('Reddit scraper connecting to Reddit.')
 reddit = praw.Reddit(user_agent=REDDIT_UA, client_id=REDDIT_CLIENT, client_secret=REDDIT_SECRET)
+
+logger.info('Rerunning the leftover requests.')
+leftover_scrape_requests= ScrapeRequest.objects.filter(
+    site_type='reddit',
+    status__in=['waiting', 'ran'],
+    is_search=False)
+for scrape_request in leftover_scrape_requests:
+    slash_count = scrape_request.target.count('/')
+    if slash_count == 6:
+        submission = Submission(reddit, url='https://reddit.com'+scrape_request.target)
+        process_submission(submission, scrape_request)
+    elif slash_count == 7:
+        comment = Comment(reddit, url='https://reddit.com'+scrape_request.target)
+        process_comment(comment, scrape_request)
 # This looks for new awaiting ScrapeRequests in the database, put there by start_scan from
 # scan schedule control, from a ScanJob.
-logger.debug('Reddit scraper running.')
+logger.info('Reddit scraper running.')
 while True:
     # Get new search requests.
     search_scrape_requests_waiting = ScrapeRequest.objects.filter(
@@ -133,24 +246,30 @@ while True:
         try:
             subreddit_name = search_scrape_request.site_name[len('/r/'):]
         except:
+            update_request_status(search_scrape_request, 'failed',
+                    failure_comment='no /r/ in search_scrape_request.site_name')
             continue
-        subreddit = reddit.subreddit(subreddit_name)
-        subreddit_tags = [tag.name for tag in Site.objects.get(
-            id=search_scrape_request.site_id).tags.all()]
+        try:
+            subreddit = reddit.subreddit(subreddit_name)
+            subreddit_tags = [tag_link.tag.name for tag_link in Site.objects.get(
+                id=search_scrape_request.site_id).tag_links.all()]
 
-        submissions = subreddit.search('title:{} OR selftext:{}'.format(
-            search_phrase, search_phrase), sort='comments', limit=REDDIT_SEARCH_DEPTH)
-        # We now need to get the count of the comments, to have an accurate progress estimation.
-        # Note that this will load all submission objects, which can take a while.
-        submissions_list = []
-        submission_requests = dict() # permalink -> request id, for easy retrieval
-        for submission in submissions:
-            if not ok(submission, 'permalink'):
-                continue
-            submission_scrape_request = make_scrape_request(submission.permalink,
-                    search_scrape_request.job_id, status='scheduled')
-            submissions_list.append(submission)
-            submission_requests[submission.permalink] = submission_scrape_request.id
+            submissions = subreddit.search('title:{} OR selftext:{}'.format(
+                search_phrase, search_phrase), sort='comments', limit=REDDIT_SEARCH_DEPTH)
+            # We now need to get the count of the comments, to have an accurate progress estimation.
+            # Note that this will load all submission objects, which can take a while.
+            submissions_list = []
+            submission_requests = dict() # permalink -> request id, for easy retrieval
+            for submission in submissions: # is seems that here bad subreddit names may fail
+                if not ok(submission, 'permalink'):
+                    continue
+                submission_scrape_request = make_scrape_request(submission.permalink,
+                        search_scrape_request.job_id, status='scheduled')
+                submissions_list.append(submission)
+                submission_requests[submission.permalink] = submission_scrape_request.id
+        except (PRAWException, NotFound, ServerError) as e:
+            update_request_status(search_scrape_request, 'failed',
+                    failure_comment='{}: {}'.format(type(e).__name__, str(e)))
         comments_count = sum([subm.num_comments for subm in submissions_list])
         search_scrape_request.lead_count = comments_count
         # Only now mark the search request as ran - we now know the load of requests it introduces.
@@ -187,78 +306,7 @@ while True:
                     in enumerate(submission.comments._comments)
                     if not comment_n in deletions]
             # Make the submission's object (Solr document).
-            if ok(submission, 'selftext'):
-                submission_obj = {'reason_scraped': search_scrape_request.job_id, 'source_type': 'f',
-                        'date_retr': date_fmt(datetime.now(tz=timezone.utc)),
-                        'tags': subreddit_tags }
-                submission_obj['text'] = format_text(submission.selftext)
-                if ok(submission, 'permalink'):
-                    submission_obj['url'] = 'https://reddit.com'+submission.permalink
-                else:
-                    update_request_status(submission_scrape_request, 'failed',
-                            failure_comment='no permalink')
-                    continue
-                submission_obj['real_doc'] = 'self'
-                if ok(submission, 'author'):
-                    submission_obj['author'] = submission.author.name
-                if ok(submission, 'created_utc'):
-                    time_obj = datetime.fromtimestamp(submission.created_utc)
-                    submission_obj['date_post'] = date_fmt(time_obj)
-                if ok(submission, 'subreddit'):
-                    if ok(submission.subreddit, 'display_name'):
-                        submission_obj['site_name'] = '/r/' + submission.subreddit.display_name
-                    if ok(submission.subreddit, 'over_18') and submission.subreddit.over_18:
-                        submission_obj['adult_b'] = True
-                # Send to Solr.
-                solr_json_text = json.dumps([submission_obj])
-                solr_update(solr_json_text, req_id=submission_scrape_request.id,
-                        req_class=ScrapeRequest)
-                update_request_status(submission_scrape_request, 'committed')
-            # Make the comment's object (Solr documents).
-            for comment in submission.comments.list():
-                # Notify the database.
-                comment_scrape_request = make_scrape_request(comment.permalink,
-                    search_scrape_request.job_id)
-                # Having a permalink is crucial to even indexing the comment.
-                if ok(comment, 'permalink'):
-                    comment_permalink = 'https://reddit.com'+comment.permalink
-                else:
-                    update_request_status(comment_scrape_request, 'failed',
-                            failure_comment='no permalink')
-                    continue
-                comment_obj = {'reason_scraped': search_scrape_request.job_id, 'source_type': 'f',
-                        'date_retr': date_fmt(datetime.now(tz=timezone.utc)),
-                        'url': comment_permalink, 'tags': subreddit_tags }
-                if ok(comment, 'body'):
-                    comment_obj['text'] = format_text(comment.body)
-                    if not comment_obj['text']:
-                        update_request_status(comment_scrape_request, 'failed',
-                                failure_comment='no extractable text')
-                        continue
-                else:
-                    update_request_status(comment_scrape_request, 'failed',
-                            failure_comment='no text body')
-                    continue
-                # TODO ? it would be better to set here the link to whole discussion set on this comment
-                comment_obj['real_doc'] = 'https://reddit.com'+submission.permalink
-                if ok(comment, 'author'):
-                    comment_obj['author'] = comment.author.name
-                if ok(comment, 'created_utc'):
-                    time_obj = datetime.fromtimestamp(comment.created_utc)
-                    comment_obj['date_post'] = date_fmt(time_obj)
-                if ok(comment, 'subreddit'):
-                    if ok(comment.subreddit, 'display_name'):
-                        comment_obj['site_name'] = '/r/' + comment.subreddit.display_name
-                    if ok(comment.subreddit, 'over_18') and comment.subreddit.over_18:
-                        comment_obj['adult_b'] = True
-                # Send to Solr (this needs a manual commit).
-                solr_json_text = json.dumps([comment_obj])
-                solr_update(solr_json_text, req_id=comment_scrape_request.id,
-                        req_class=ScrapeRequest)
-                # Do the manual commit.
-                solr_update('{"commit": {}}', req_id=comment_scrape_request.id,
-                        req_class=ScrapeRequest)
-                update_request_status(comment_scrape_request, 'committed')
+            process_submission(submission, submission_scrape_request, subreddit_tags=subreddit_tags)
         update_request_status(search_scrape_request, 'committed')
 
 logger.debug('Reddit scraper exited.')
