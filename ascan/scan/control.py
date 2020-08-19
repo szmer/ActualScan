@@ -160,7 +160,7 @@ def start_scan(scan_job):
                             source_type=site.source_type, site_name=site.site_name,
                             site_url=site.homepage_url, site_type=site.site_type,
                             site_id = site.id,
-                            query_tags=scan_job.query_tags, save_copies=scan_job.save_copies)
+                            save_copies=scan_job.save_copies or site.save_copies)
                     website_count += 1
                 elif site.site_type == 'reddit':
                     ScrapeRequest.objects.create(target='[reddit] '+scan_job.query_phrase,
@@ -169,7 +169,7 @@ def start_scan(scan_job):
                             source_type=site.source_type, site_name=site.site_name,
                             site_url=site.homepage_url,
                             site_id = site.id,
-                            query_tags=scan_job.query_tags, save_copies=scan_job.save_copies)
+                            save_copies=scan_job.save_copies or site.save_copies)
                     subreddit_count += 1
                 else:
                     error('Unknown site type {} for site {} ({})'.format(

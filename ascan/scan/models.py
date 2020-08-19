@@ -43,6 +43,9 @@ class Site(models.Model):
     site_type = models.CharField(max_length=32,
             choices=[(v, v) for v in ['web', 'reddit']])
     creator = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='sites', null=True)
+    # Possibly save raw copies of everything requested from the site to disk. For debugging and
+    # crafting the extraction functions.
+    save_copies = models.BooleanField(default=False)
 
     # NOTE we should take urlencoding schemes into account
     MOCK_STR1 = 'twenty'
@@ -149,7 +152,6 @@ class ScrapeRequest(models.Model):
     site_name = models.CharField(max_length=512)
     site_type = models.CharField(max_length=32)
     site_url = models.CharField(max_length=8192)
-    query_tags = models.CharField(max_length=8192)
     # This has meaning for search requests. For website requests, this should contain the number of
     # search pages (not implemented). For Reddit requests, this should contain the number total of
     # comments yielded by the search from all submissions in the subreddit.

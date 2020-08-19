@@ -4,9 +4,9 @@
 
 (defun searchpage-searchp (node path)
   ;; We need to translate it to explicit boolean for Python.
-  (not
-   (null
-    (and (plump:has-attribute node "class")
-         (or
-          ;; Test quotes.toscrape.com
-          (cl-ppcre:scan (boundary-regex "next") (plump:attribute node "class")))))))
+  (not (null
+         (and (plump:has-attribute node "class")
+              (or
+                ;;(cl-ppcre:scan "pagination" (plump:attribute node "class"))
+                ;; Test quotes.toscrape.com
+                (cl-ppcre:scan "next" (plump:attribute node "class")))))))

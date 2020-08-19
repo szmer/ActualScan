@@ -34,8 +34,12 @@
           ;; the permalink.
           (list "searchpage"
                 ;:skip-p #'general-skip-p
+                ;; find document items and next page links on the search page (note that often they
+                ;; have very similar style)
                 :doc-startp #'searchpage-doc-startp
+                ;; is the link to another search page?
                 :is_search #'searchpage-searchp
+                ;; url element of the specific document item
                 :url #'searchpage-permalink)
           ;; Empty defaults.
           (list "test"

@@ -18,6 +18,9 @@ redis==3.4.1
 # Scrapy.
 Scrapy==2.2.1
 simpleflock==0.0.3
+# (for Selenium and limiting access to it):
+Selenium==3.141.0
+python-redis-lock==3.6.0
 
 # Reddit scraper.
 praw==7.1.0

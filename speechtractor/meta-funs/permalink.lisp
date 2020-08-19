@@ -61,6 +61,27 @@
           ;; The parent should be a h2.
           (equalp (first (last path 2)) "h2"))
      (plump:attribute node "href"))
+    ;; CNN
+    ((and (equalp "a" (plump:tag-name node))
+          (typep node 'plump:child-node)
+          (plump:has-attribute (plump:parent node) "class")
+          (cl-ppcre:scan "result-+headline" (plump:attribute (plump:parent node) "class")))
+     (plump:attribute node "href"))
+    ;; New Scientist
+    ((and (equalp "a" (plump:tag-name node))
+          (plump:has-attribute node "class")
+          (cl-ppcre:scan (boundary-regex "card__link") (plump:attribute node "class")))
+     (plump:attribute node "href"))
+    ((and (equalp "a" (plump:tag-name node))
+          (plump:has-attribute node "class")
+          (cl-ppcre:scan (boundary-regex "search-pagination__page-item--next") (plump:attribute node "class")))
+     (plump:attribute node "href"))
+    ;; Gatesnotes.
+    ((and (equalp "a" (plump:tag-name node))
+          (typep node 'plump:child-node)
+          (plump:has-attribute (plump:parent node) "class")
+          (cl-ppcre:scan "SearchThumb" (plump:attribute (plump:parent node) "class")))
+     (plump:attribute node "href"))
     ;; Toscrape test
     ((and (equalp "a" (plump:tag-name node))
           (or (equalp "(about)" (plump:render-text node))

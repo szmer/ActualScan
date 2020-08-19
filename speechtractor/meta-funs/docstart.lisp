@@ -34,6 +34,7 @@
 
 (defun searchpage-doc-startp (node path)
   (or
+    ;; quotes.toscrape.com
    (and (plump:has-attribute node "itemtype")
         (equalp "http://schema.org/CreativeWork" (plump:attribute node "itemtype")))
    (and (plump:has-attribute node "class")
@@ -41,4 +42,14 @@
          ;; Test quotes.toscrape.com
          (cl-ppcre:scan (boundary-regex "next") (plump:attribute node "class"))
          ;; Wordpress search
-         (cl-ppcre:scan (boundary-regex "post") (plump:attribute node "class"))))))
+         (cl-ppcre:scan (boundary-regex "post") (plump:attribute node "class"))
+         ;; CNN: cnn-search__result--article or gallery
+         (cl-ppcre:scan "result-+article" (plump:attribute node "class"))
+         (cl-ppcre:scan "result-+gallery" (plump:attribute node "class"))
+         ;; Where the search item may be preceded by date (e.g. New Scientist)
+         (cl-ppcre:scan (boundary-regex "published-date") (plump:attribute node "class"))
+         ;; Gatesnotes.
+         (cl-ppcre:scan "SearchThumb" (plump:attribute node "class"))
+         ;; Pagination area - get the "next" link from the inside
+         (cl-ppcre:scan (boundary-regex "search-pagination")
+                        (plump:attribute node "class"))))))

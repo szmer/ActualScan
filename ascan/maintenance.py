@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 import json
 import logging
 from logging import getLogger, debug, info
+import time
 #
 # Read command line args.
 #
@@ -114,3 +115,5 @@ def do_scan_management():
 
 while True:
     do_scan_management()
+    # Don't overwhelm the sockets and databases.
+    time.sleep(1.0)

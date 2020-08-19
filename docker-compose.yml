@@ -26,7 +26,7 @@ services:
      command: python3 maintenance.py -L WARNING
      working_dir: /ascan
      env_file:
-        - ".env"
+        - '.env'
      volumes:
         - ./ascan:/ascan
      depends_on:
@@ -36,16 +36,19 @@ services:
      build:
         context: .
         dockerfile: Dockerfile_website
-     command: scrapy crawl general -L WARNING
+     command: scrapy crawl general -a selenium_wait_time=4 -L INFO
      working_dir: /scrapies/genscrap
      env_file:
         - '.env'
      depends_on:
         - postgres
         - solr
+        - redis
+        - selenium
         - website
      volumes:
         - ./ascan:/ascan
+        - ./pagecopies:/scrapies/pagecopies
 
   reddit:
      build:
@@ -110,7 +113,16 @@ services:
      env_file:
         - '.env'
 
-   # Needed for Django Channels.
+  selenium:
+     image: 'selenium/standalone-chrome:3.141.59'
+     volumes:
+        - /dev/shm:/dev/shm
+     ports:
+        - '4444:4444'
+     env_file:
+        - '.env'
+
+   # Needed for Django Channels (and Celery when we use it).
   redis:
     image: 'redis:6.0-rc'
     command: 'redis-server /usr/local/etc/redis/redis.conf'

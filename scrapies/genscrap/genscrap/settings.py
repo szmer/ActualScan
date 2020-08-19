@@ -77,7 +77,9 @@ DEFAULT_REQUEST_HEADERS = {
 EXTENSIONS = {
     'scrapy.extensions.telnet.TelnetConsole': None,
     # don't close the spider on errors
-    'scrapy.extensions.closespider.CloseSpider': None
+    'scrapy.extensions.closespider.CloseSpider': None,
+    # we don't need the periodical statistics, they count mainly monitoring "Solr" parses anyway
+    'scrapy.extensions.logstats.LogStats': None
 }
 
 # Configure item pipelines

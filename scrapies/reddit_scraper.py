@@ -101,7 +101,6 @@ def make_scrape_request(target, job_id, status='ran'):
             job_id=search_scrape_request.job_id, status=status,
             status_changed=datetime.now(timezone.utc),
             source_type=search_scrape_request.source_type,
-            query_tags=search_scrape_request.query_tags,
             site_name=search_scrape_request.site_name,
             site_url=search_scrape_request.site_url,
             site_id=search_scrape_request.site_id,

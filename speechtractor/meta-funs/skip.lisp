@@ -34,9 +34,15 @@
                           (plump:attribute node "class"))
            (cl-ppcre:scan (boundary-regex "entry-comments")
                           (plump:attribute node "class"))
+           (cl-ppcre:scan (boundary-regex "newComments")
+                          (plump:attribute node "class"))
            (cl-ppcre:scan (boundary-regex "sidebar-article")
                           (plump:attribute node "class"))
            (cl-ppcre:scan "related"
+                          (plump:attribute node "class"))
+           (cl-ppcre:scan "[Ff]ull[_-]*[Oo]verlay"
+                          (plump:attribute node "class"))
+           (cl-ppcre:scan "[Ss]ite[_-]*[Ff]eatures"
                           (plump:attribute node "class"))
            (cl-ppcre:scan (boundary-regex "m-list-hub") ; "related stories" in fashionista
                           (plump:attribute node "class"))

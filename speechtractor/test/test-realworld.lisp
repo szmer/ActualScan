@@ -141,6 +141,7 @@
               (find-if (lambda (doc) (null (cdr (assoc :url doc)))) parsed-docs)))
       (is (equalp "Diana" (cdr (assoc :author (first parsed-docs)))))
       ;; ??? TODO weird of-by-minute date mismatch happening here
+      ;; Note that since we are already comparing Solr time strings here, there's no easy way to ignore that 1 sec.
       (is (equalp (speechtractor::solr-date-from "11 months ago")
                   (cdr (assoc :date--post (first parsed-docs)))))
       (is (equalp "https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006057"
@@ -180,6 +181,8 @@
       (is (eq nil
               (find-if (lambda (doc) (null (cdr (assoc :url doc)))) parsed-docs)))
       (is (equalp "RG250" (cdr (assoc :author (first parsed-docs)))))
+      ;; ??? TODO weird of-by-minute date mismatch happening here
+      ;; Note that since we are already comparing Solr time strings here, there's no easy way to ignore that 1 sec.
       (is (equalp (speechtractor::solr-date-from "7 months ago")
                   (cdr (assoc :date--post (first parsed-docs)))))
       (is (equalp "#post83753960"
@@ -583,3 +586,72 @@
       ;;-(is (equalp "Albert Einstein" (cdr (assoc :author (first parsed-docs)))))
       (is (search "In 1879, Albert Einstein was born in Ulm, Germany"
                   (cdr (assoc :text (first parsed-docs))))))))
+
+(deftest x-newscientist-search ()
+  (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "newscientist-search.html" "searchpage"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      (is (= 11 (length parsed-docs))) ;; 10 docs + the next page
+      (is (equalp "/article/2109894-hundreds-of-endangered-wild-snow-leopards-are-killed-each-year/"
+                  (cdr (assoc :url (first parsed-docs)))))
+      (is (equalp "/letter/mg15721228-800-letters-cat-scan/"
+                  (cdr (assoc :url (second parsed-docs)))))
+      (is (equalp "/search/?q=twenty%20cats&page=2"
+                  (cdr (assoc :url (car (last parsed-docs))))))
+      (is (assoc :is--search (car (last parsed-docs)))))))
+
+(deftest x-editioncnn-search ()
+  (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "editioncnn-search.html" "searchpage"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      (is (= 10 (length parsed-docs))) ;; 10 docs
+      (is (equalp "//www.cnn.com/2013/09/30/us/u-s-nuclear-power-plants/index.html"
+                  (cdr (assoc :url (first parsed-docs)))))
+      (is (equalp "//www.cnn.com/2020/07/30/sport/wheelchair-paralympics-amputation-compete-scli-spt-intl-gbr/index.html"
+                  (cdr (assoc :url (second parsed-docs)))))
+      ;; As it's obtained from running JS, we don't expect actual next search page links.
+      (is (notany (lambda (doc) (assoc :is--search doc)) parsed-docs)))))
+
+(deftest x-editioncnn ()
+  (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "editioncnn.html" "media"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      (is (= 1 (length parsed-docs)))
+      (is (equalp "Oscar Holland, CNN" (cdr (assoc :author (first parsed-docs)))))
+      (is (equalp "2020-07-11T00:00:00Z" (cdr (assoc :date--post (first parsed-docs)))))
+      (is (search "The President of the Republic has become convinced"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (search "meanwhile proposed turning the cathedral"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (not (search "unveils his latest work"
+                       (cdr (assoc :text (first parsed-docs))))))
+      (is (not (search "Energy + Environment"
+                       (cdr (assoc :text (first parsed-docs)))))))))
+
+(deftest x-gatesnotes-search ()
+  (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "gatesnotes-search.html" "searchpage"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      (is (= 12 (length parsed-docs))) ;; 12 docs
+      (is (equalp "/Books/I-Contain-Multitudes"
+                  (cdr (assoc :url (first parsed-docs)))))
+      (is (equalp "/About-Bill-Gates/Discussion-with-Jared-Diamond"
+                  (cdr (assoc :url (second parsed-docs)))))
+      ;; As it's obtained from running JS, we don't expect actual next search page links.
+      (is (notany (lambda (doc) (assoc :is--search doc)) parsed-docs)))))
+
+(deftest x-gatesnotes ()
+  (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "gatesnotes.html" "media"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      (is (= 1 (length parsed-docs)))
+      (is (equalp "Bill Gates" (cdr (assoc :author (first parsed-docs)))))
+      (is (equalp "2017-03-28T00:00:00Z" (cdr (assoc :date--post (first parsed-docs)))))
+      (is (search "I’ve been perpetuating a misconception."
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (search "disease called dengue"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (not (search "Deactivate account"
+                       (cdr (assoc :text (first parsed-docs))))))
+      (is (not (search "Dear Mr. Gates"
+                       (cdr (assoc :text (first parsed-docs)))))))))

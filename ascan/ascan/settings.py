@@ -158,7 +158,7 @@ CHANNEL_LAYERS = {
         "CONFIG": {
             "hosts": [
                 { "address": "redis://redis:6379/0",
-                    "password": "7606667ae73c536789181d17fc35659e" }
+                    "password": os.environ['REDIS_PASS'] }
                 ],
         },
     },

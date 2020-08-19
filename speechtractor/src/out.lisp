@@ -36,5 +36,8 @@
                                             (paragraph-text paragraph :cleanp t))))))
           result-docs))
       ;; cl-json expects alists, we have property lists
-      (cl-json:encode-json-to-string
-        (mapcar #'alexandria:plist-alist (reverse result-docs))))))
+      (let ((response (cl-json:encode-json-to-string
+                        (mapcar #'alexandria:plist-alist (reverse result-docs)))))
+        (if (equalp response "null")
+        "[]"
+        response)))))
