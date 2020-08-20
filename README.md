@@ -38,7 +38,7 @@ You can add to the container options in docker-compose.yml:
     tty: true        # docker run -t
 
 !! Run the container only with the default command, e.g.
-docker-compose run scrapy scrapy crawl general -a selenium_wait_time=4 -L DEBUG --pdb
+docker-compose run scrapy scrapy crawl general -L DEBUG --pdb
 
 You sometimes can also see logs with:
 

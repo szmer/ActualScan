@@ -153,8 +153,9 @@ class ScrapeRequest(models.Model):
     site_type = models.CharField(max_length=32)
     site_url = models.CharField(max_length=8192)
     # This has meaning for search requests. For website requests, this should contain the number of
-    # search pages (not implemented). For Reddit requests, this should contain the number total of
-    # comments yielded by the search from all submissions in the subreddit.
+    # search pages (not implemented except for leads obtained through running JS with Selenium). For
+    # Reddit requests, this should contain the number total of comments yielded by the search from
+    # all submissions in the subreddit.
     lead_count = models.IntegerField(default=0)
     # The job id is also used in reason_scraped in Solr.
     job = models.ForeignKey(ScanJob, related_name='requests', on_delete=models.CASCADE)

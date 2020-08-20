@@ -36,7 +36,7 @@ services:
      build:
         context: .
         dockerfile: Dockerfile_website
-     command: scrapy crawl general -a selenium_wait_time=4 -L INFO
+     command: scrapy crawl general -L INFO
      working_dir: /scrapies/genscrap
      env_file:
         - '.env'

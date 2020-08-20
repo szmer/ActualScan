@@ -84,7 +84,7 @@ def scanresults(request):
     # The index-only search response (if there is no scan or it finished).
     try:
         omnivore_conn = http.client.HTTPConnection('omnivore', port=4242, timeout=10)
-        # TODO query tags (give Solr the acceptable ones)
+        # TODO query tags (give Solr the acceptable sites)
         omnivore_conn.request('GET', '/result?q={}&sdate={}&edate={}&und={}'.format(
             quote(scan_query), start_date, end_date, '1' if allow_undated else '0'),
             headers={'Content-type': 'application/json'})

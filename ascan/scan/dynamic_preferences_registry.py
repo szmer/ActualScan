@@ -1,8 +1,6 @@
 from dynamic_preferences.types import IntegerPreference, FloatPreference
 from dynamic_preferences.registries import global_preferences_registry
 
-# we create some section objects to link related preferences together
-
 @global_preferences_registry.register
 class ScanJobTimeToLive(IntegerPreference):
     name = 'scan_job_time_to_live'
@@ -20,9 +18,9 @@ class ScrapeRequestTimeToExist(IntegerPreference):
     name = 'scrape_request_time_to_exist'
     default = 60*60*24*30 # a month (in seconds) before it's deleted from db
     required = True
-
+#
 # Scan permission issuance.
-
+#
 # how many scan jobs can run simultaneously
 @global_preferences_registry.register
 class ConcurrentJobsAllowed(IntegerPreference):
@@ -43,6 +41,9 @@ class GuestsScanPermissionTimeToLive(IntegerPreference):
     default = 60 # a minute
     required = True
 
+#
+# Reddit scraper configuration.
+#
 @global_preferences_registry.register
 class RedditSearchDepth(IntegerPreference):
     name = 'reddit_search_depth'
@@ -63,6 +64,42 @@ class RedditManyCommentsMinScoreRatio(IntegerPreference):
     default = 200
     required = True
 
+#
+# Web scraper configuration (for scrapy).
+#
+@global_preferences_registry.register
+class SeleniumWaitTime(IntegerPreference):
+    name = 'selenium_wait_time'
+    default = 4
+    required = True
+
+@global_preferences_registry.register
+class SeleniumMaxClickElemsTried(IntegerPreference):
+    name = 'selenium_max_click_elems_tried'
+    default = 3
+    required = True
+
+@global_preferences_registry.register # NOTE not implemented
+class WebNormalSearchDepth(IntegerPreference):
+    name = 'web_normal_search_depth'
+    default = 40
+    required = True
+
+@global_preferences_registry.register
+class WebJSSearchDepth(IntegerPreference):
+    name = 'web_js_search_depth'
+    default = 20
+    required = True
+
+@global_preferences_registry.register
+class WebInfiscrollSearchDepth(IntegerPreference):
+    name = 'web_infiscroll_search_depth'
+    default = 10
+    required = True
+
+#
+# For progress estimations.
+#
 # These multipliers are used to estimate how many scrape requests will a site generate.
 @global_preferences_registry.register
 class SubredditEstimationMultiplier(IntegerPreference):
