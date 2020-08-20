@@ -23,7 +23,7 @@
 
 ;;;
 ;;; Dynamic responders.
-(hunchentoot:define-easy-handler (query-response :uri "/result") (q sdate edate und)
+(hunchentoot:define-easy-handler (query-response :uri "/result") (q sdate edate undat sites)
   (setf (hunchentoot:content-type*) "application/json")
   (let ((query-result
           (apply #'query-result-solr!
@@ -31,7 +31,8 @@
                               (list q)
                               (when sdate (list :start-date sdate))
                               (when edate (list :end-date edate))
-                              (when und (list :undated (not (equalp "0" und))))))))
+                              (when undat (list :undated (not (equalp "0" undat))))
+                              (when sites (list :sites (cl-strings:split sites ",")))))))
     (cl-json:encode-json-to-string
       ;; The query result may be nothing if we can't get nothing from Solr, so remember to give
       ;; 0 sents on no information.

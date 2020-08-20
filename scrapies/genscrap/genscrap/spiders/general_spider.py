@@ -357,6 +357,9 @@ class GeneralSpider(scrapy.Spider):
             await self.fail_with_comment('Status code: {}'.format(response.status),
                     db_request=db_request)
             return
+        else:
+            await sync_to_async(update_request_status)(db_request, 'ran')
+
 
         # Interpret the webpage with speechtractor.
         if response.meta['is_search']:
@@ -461,11 +464,6 @@ class GeneralSpider(scrapy.Spider):
                 site_obj = await sync_to_async(list)(Site.objects.filter(
                     id=response.meta['site_id']).all())
                 site_obj = site_obj[0]
-                # Get the site tags.
-                # We select_related to avoid Django complaining about getting tags in async.
-                site_tag_links = await sync_to_async(list)(site_obj.tag_links.select_related(
-                    'tag').all())
-                site_tags = [tag_link.tag.name for tag_link in site_tag_links]
                 for doc in stractor_response_json: # fill the missing fields
                     doc['date_retr'] = timestamp_now()
                     doc['site_name'] = response.meta['site_name']
@@ -476,7 +474,6 @@ class GeneralSpider(scrapy.Spider):
                     else:
                         doc['real_doc'] = response.url
                     doc['url'] = full_url(doc['url'], response.meta['site_url'])
-                    doc['tags'] = site_tags
                     doc['reason_scraped'] = response.meta['job_id']
                 # This sends documents to solr with default settings. We need to do a manual commit
                 # afterwards.

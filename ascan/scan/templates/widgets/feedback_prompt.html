@@ -1,8 +1,10 @@
 {% if site_name == possible_feedback.site %}
+<em>
 <span class='feedback-prompt' style='display: none'>
    Do you think that the site {{ possible_feedback.site }} is relevant for
    <strong>{{ possible_feedback.tag }}</strong>?
    <a href="javascript:decide_feedback(true)">Yes</a>
    <a href="javascript:decide_feedback(false)">No</a>
 <span>
+</em>
 {% endif %}

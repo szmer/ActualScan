@@ -1,15 +1,14 @@
 (in-package :omnivore)
 
-(defun solr-tokens (address port core query &key (start-date nil) (end-date nil) (undated nil))
+(defun solr-tokens (address port core query &key (start-date nil) (end-date nil) (undated nil)
+                            (sites nil))
   ;;; One of general KLUDGE s is that there is no corpus object here.
   "The second value contains statistics got directly from Solr."
   (assert (not (and end-date (not start-date))))
   (let* ((http-query (format nil
                                (concatenate 'string
                                             "http://~A:~A/solr/~A/select?q=~A"
-                                            ;; KLUDGE to test tags
-                                            ;-"%20AND%20tags:entrepreneur"
-                                            ;; Set the start date.
+                                            ;; Set the start and end dates.
                                             (if start-date
                                                 (concatenate
                                                   'string
@@ -23,6 +22,11 @@
                                                   ;; in AND/OR constructions
                                                   (if undated "%20OR%20(*:*%20NOT%20date_post:*)"
                                                       ""))
+                                                "")
+                                            ;; Set the desired sites.
+                                            (if sites
+                                                (format nil "&fq=site_name:(~A)"
+                                                        (cl-strings:join sites :separator "%20"))
                                                 "")
                                             ;; Get those fields, but no text (only highlights).
                                             "&fl=url,author,title,date_post,date_retr,site_name"
@@ -131,4 +135,4 @@
               (progn (push item (getf result-list :year-counts))
                      (setf year-label-p t))))
         (mapcar (lambda (item) (if (listp item) (reverse item) item))
-                result-list)))))
+                result-list))))) 

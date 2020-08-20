@@ -29,7 +29,7 @@ from mdx_linkify.mdx_linkify import LinkifyExtension
 # performance bottleneck is elsewhere.
 from bs4 import BeautifulSoup
 
-from scan.models import Site, ScrapeRequest
+from scan.models import ScrapeRequest
 from dynamic_preferences.registries import global_preferences_registry
 
 # We need to get one module deeper comparing to the general spider, because we're outside of the
@@ -107,16 +107,12 @@ def make_scrape_request(target, job_id, status='ran'):
             site_type='reddit',
             save_copies=search_scrape_request.save_copies)
 
-def process_submission(submission, submission_scrape_request, subreddit_tags=None):
-    if subreddit_tags is None:
-        subreddit_tags = [tag_link.tag.name for tag_link in Site.objects.get(
-            id=submission_scrape_request.site_id).tag_links.all()]
+def process_submission(submission, submission_scrape_request):
     try:
         if ok(submission, 'selftext'):
             submission_obj = {'reason_scraped': submission_scrape_request.job_id,
                     'source_type': 'f',
-                    'date_retr': date_fmt(datetime.now(tz=timezone.utc)),
-                    'tags': subreddit_tags }
+                    'date_retr': date_fmt(datetime.now(tz=timezone.utc)) }
             submission_obj['text'] = format_text(submission.selftext)
             if ok(submission, 'permalink'):
                 submission_obj['url'] = 'https://reddit.com'+submission.permalink
@@ -146,16 +142,12 @@ def process_submission(submission, submission_scrape_request, subreddit_tags=Non
                 # Notify the database.
                 comment_scrape_request = make_scrape_request(comment.permalink,
                            submission_scrape_request.job_id)
-                process_comment(comment, comment_scrape_request,
-                        subreddit_tags=subreddit_tags)
+                process_comment(comment, comment_scrape_request)
     except (PRAWException, NotFound, ServerError) as e:
         update_request_status(submission_scrape_request, 'failed',
                 failure_comment='{}: {}'.format(type(e).__name__, str(e)))
 
-def process_comment(comment, comment_scrape_request, subreddit_tags=None):
-    if subreddit_tags is None:
-        subreddit_tags = [tag_link.tag.name for tag_link in Site.objects.get(
-            id=comment_scrape_request.site_id).tag_links.all()]
+def process_comment(comment, comment_scrape_request):
     try:
         # Having a permalink is crucial to even indexing the comment.
         if ok(comment, 'permalink'):
@@ -167,7 +159,7 @@ def process_comment(comment, comment_scrape_request, subreddit_tags=None):
         comment_obj = {'reason_scraped': comment_scrape_request.job_id,
                 'source_type': 'f',
                 'date_retr': date_fmt(datetime.now(tz=timezone.utc)),
-                'url': comment_permalink, 'tags': subreddit_tags }
+                'url': comment_permalink}
         if ok(comment, 'body'):
             comment_obj['text'] = format_text(comment.body)
             if not comment_obj['text']:
@@ -250,8 +242,6 @@ while True:
             continue
         try:
             subreddit = reddit.subreddit(subreddit_name)
-            subreddit_tags = [tag_link.tag.name for tag_link in Site.objects.get(
-                id=search_scrape_request.site_id).tag_links.all()]
 
             submissions = subreddit.search('title:{} OR selftext:{}'.format(
                 search_phrase, search_phrase), sort='comments', limit=REDDIT_SEARCH_DEPTH)
@@ -305,7 +295,7 @@ while True:
                     in enumerate(submission.comments._comments)
                     if not comment_n in deletions]
             # Make the submission's object (Solr document).
-            process_submission(submission, submission_scrape_request, subreddit_tags=subreddit_tags)
+            process_submission(submission, submission_scrape_request)
         update_request_status(search_scrape_request, 'committed')
 
 logger.debug('Reddit scraper exited.')

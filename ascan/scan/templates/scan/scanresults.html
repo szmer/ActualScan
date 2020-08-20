@@ -36,7 +36,7 @@
    </div>
    {% else %}
    <div class="alert alert-danger" role="alert">
-      <p>There was a problem with your scan request.</p>
+      <p>Sorry, we experienced a problem with your request.</p>
    </div>
    {% endif %}
 
@@ -84,6 +84,7 @@
    <script type="application/javascript" src="{% static 'scan/js/feedback_prompt.js' %}"></script>
 {% endif %}
 
+<div class="card-columns">
 {% if result.years %}
 <div class="card">
   <div class="card-header">
@@ -110,11 +111,12 @@
     Common opinion
   </div>
        {% for sent in result.typical %}
-       <div class="card-body">
+       <div class="card-body p-2">
        <p class="card-text">{{ sent.text }}</p>
-       <p class="card-text"><small class="text-muted">by {{ sent.author }}
-          ({{ sent.date }})
+       <p class="card-text"><small class="text-muted">
+          by {{ sent.author }}{% if sent.date %} ({{ sent.date }}){% endif %}
           at {{ sent.domain }}</small>
+       <small><br><a href="{{ sent.url }}">{{ sent.url }}</a></small>
        {% include "widgets/feedback_prompt.html" with site_name=sent.domain %}
        </p>
        </div>
@@ -125,17 +127,19 @@
 {% if result.phrases %}
 <div class="card">
   <div class="card-header">
-    Hot phrases
+    Key phrases
   </div>
        {% for phrase in result.phrases %}
-       <div class="card-body">
+       <div class="card-body p-2">
           <h5 class="card-title">{{ phrase.text }}</h5>
           <ul>
              {% for sent in phrase.typical %}
              <li>
                 <span class="card-text">{{ sent.text }}</span>
-                <small class="text-muted">by {{ sent.author }} ({{ sent.date }})
-                   at {{ sent.domain }} </small>
+                <small class="text-muted">by {{ sent.author }}
+                   {% if sent.date %} ({{ sent.date }}){% endif %}
+                   at {{ sent.domain }}
+                   <br><a href="{{ sent.url }}">{{ sent.url }}</a></small>
                 {% include "widgets/feedback_prompt.html" with site_name=sent.domain %}
              </li>
              {% endfor %}
@@ -151,17 +155,18 @@
     Oddball posters
   </div>
        {% for sent in result.atypical %}
-       <div class="card-body">
+       <div class="card-body p-2">
        <p class="card-text">{{ sent.text }}</p>
        <p class="card-text"><small class="text-muted">by {{ sent.author }}
-          ({{ sent.date }})
-          at {{ sent.domain }} </small>
+          {% if sent.date %} ({{ sent.date }}){% endif %} at {{ sent.domain }} </small>
+       <small><br><a href="{{ sent.url }}">{{ sent.url }}</a></small>
        {% include "widgets/feedback_prompt.html" with site_name=sent.domain %}
        </p>
        </div>
        {% endfor %}
 </div>
 {% endif %}
+</div>
 
 <script defer>
 var chartOptions = {

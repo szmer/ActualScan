@@ -27,10 +27,10 @@
 ;;-         (view (pg-textviews:get-view corpus (list category) :get-documents t)))
 ;;-    (result-for-tokens (view-divisions tv-view))))
 
-(defun query-result-solr! (query &key (start-date nil) (end-date nil) (undated nil))
+(defun query-result-solr! (query &key (start-date nil) (end-date nil) (undated nil) (sites nil))
   (multiple-value-bind (tv-tokens solr-stats)
     (solr-tokens *solr-address* *solr-port* *solr-collection*
                  ;; enclose in url-encoded quotation marks
                  (format nil "text:%22~A%22" (drakma:url-encode query :utf-8))
-                 :start-date start-date :end-date end-date :undated undated)
+                 :start-date start-date :end-date end-date :undated undated :sites sites)
     (result-for-tokens tv-tokens solr-stats)))

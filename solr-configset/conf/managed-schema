@@ -1066,10 +1066,6 @@
         -->
      <field name="date_retr" type="pdate" indexed="true" stored="true" required="true"/>
      <!--
-        Topic tags.
-        -->
-     <field name="tags" type="string" indexed="true" stored="true" multiValued="true" required="true"/>
-     <!--
         Retrieval failures since the last successful one. Only set if needed.
         -->
      <field name="fails" type="pdate" indexed="false" stored="true"/>

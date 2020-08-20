@@ -10,6 +10,7 @@
 {% endblock %}
 
 {% block container %}
+<div class="col-lg-6">
 <div class="text-center">
 <img src="{% static 'scan/logo1.png' %}" alt="ActualScan" style="width: 90%; margin: 40px">
 </div>
@@ -25,4 +26,5 @@
    <button name="is_scan" value="true" type="submit" class="btn btn-primary btn-lg">Scan the Web</button>
    {% endif %}
 </form>
+</div>
 {% endblock %}

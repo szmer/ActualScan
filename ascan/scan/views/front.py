@@ -14,7 +14,7 @@ from scan.control import (maybe_issue_guest_scan_permission, request_scan, scan_
         verify_scan_permission, maybe_issue_feedback_permission)
 from scan.forms import PublicScanForm
 from scan.utils import date_fmt, trust_level_to_numeric
-from scan.models import TagSiteLink
+from scan.models import Site, TagSiteLink
 
 @login_required
 def accountinfo(request):
@@ -82,14 +82,26 @@ def scanresults(request):
                     'results instead.')
 
     # The index-only search response (if there is no scan or it finished).
+    query_site_names = [site.site_name
+            for site in Site.objects.filter(
+                tag_links__tag__in=form.cleaned_data['query_tags']).all()]
     try:
         omnivore_conn = http.client.HTTPConnection('omnivore', port=4242, timeout=10)
         # TODO query tags (give Solr the acceptable sites)
-        omnivore_conn.request('GET', '/result?q={}&sdate={}&edate={}&und={}'.format(
-            quote(scan_query), start_date, end_date, '1' if allow_undated else '0'),
+        omnivore_addr = '/result?q={}&sdate={}&edate={}&undat={}&sites={}'.format(
+            quote(scan_query), start_date, end_date, '1' if allow_undated else '0',
+            ','.join(query_site_names))
+        debug('Omnivore query: {}'.format(omnivore_addr))
+        omnivore_conn.request('GET', omnivore_addr,
             headers={'Content-type': 'application/json'})
         omnivore_response = omnivore_conn.getresponse()
-        omnivore_results = json.loads(omnivore_response.read())
+        omnivore_response_text = omnivore_response.read()
+        try:
+            omnivore_results = json.loads(omnivore_response_text)
+        except json.JSONDecodeError as e:
+            info('Bad omnivore response for {}: {}'.format(scan_query,
+                omnivore_response_text))
+            raise e
         debug('Omnivore responded for {}: {}'.format(scan_query,
             omnivore_results))
         context = { 'result': omnivore_results, 'scan_phrase': scan_query, 'is_good': True }
@@ -118,7 +130,7 @@ def scanresults(request):
 
         return render(request, 'scan/scanresults.html', context=context)
     except Exception as e:
-        info('Error processing scan/search request: {}'.format(e))
+        info('Error processing scan/search request {}: {}'.format(type(e), e))
         context = { 'status_data': { 'phase': 'Internal error when processing the request.' },
                 'is_good': False, 'result': False }
         return render(request, 'scan/scanresults.html', context=context, status=500)
