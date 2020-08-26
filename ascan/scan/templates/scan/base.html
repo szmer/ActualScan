@@ -32,6 +32,12 @@
            <a class="nav-link" href="/manager/tags/">Tags</a>
         </li>
 
+        {% if request.user.is_authenticated %}
+        <li class="nav-item active">
+           <a class="nav-link" href="/manager/scans/">Scans</a>
+        </li>
+        {% endif %}
+
         <li class="nav-item active">
            <a class="nav-link" href="/accounts/info/">Your account</a>
         </li>
@@ -39,12 +45,6 @@
         {% if request.user.is_staff %}
         <li class="nav-item active">
            <a class="nav-link" href="/admin/">Admin</a>
-        </li>
-        {% endif %}
-
-        {% if request.user.is_authenticated %}
-        <li class="nav-item active">
-           <a class="nav-link" href="">Logout</a>
         </li>
         {% endif %}
      </ul>

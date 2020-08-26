@@ -1,5 +1,5 @@
 window.addEventListener("load", function(event) {
-   if (window.location.search.search('query_phrase') != -1) {
+   if (window.location.search.search('scan_query') != -1) {
       var goToOptions = document.getElementById('go_to_results_options')
 
       var goToSwitchLabel = document.createElement('label')

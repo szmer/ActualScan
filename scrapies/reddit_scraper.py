@@ -4,6 +4,7 @@ import json
 import logging
 from logging import getLogger
 import os
+import random
 import re
 
 # Connect to Django.
@@ -107,6 +108,7 @@ def make_scrape_request(base_scrape_request, target, job_id, status='ran'):
 def process_submission(submission, submission_scrape_request):
     logger.info('Processing the submission: {}'.format(submission_scrape_request.target))
     try:
+        update_request_status(submission_scrape_request, 'ran')
         # Load all the 'load more's.
         submission.comments.replace_more(limit=None)
         # Apply some rules for deleting comments on the top level.
@@ -167,6 +169,7 @@ def process_submission(submission, submission_scrape_request):
 
 def process_comment(comment, comment_scrape_request):
     try:
+        update_request_status(comment_scrape_request, 'ran')
         # Having a permalink is crucial to even indexing the comment.
         if ok(comment, 'permalink'):
             comment_permalink = 'https://reddit.com'+comment.permalink
@@ -231,7 +234,7 @@ reddit = praw.Reddit(user_agent=os.environ['REDDIT_UA'],
 logger.info('Rerunning the leftover requests.')
 leftover_scrape_requests= ScrapeRequest.objects.filter(
     site_type='reddit',
-    status__in=['waiting', 'ran'],
+    status__in=['waiting', 'scheduled', 'ran'],
     is_search=False)
 for scrape_request in leftover_scrape_requests:
     # Deduplicate with Solr.
@@ -243,10 +246,10 @@ for scrape_request in leftover_scrape_requests:
         continue
 
     slash_count = scrape_request.target.count('/')
-    if slash_count == 6:
-        submission = Submission(reddit, url=permalink)
-        process_submission(submission, scrape_request)
-    elif slash_count == 7:
+    if slash_count == 6: # if it's a whole submission, just add it to the queue
+        if scrape_request.status != 'waiting':
+            update_request_status(scrape_request, 'scheduled')
+    elif slash_count == 7: # process the leftover comments now, as we work by submissions
         comment = Comment(reddit, url=permalink)
         process_comment(comment, scrape_request)
 # This looks for new awaiting ScrapeRequests in the database, put there by start_scan from
@@ -258,7 +261,9 @@ while True:
         site_type='reddit',
         status='waiting',
         is_search=True)
+    #
     # Run the respective searches, effectively for pairs: (subreddit, query).
+    #
     for search_scrape_request in search_scrape_requests_waiting:
         logger.debug('Processing the scrape request for {} in {}'.format(
             search_scrape_request.target, search_scrape_request.job_id))
@@ -270,6 +275,7 @@ while True:
                     failure_comment='no /r/ in search_scrape_request.site_name')
             continue
         try:
+            update_request_status(search_scrape_request, 'ran')
             subreddit = reddit.subreddit(subreddit_name)
 
             submissions = subreddit.search('title:{} OR selftext:{}'.format(
@@ -294,25 +300,40 @@ while True:
                     failure_comment='{}: {}'.format(type(e).__name__, str(e)))
         comments_count = sum([subm.num_comments for subm in submissions_list])
         search_scrape_request.lead_count = comments_count
-        # Only now mark the search request as ran - we now know the load of requests it introduces.
-        update_request_status(search_scrape_request, 'ran')
-
-        # Process submissions from this subreddit.
-        downloaded_submissions = set() # skip the same submission inside one search request
-        for submission in submissions_list:
-            if not ok(submission, 'permalink'):
-                continue
-            if submission.permalink in downloaded_submissions:
-                continue
-            downloaded_submissions.add(submission.permalink)
-
-            submission_scrape_request = ScrapeRequest.objects.get(id=
-                    submission_requests[submission.permalink])
-            if submission_scrape_request.status == 'cancelled':
-                continue
-            update_request_status(submission_scrape_request, 'ran')
-            # Make the submission's object (Solr document).
-            process_submission(submission, submission_scrape_request)
+        # TODO REMOVE COMMENT Only now mark the search request as ran - we now know the load of requests it introduces.
         update_request_status(search_scrape_request, 'committed')
+
+    #
+    # Pull and run some Reddit submission scheduled for download.
+    #
+    # Randomize the ORDER BY method, as randomizing the rows themselves could be more costly.
+    sorting_methods = ['status_changed', '-status_changed', 'site_name', '-site_name', 'job_id',
+            '-job_id']
+    submission_scrape_requests = ScrapeRequest.objects.filter(site_type='reddit',
+            status='scheduled', is_search=False).order_by(random.choice(sorting_methods))[:1]
+    if submission_scrape_requests:
+        scrape_request = submission_scrape_requests[0]
+        slash_count = scrape_request.target.count('/')
+        if slash_count != 6: # it's only a comment, so skip
+            continue
+        # Do deduplication with Solr.
+        permalink = 'https://reddit.com'+scrape_request.target
+        is_url_skippable = solr_check_urls(DEDUP_DATE_POST_CHECK, DEDUP_DATE_RETR_CHECK,
+                [permalink])
+        if permalink in is_url_skippable:
+            update_request_status(scrape_request, 'cancelled', failure_comment='dupe')
+            continue
+        # Deduplicate other requests for the same from the same job.
+        for other_scrape_request in ScrapeRequest.objects.filter(
+                target=scrape_request.target,
+                job_id=scrape_request.job_id).exclude(
+                        id=scrape_request.id).all():
+            update_request_status(other_scrape_request, 'cancelled', failure_comment='dupe')
+
+        submission = Submission(reddit, url=permalink)
+        if not ok(submission, 'permalink'):
+            update_request_status(scrape_request, 'failed', failure_comment='no permalink')
+            continue
+        process_submission(submission, scrape_request)
 
 logger.debug('Reddit scraper exited.')

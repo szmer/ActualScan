@@ -124,10 +124,12 @@ class ScanJob(models.Model):
         debug('Status of the job {} being changed to {}'.format(self.id, status))
 
     def __repr__(self):
-        return '({})job {}/{}, {}'.format(self.pk, self.query_phrase, self.query_tags, self.status)
+        return '({})job {}/{}/{}, {}'.format(self.pk, self.query_phrase, self.query_tags,
+                self.query_site_names, self.status)
 
     def __str__(self):
-        return '({})job {}/{}, {}'.format(self.pk, self.query_phrase, self.query_tags, self.status)
+        return '({})job {}/{}/{}, {}'.format(self.pk, self.query_phrase, self.query_tags,
+                self.query_site_names, self.status)
 
 class ScrapeRequest(models.Model):
     """

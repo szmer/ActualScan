@@ -2,8 +2,6 @@ from datetime import datetime, timedelta
 from logging import debug, info, error
 from urllib.parse import urlparse
 
-from django.db.models import Sum
-
 from scan.models import Site, Tag, ScanJob, ScrapeRequest, ScanPermission, FeedbackPermission
 
 from dynamic_preferences.registries import global_preferences_registry
@@ -232,40 +230,32 @@ def scan_progress_info(scan_job_id):
     committed_web_search_count = ScrapeRequest.objects.filter(
             status='committed', site_type='web', is_search=True,
             job=scan_job).count()
+    committed_web_crawl_count = ScrapeRequest.objects.filter(is_search=False, site_type='web',
+            job=scan_job, status='committed').count()
     committed_crawl_count = ScrapeRequest.objects.filter(
         status='committed', is_search=False, job=scan_job).count()
 
-    # Denominator "past" component.
-    # Past Reddit load from search is the sum of lead counts (i.e. sums of comments) of the
-    # committed Reddit search requests.
-    reddit_past_load_from_search = ScrapeRequest.objects.filter(status='committed',
-                     site_type='reddit',
-                     is_search=True,
-                     job=scan_job).aggregate(Sum('lead_count'))['lead_count__sum']
-    reddit_past_load_from_search = (int(reddit_past_load_from_search)
-            if reddit_past_load_from_search is not None
-            else 0)
-    # What we already know will/has happened with Web pages.
+    # Denominator "past" component - what we already know will/has happened with the pages.
+    reddit_known_yield_from_search = ScrapeRequest.objects.filter(is_search=False, site_type='reddit',
+            job=scan_job).count()
     web_known_yield_from_search = ScrapeRequest.objects.filter(is_search=False, site_type='web',
             job=scan_job).count()
     web_search_count = ScrapeRequest.objects.filter(is_search=True, site_type='web',
             job=scan_job).count()
 
-    # Denominator "current" component.
-    # NOTE this assumes that the Reddit scraper is single-threaded and processes requests in
-    # sequence.
-    current_reddit_search = list(ScrapeRequest.objects.filter(
+    # Denominator "current" component: search request that are currently yielding new stuff to
+    # scrape.
+    current_reddit_search_count = ScrapeRequest.objects.filter(
                     status='ran', site_type='reddit', is_search=True,
-                    job=scan_job))
-    reddit_current_load_from_search = (0 if len(current_reddit_search) == 0
-            else current_reddit_search[0].lead_count)
+                    job=scan_job).count()
+    if committed_reddit_search_count > 0:
+        average_reddit_search_yield = committed_reddit_crawl_count / committed_reddit_search_count
+    else:
+        average_reddit_search_yield = global_preferences['subreddit_estimation_multiplier']
+    reddit_current_yield_from_search = current_reddit_search_count * average_reddit_search_yield
     # The average number of scraped pages produced by each search page.
-    web_committed_crawl_count = ScrapeRequest.objects.filter(is_search=False, site_type='web',
-            job=scan_job, status='committed').count()
-    web_committed_search_count = ScrapeRequest.objects.filter(is_search=True, site_type='web',
-            job=scan_job, status='committed').count()
-    if web_committed_crawl_count > 0:
-        average_search_page_yield = web_committed_search_count / web_committed_crawl_count
+    if committed_web_search_count > 0:
+        average_search_page_yield = committed_web_crawl_count / committed_web_search_count 
     else:
         average_search_page_yield = global_preferences['search_page_yield_estimation']
     # Unfinished search pages, which we will estimate with average yield from above.
@@ -284,11 +274,11 @@ def scan_progress_info(scan_job_id):
     # the job object.)
     # Count search requests that ran (may not finished in the case of Reddit, but we have real data
     # for them).
-    ran_reddit_search_count = ScrapeRequest.objects.filter(
+    waiting_reddit_search_count = ScrapeRequest.objects.filter(
             status='ran', site_type='reddit', is_search=True,
             job=scan_job).count()
     # See search for how many sites already fully committed.
-    unique_web_search_count = ScrapeRequest.objects.filter(
+    unique_done_web_search_count = ScrapeRequest.objects.filter(
             site_type='web',
             is_search=True,
             job=scan_job,
@@ -299,35 +289,36 @@ def scan_progress_info(scan_job_id):
 
     # Big picture request stats (this goes to the client).
     req_stats = {
-            'searches': (committed_reddit_search_count+web_committed_search_count
+            'searches': (committed_reddit_search_count+committed_web_search_count
                 +unfinished_search_pages_sum),
-            'crawls': (committed_reddit_crawl_count+web_committed_crawl_count
+            'crawls': (committed_reddit_crawl_count+committed_web_crawl_count
                 +unfinished_crawl_pages_sum),
             'commits': (committed_reddit_search_count+committed_reddit_crawl_count
-                +web_committed_search_count+web_committed_crawl_count),
+                +committed_web_search_count+committed_web_crawl_count),
             'wait_runs': unfinished_crawl_pages_sum+unfinished_search_pages_sum,
             'fails': fails_count,
-            'future': ((scan_job.website_count - unique_web_search_count)
+            'future': ((scan_job.website_count - unique_done_web_search_count)
                 * global_preferences['website_estimation_multiplier'] 
-                + (scan_job.subreddit_count - ran_reddit_search_count)
-                * global_preferences['subreddit_estimation_multiplier']),
-            'reddit_blocking': not committed_reddit_crawl_count
+                + (scan_job.subreddit_count - waiting_reddit_search_count)
+                * average_reddit_search_yield),
+            'reddit_blocking': (waiting_reddit_search_count and not committed_reddit_crawl_count
+                and not reddit_current_yield_from_search)
             }
 
     # Compute the denominator for computing scan progress. In the estimation, use the real numbers
     # for done search requests and the estimators from config for the future ones.
     reddit_full_estimation = (
             # Estimation for future search requests.
-            ((scan_job.subreddit_count - ran_reddit_search_count)
-            * global_preferences['subreddit_estimation_multiplier'])
+            ((scan_job.subreddit_count - waiting_reddit_search_count)
+            * average_reddit_search_yield)
             # Current load from search.
-            + reddit_current_load_from_search
+            + reddit_current_yield_from_search
             # Committed requests.
-            + reddit_past_load_from_search
+            + reddit_known_yield_from_search
             )
     web_full_estimation = (
             # Estimation for future search requests.
-            ((scan_job.website_count - unique_web_search_count)
+            ((scan_job.website_count - unique_done_web_search_count)
             * global_preferences['website_estimation_multiplier'])
             # Current load from search.
             + web_current_yield_from_search
@@ -354,12 +345,12 @@ def scan_progress_info(scan_job_id):
                 'Full estimation numerator is {}, denominator {}'
                 .format(scan_job.id,
                     # Reddit done
-                    reddit_past_load_from_search,
+                    reddit_known_yield_from_search,
                     # Reddit future
-                    (scan_job.subreddit_count - ran_reddit_search_count)
-                    * global_preferences['subreddit_estimation_multiplier'],
+                    (scan_job.subreddit_count - waiting_reddit_search_count)
+                    * average_reddit_search_yield,
                     # Reddit current
-                    reddit_current_load_from_search,
+                    reddit_current_yield_from_search,
                     # Reddit estimation,
                     reddit_full_estimation,
                     # Reddit committed
@@ -368,7 +359,7 @@ def scan_progress_info(scan_job_id):
                     web_known_yield_from_search,
                     web_search_count,
                     # Web future
-                    (scan_job.website_count - unique_web_search_count)
+                    (scan_job.website_count - unique_done_web_search_count)
                     * global_preferences['website_estimation_multiplier'],
                     # Web estimation of the current yield
                     web_current_yield_from_search,
@@ -385,9 +376,10 @@ def scan_progress_info(scan_job_id):
         if full_estimation > 0:
             dl_proportion /= full_estimation
         else:
-            dl_proportion = 1.0
+            dl_proportion = 0.0
     done_request = ScrapeRequest.objects.filter(
-            status__in=['committed', 'failed'], job=scan_job).order_by('-status_changed')[:1]
+            status__in=['committed', 'failed'], job=scan_job).exclude(
+                    site_type='reddit', is_search=True).order_by('-status_changed')[:1]
     return {'phase': phase, 'fails': fails_count,
             'last_url': (
                 (done_request[0].target if urlparse(done_request[0].target).netloc

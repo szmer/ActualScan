@@ -55,11 +55,11 @@ def do_scan_management():
     FeedbackPermission.objects.filter(time_issued__lte=expiration_threshold).delete()
     # Mark finished jobs and broadcast progress to WebSockets.
     channel_layer = channels.layers.get_channel_layer()
+    # The threshold to get scan jobs terminated due to timeout.
+    scan_job_time_threshold = datetime.now(timezone.utc) - timedelta(
+        seconds=global_preferences['scan_job_time_to_live'])
+    debug('Jobs last changed before {} would be terminated now.'.format(scan_job_time_threshold))
     for job in ScanJob.objects.all(): # TODO filter old finished?
-        # The threshold to get scan jobs terminated due to timeout.
-        scan_job_time_threshold = datetime.now(timezone.utc) - timedelta(
-            seconds=global_preferences['scan_job_time_to_live'])
-        debug('Jobs last changed before {} would be terminated now.'.format(scan_job_time_threshold))
         if job.status == 'working':
             if job.status_changed < scan_job_time_threshold:
                 info('Job {} marked as terminated (timeout).'.format(job.id))
@@ -67,9 +67,7 @@ def do_scan_management():
             else:
                 requests_waiting = job.requests.filter(status__in=
                         ['waiting', 'scheduled', 'ran']).count()
-                if requests_waiting > 0:
-                    continue
-                else:
+                if requests_waiting == 0:
                     info('Job {} marked as finished.'.format(job.id))
                     job.change_status('finished')
         if job.status != 'finished' or job.status_changed > scan_job_time_threshold:
