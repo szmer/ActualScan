@@ -61,6 +61,15 @@
           ;; The parent should be a h2.
           (equalp (first (last path 2)) "h2"))
      (plump:attribute node "href"))
+    ;; CNET, some thin Solr wrapping?
+    ((and (equalp "a" (plump:tag-name node))
+          (typep node 'plump:child-node)
+          (plump:has-attribute (plump:parent node) "class")
+          (search "searchItem" (plump:attribute (plump:parent node) "class")))
+     (plump:attribute node "href"))
+    ((and (equalp "a" (plump:tag-name node))
+          (search "next" (plump:attribute node "class")))
+     (plump:attribute node "href"))
     ;; CNN
     ((and (equalp "a" (plump:tag-name node))
           (typep node 'plump:child-node)

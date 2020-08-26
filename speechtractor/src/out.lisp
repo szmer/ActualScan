@@ -3,8 +3,8 @@
 (defun html-document-data-json (html-string metadata-funs
                                             &key (classification-settings (make-hash-table))
                                             (paragraph-separator (format nil "~%~%"))
-                                            (split-sents nil))
-  (multiple-value-bind (paragraphs docs-metadata)
+                                            (split-sents nil) (remove-if-empty-url nil))
+  (multiple-value-bind (paragraphs docs-metadata metadata-log)
     (html-document-data html-string metadata-funs
                         :classification-settings classification-settings)
     (let ((paragraph-n 0)
@@ -24,6 +24,7 @@
               ((or (null paragraph)
                    (and doc-foundp (paragraph-doc-startp paragraph)))
                doc-data)
+            ;; Collect the paragraphs into the document plist text property.
               (incf paragraph-n)
               (when (paragraph-doc-startp paragraph) (setf doc-foundp t))
               (when (and doc-foundp (eq :good (paragraph-classification paragraph)))
@@ -35,6 +36,9 @@
                                    (funcall maybe-sentence-formatter
                                             (paragraph-text paragraph :cleanp t))))))
           result-docs))
+      (when remove-if-empty-url
+        (setf result-docs (remove-if (lambda (doc) (not (getf doc :url)))
+                                     result-docs)))
       ;; cl-json expects alists, we have property lists
       (let ((response (cl-json:encode-json-to-string
                         (mapcar #'alexandria:plist-alist (reverse result-docs)))))

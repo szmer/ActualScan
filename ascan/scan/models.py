@@ -26,15 +26,15 @@ class Tag(models.Model):
     creator = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='tags', null=True)
 
     def __repr__(self):
-        return '/{}/'.format(self.name)
+        return '#{}'.format(self.name)
 
     def __str__(self):
-        return '/{}/'.format(self.name)
+        return '#{}'.format(self.name)
 
 class Site(models.Model):
     homepage_url = models.CharField(max_length=8192)
     # Homepage url w/o protocol and www, or /r/subreddit
-    site_name = models.CharField(max_length=512, unique=True)
+    site_name = models.CharField(max_length=2048, unique=True)
     # An url with search for "twenty cats"
     # For Reddit, the subreddit name without /r/
     search_pointer = models.CharField(max_length=8192)
@@ -52,10 +52,10 @@ class Site(models.Model):
     MOCK_STR2 = 'cats'
 
     def __repr__(self):
-        return 'site: {}'.format(self.site_name)
+        return '+ {}'.format(self.site_name)
 
     def __str__(self):
-        return 'site: {}'.format(self.site_name)
+        return '+ {}'.format(self.site_name)
 
     def search_url_for(self, tokens):
         """
@@ -107,8 +107,9 @@ class ScanJob(models.Model):
     query_phrase = models.CharField(max_length=512)
     # Just separate tags with commas in the string. It's written and read mostly once, so we don't
     # bother with native Postgres arrays.
-    # NOTE we currently *require* tags in scan jobs
-    query_tags = models.CharField(max_length=8192)
+    query_tags = models.CharField(max_length=8192, default='')
+    # This overwrites the tags if present.
+    query_site_names = models.CharField(max_length=20480, default='')
     # These counts should be filled out when starting the job; they're needed for progress reporting
     website_count = models.IntegerField(default=0)
     subreddit_count = models.IntegerField(default=0)

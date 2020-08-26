@@ -36,7 +36,8 @@
                                (scored-with-markers tv-sentences))
                :n n)))
 
-(defun phrases-info (tv-sentences freq num-examples &key (sents-to-text t) (give-atypical nil))
+(defun phrases-info (tv-sentences freq num-examples &key (sents-to-text t) (give-atypical nil)
+                                  (give-oldest nil))
   (when *debug-scoring*
     (format t "-----Looking for phrases...-----~%"))
   (let ((bigrams (top-bigrams tv-sentences :freq freq))
@@ -55,7 +56,18 @@
                                 (typical containing-sents num-examples)))
                   (when give-atypical
                     (list :atypical (mapcar (if sents-to-text #'raw-text #'identity)
-                                                   (atypical containing-sents num-examples)))))))
+                                                   (atypical containing-sents num-examples))))
+                  (when give-oldest
+                    (list :oldest
+                          (mapcar (if sents-to-text #'raw-text #'identity)
+                                  (mapcar #'car
+                                          (remove-if (lambda (entry) ; remove undated sentences
+                                               (not (read-attribute (first entry)
+                                                                    "publication-date")))
+                                             (ranked-low (scored-with-age containing-sents)
+                                                         :n give-oldest))
+                                          )
+                                  ))))))
             ;; Sort - give the most frequent ones first.
             (sort (append (alexandria:hash-table-alist bigrams)
                          ;;- (alexandria:hash-table-alist trigrams)

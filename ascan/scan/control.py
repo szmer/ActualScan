@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta
 from logging import debug, info, error
+from urllib.parse import urlparse
 
 from django.db.models import Sum
 
-from scan.models import Tag, ScanJob, ScrapeRequest, ScanPermission, FeedbackPermission
+from scan.models import Site, Tag, ScanJob, ScrapeRequest, ScanPermission, FeedbackPermission
 
 from dynamic_preferences.registries import global_preferences_registry
 
@@ -89,8 +90,8 @@ def maybe_issue_feedback_permission(user_iden, possible_subject_links, is_ip=Fal
                 return link
     return False
 
-def request_scan(user_iden, query_phrase : str, query_tags : list, minimal_level=0, force_new=False,
-        is_ip=False, is_privileged=False):
+def request_scan(user_iden, query_phrase : str, query_tags=[], query_site_names=[],
+        minimal_level=0, force_new=False, is_ip=False, is_privileged=False):
     """
     Put an awaiting scan job in the database. query_tags should be a list of strings. If force_new
     is set and the job already exists, a ValueError is raised. Return the ScanJob object.
@@ -100,23 +101,27 @@ def request_scan(user_iden, query_phrase : str, query_tags : list, minimal_level
     """
     # TODO also recreate the job if in an inactive status
     query_tags_str = ','.join(query_tags)
+    query_sites_str = ','.join(query_site_names)
     # Try to get already existing jobs with the same parameters
     # NOTE deduplicating them across users
     if is_privileged:
         # Try to find still working jobs.
         jobs = ScanJob.objects.filter(query_phrase=query_phrase, query_tags=query_tags_str,
-                status__in=['waiting', 'working'], minimal_level=minimal_level)
+                query_site_names=query_sites_str, status__in=['waiting', 'working'],
+                minimal_level=minimal_level)
         if not jobs:
             # TODO let them choose if the scan should be new
             time_threshold = datetime.now() - timedelta(minutes=5)
             jobs = ScanJob.objects.filter(query_phrase=query_phrase, query_tags=query_tags_str,
-                    status='finished', status_changed__gte=time_threshold,
+                    query_site_names=query_sites_str, status='finished',
+                    status_changed__gte=time_threshold,
                     minimal_level=minimal_level)
     # Non-privileged users can start a scan every 30 minutes. TODO notify them
     else:
         time_threshold = datetime.now() - timedelta(minutes=30)
         jobs = ScanJob.objects.filter(query_phrase=query_phrase, query_tags=query_tags_str,
-                minimal_level=minimal_level, status_changed__gte=time_threshold)
+                query_site_names=query_sites_str, minimal_level=minimal_level,
+                status_changed__gte=time_threshold)
     debug('The user is privileged: {}, number of jobs found:'.format(is_privileged,
         0 if not jobs else len(jobs)))
     if jobs and force_new:
@@ -125,10 +130,10 @@ def request_scan(user_iden, query_phrase : str, query_tags : list, minimal_level
     if not jobs:
         if not is_ip:
             job = ScanJob.objects.create(user=user_iden, query_phrase=query_phrase,
-                    query_tags=query_tags_str, status='waiting')
+                    query_tags=query_tags_str, query_site_names=query_sites_str, status='waiting')
         else:
             job = ScanJob.objects.create(user_ip=user_iden, query_phrase=query_phrase,
-                    query_tags=query_tags_str, status='waiting')
+                    query_tags=query_tags_str, query_site_names=query_sites_str, status='waiting')
         jobs = [job] # the return statement wants a list
     return jobs[0]
 
@@ -138,42 +143,49 @@ def start_scan(scan_job):
     """
     info('Starting scan job {}'.format(scan_job.id))
     phrase_tokens = scan_job.query_phrase.split()
-    # TODO test for the situation with no coherent/findable tags
-    tag_strs = scan_job.query_tags.split(',')
-    info('Tags taken into account in this scan: {}'.format(tag_strs))
-    tags = Tag.objects.filter(name__in=tag_strs)
-    sites_queried = set()
+    sites_to_query = set()
     website_count = 0
     subreddit_count = 0
-    for tag in tags:
-        for site_link in tag.site_links.filter(level__gte=scan_job.minimal_level).all():
-            site = site_link.site
-            if not site in sites_queried:
-                sites_queried.add(site) # a site can belong to multiple tags
-                info('Starting requests for site (tag {}, scan job {})'.
-                        format(site.site_name, tag.name, scan_job.id))
-                if site.site_type == 'web':
-                    search_pointer = site.search_url_for(phrase_tokens)
-                    ScrapeRequest.objects.create(target=search_pointer,
-                            is_search=True, job=scan_job,
-                            status='waiting',
-                            source_type=site.source_type, site_name=site.site_name,
-                            site_url=site.homepage_url, site_type=site.site_type,
-                            site_id = site.id,
-                            save_copies=scan_job.save_copies or site.save_copies)
-                    website_count += 1
-                elif site.site_type == 'reddit':
-                    ScrapeRequest.objects.create(target='[reddit] '+scan_job.query_phrase,
-                            is_search=True, job=scan_job,
-                            status='waiting', site_type=site.site_type,
-                            source_type=site.source_type, site_name=site.site_name,
-                            site_url=site.homepage_url,
-                            site_id = site.id,
-                            save_copies=scan_job.save_copies or site.save_copies)
-                    subreddit_count += 1
-                else:
-                    error('Unknown site type {} for site {} ({})'.format(
-                        site.site_type, site.id, site.homepage_url))
+    if scan_job.query_site_names:
+        site_strs = scan_job.query_site_names.split(',')
+        info('Scanning the sites: {}'.format(site_strs))
+        for site in Site.objects.filter(site_name__in=site_strs):
+            sites_to_query.add(site)
+    if scan_job.query_tags:
+        # TODO test for the situation with no coherent/findable tags
+        tag_strs = scan_job.query_tags.split(',')
+        info('Tags taken into account in this scan: {}'.format(tag_strs))
+        tags = Tag.objects.filter(name__in=tag_strs)
+        for tag in tags:
+            for site_link in tag.site_links.filter(level__gte=scan_job.minimal_level).all():
+                site = site_link.site
+                if not site in sites_to_query:
+                    sites_to_query.add(site) # a site can belong to multiple tags
+    for site in sites_to_query:
+        info('Starting requests for site {} (scan job {})'.
+                format(site.site_name, scan_job.id))
+        if site.site_type == 'web':
+            search_pointer = site.search_url_for(phrase_tokens)
+            ScrapeRequest.objects.create(target=search_pointer,
+                    is_search=True, job=scan_job,
+                    status='waiting',
+                    source_type=site.source_type, site_name=site.site_name,
+                    site_url=site.homepage_url, site_type=site.site_type,
+                    site_id = site.id,
+                    save_copies=scan_job.save_copies or site.save_copies)
+            website_count += 1
+        elif site.site_type == 'reddit':
+            ScrapeRequest.objects.create(target='[reddit] '+scan_job.query_phrase,
+                    is_search=True, job=scan_job,
+                    status='waiting', site_type=site.site_type,
+                    source_type=site.source_type, site_name=site.site_name,
+                    site_url=site.homepage_url,
+                    site_id = site.id,
+                    save_copies=scan_job.save_copies or site.save_copies)
+            subreddit_count += 1
+        else:
+            error('Unknown site type {} for site {} ({})'.format(
+                site.site_type, site.id, site.homepage_url))
     scan_job.change_status('working')
     scan_job.website_count = website_count
     scan_job.subreddit_count = subreddit_count
@@ -199,7 +211,7 @@ def terminate_scan(scan_job_id):
 
 def scan_progress_info(scan_job_id):
     """
-    A dictionary: 'phase' ('waiting', 'crawl', 'unexisting' or appropriate ScanJob
+    A dictionary: 'phase' ('waiting', 'working', 'unexisting' or appropriate ScanJob
     status), possibly also 'fails', 'last_url', 'dl_proportion'. Note that dl_proportion reflects
     proportion of the pages to be crawled or the search pages depending on the phase.
     """
@@ -208,10 +220,6 @@ def scan_progress_info(scan_job_id):
     if scan_job is None:
         debug('Returning status unexisting for the job'.format(scan_job_id))
         return {'phase': 'unexisting'}
-    if scan_job.status in ['waiting', 'finished', 'terminated', 'rejected']:
-        debug('Returning status {} for the job'.format(scan_job.status,
-            scan_job_id))
-        return {'phase': scan_job.status}
 
     # TODO possibly optimize queries
     # Count the committed search and crawl (non-search) requests.
@@ -254,15 +262,19 @@ def scan_progress_info(scan_job_id):
     # The average number of scraped pages produced by each search page.
     web_committed_crawl_count = ScrapeRequest.objects.filter(is_search=False, site_type='web',
             job=scan_job, status='committed').count()
-    if web_committed_crawl_count > 0:
-        web_committed_search_count = ScrapeRequest.objects.filter(is_search=True, site_type='web',
+    web_committed_search_count = ScrapeRequest.objects.filter(is_search=True, site_type='web',
             job=scan_job, status='committed').count()
+    if web_committed_crawl_count > 0:
         average_search_page_yield = web_committed_search_count / web_committed_crawl_count
     else:
         average_search_page_yield = global_preferences['search_page_yield_estimation']
     # Unfinished search pages, which we will estimate with average yield from above.
     unfinished_search_pages_sum = ScrapeRequest.objects.filter(
             is_search=True,
+            job=scan_job,
+            status__in=['waiting', 'scheduled', 'ran']).count()
+    unfinished_crawl_pages_sum = ScrapeRequest.objects.filter(
+            is_search=False,
             job=scan_job,
             status__in=['waiting', 'scheduled', 'ran']).count()
     # Conservatively assume that each scheduled search page will yield 2 * more additional ones.
@@ -284,6 +296,24 @@ def scan_progress_info(scan_job_id):
 
     # Count failures.
     fails_count = ScrapeRequest.objects.filter(status='failed', job=scan_job).count()
+
+    # Big picture request stats (this goes to the client).
+    req_stats = {
+            'searches': (committed_reddit_search_count+web_committed_search_count
+                +unfinished_search_pages_sum),
+            'crawls': (committed_reddit_crawl_count+web_committed_crawl_count
+                +unfinished_crawl_pages_sum),
+            'commits': (committed_reddit_search_count+committed_reddit_crawl_count
+                +web_committed_search_count+web_committed_crawl_count),
+            'wait_runs': unfinished_crawl_pages_sum+unfinished_search_pages_sum,
+            'fails': fails_count,
+            'future': ((scan_job.website_count - unique_web_search_count)
+                * global_preferences['website_estimation_multiplier'] 
+                + (scan_job.subreddit_count - ran_reddit_search_count)
+                * global_preferences['subreddit_estimation_multiplier']),
+            'reddit_blocking': not committed_reddit_crawl_count
+            }
+
     # Compute the denominator for computing scan progress. In the estimation, use the real numbers
     # for done search requests and the estimators from config for the future ones.
     reddit_full_estimation = (
@@ -308,50 +338,60 @@ def scan_progress_info(scan_job_id):
             )
     full_estimation = reddit_full_estimation + web_full_estimation
 
-    debug('Progress estimation for {}:\n'
-            'Done subs Reddit: {}, future estimation: {}, current load to crawl {}, '
-            'full Reddit estimation: {}, already committed: {}\n'
-            'Known yield in Web: {} (+search pages {}), future estimation: {}, estimation of '
-            'current yield {}, full web estimation {}\n'
-            'Full estimation numerator is {}, denominator {}'
-            .format(scan_job.id,
-                # Reddit done
-                reddit_past_load_from_search,
-                # Reddit future
-                (scan_job.subreddit_count - ran_reddit_search_count)
-                * global_preferences['subreddit_estimation_multiplier'],
-                # Reddit current
-                reddit_current_load_from_search,
-                # Reddit estimation,
-                reddit_full_estimation,
-                # Reddit committed
-                committed_reddit_crawl_count+committed_reddit_search_count,
-                # Web known yield
-                web_known_yield_from_search,
-                web_search_count,
-                # Web future
-                (scan_job.website_count - unique_web_search_count)
-                * global_preferences['website_estimation_multiplier'],
-                # Web estimation of the current yield
-                web_current_yield_from_search,
-                # Web full estimation
-                web_full_estimation,
-                # Full estimation components
-                (committed_reddit_search_count + committed_web_search_count
-                    + committed_crawl_count),
-                full_estimation))
-
-    dl_proportion = (committed_reddit_search_count
-            + committed_web_search_count
-            + committed_crawl_count)
-    if full_estimation > 0:
-        dl_proportion /= full_estimation
+    if scan_job.status in ['waiting', 'finished', 'terminated', 'rejected']:
+        phase = scan_job.status
     else:
+        phase = 'working'
+
+    if scan_job.status == 'finished':
         dl_proportion = 1.0
-    phase = 'crawl' # as the search isn't prioritzed, see above
+    else:
+        debug('Progress estimation for {}:\n'
+                'Done subs Reddit: {}, future estimation: {}, current load to crawl {}, '
+                'full Reddit estimation: {}, already committed: {}\n'
+                'Known yield in Web: {} (+search pages {}), future estimation: {}, estimation of '
+                'current yield {}, full web estimation {}\n'
+                'Full estimation numerator is {}, denominator {}'
+                .format(scan_job.id,
+                    # Reddit done
+                    reddit_past_load_from_search,
+                    # Reddit future
+                    (scan_job.subreddit_count - ran_reddit_search_count)
+                    * global_preferences['subreddit_estimation_multiplier'],
+                    # Reddit current
+                    reddit_current_load_from_search,
+                    # Reddit estimation,
+                    reddit_full_estimation,
+                    # Reddit committed
+                    committed_reddit_crawl_count+committed_reddit_search_count,
+                    # Web known yield
+                    web_known_yield_from_search,
+                    web_search_count,
+                    # Web future
+                    (scan_job.website_count - unique_web_search_count)
+                    * global_preferences['website_estimation_multiplier'],
+                    # Web estimation of the current yield
+                    web_current_yield_from_search,
+                    # Web full estimation
+                    web_full_estimation,
+                    # Full estimation components
+                    (committed_reddit_search_count + committed_web_search_count
+                        + committed_crawl_count),
+                    full_estimation))
+
+        dl_proportion = (committed_reddit_search_count
+                + committed_web_search_count
+                + committed_crawl_count)
+        if full_estimation > 0:
+            dl_proportion /= full_estimation
+        else:
+            dl_proportion = 1.0
     done_request = ScrapeRequest.objects.filter(
             status__in=['committed', 'failed'], job=scan_job).order_by('-status_changed')[:1]
     return {'phase': phase, 'fails': fails_count,
-            'last_url': (done_request[0].site_url + '/' + done_request[0].target
+            'last_url': (
+                (done_request[0].target if urlparse(done_request[0].target).netloc
+                    else done_request[0].site_url + '/' + done_request[0].target)
                 if len(done_request) > 0 else None),
+            'req_stats': req_stats,
             'dl_proportion': dl_proportion}

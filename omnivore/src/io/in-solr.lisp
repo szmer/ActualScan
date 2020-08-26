@@ -1,13 +1,16 @@
 (in-package :omnivore)
 
-(defun solr-tokens (address port core query &key (start-date nil) (end-date nil) (undated nil)
+(defun solr-tokens (address port core solr-query &key (start-date nil) (end-date nil) (undated nil)
                             (sites nil))
+  "Values: loose tokens with sentence references, plist of additional stats (years, document counts\
+   for the year"
   ;;; One of general KLUDGE s is that there is no corpus object here.
   "The second value contains statistics got directly from Solr."
   (assert (not (and end-date (not start-date))))
   (let* ((http-query (format nil
                                (concatenate 'string
                                             "http://~A:~A/solr/~A/select?q=~A"
+                                            ;; note that fq can be faster than q
                                             ;; Set the start and end dates.
                                             (if start-date
                                                 (concatenate
@@ -20,13 +23,22 @@
                                                         (or end-date "NOW"))
                                                   ;; apparently that's how you detect empty fields
                                                   ;; in AND/OR constructions
-                                                  (if undated "%20OR%20(*:*%20NOT%20date_post:*)"
+                                                  (if undated "%20OR%20(*:*%20AND%20-date_post:%5B*%20TO%20*%5D)"
                                                       ""))
                                                 "")
                                             ;; Set the desired sites.
                                             (if sites
                                                 (format nil "&fq=site_name:(~A)"
-                                                        (cl-strings:join sites :separator "%20"))
+                                                        (cl-strings:replace-all
+                                                          (cl-strings:join
+                                                            (mapcar (lambda (name)
+                                                                      ;; quotes
+                                                                      (format nil "%22~A%22" name))
+                                                                    sites)
+                                                            ;; space
+                                                            :separator "%20")
+                                                          ;; Solr has a problem with slashes.
+                                                          "/" "%5C%2F"))
                                                 "")
                                             ;; Get those fields, but no text (only highlights).
                                             "&fl=url,author,title,date_post,date_retr,site_name"
@@ -43,14 +55,18 @@
                                             "&rows=~A"
                                             ;; Faceting - get time information.
                                             "&facet.range=date_post&facet=true"
-                                            "&facet.range.start=2010-01-01T00:00:00Z&facet.range.end=NOW"
-                                            "&facet.range.gap=%2B1YEAR"
+                                            (format
+                                              nil
+                                              "&facet.range.start=~A&facet.range.end=~A"
+                                              (or start-date "2010-01-01T00:00:00Z")
+                                              (or end-date "NOW"))
+                                            "&facet.range.gap=%2B1MONTH"
                                             ;; Group by source_type - balance them out
-                                            "&group=true&group.field=source_type&group.limit=~A"
+                                            "&group=true&group.field=site_name&group.limit=~A"
                                             ;; Give us a single docs field, instead of separating
                                             ;; the groups
                                             "&group.main=true")
-                               address port core query *solr-snippets-per-doc* *solr-total-row-limit*
+                               address port core solr-query *solr-snippets-per-doc* *solr-total-row-limit*
                                *solr-group-row-limit*))
          (response (timed-execution
                        (babel:octets-to-string
@@ -128,8 +144,9 @@
                                         (gethash "facet_ranges"
                                                  (gethash "facet_counts"
                                                           response-json)))))
-          (if year-label-p
-              (progn (push (subseq item 0 4) (getf result-list :years))
+          (if year-label-p ; years alternate with counts in Solr results
+              (progn (push (subseq item 0 7) ; extract only the year from the string
+                           (getf result-list :years))
                      (setf year-label-p nil))
               ;; TODO scale up for the current year
               (progn (push item (getf result-list :year-counts))

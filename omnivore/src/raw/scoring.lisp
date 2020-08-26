@@ -91,25 +91,14 @@
   "Return the sentences with assigned average tf-idf scores of their tokens. The list is suitable\
    for correcting and ranking functions."
   (let ((term-doc-freqs (make-hash-table :test #'equalp)))
-    ;; Collect the doc frequency table info.
-    (dolist (sentence sentences)
-      (dolist (token (remove-duplicates (division-divisions sentence) :key #'division-raw-text
-                                        :test #'equalp))
-        (if (gethash (division-raw-text token) term-doc-freqs)
-            (incf (gethash (division-raw-text token) term-doc-freqs))
-            (setf (gethash (division-raw-text token) term-doc-freqs) 1))))
-    ;; Compute its score for each sentence.
-    (mapcar (lambda (sentence)
-              (let ((score 0.0))
-                (dolist (token (division-divisions sentence))
-                  ;; add the idf to the score, multiplied by 1.
-                  (incf score (/ (length sentences)
-                                 (gethash (division-raw-text token) term-doc-freqs))))
+    (mapcar (lambda (sentence sent-tf-idfs)
+              (let ((score-sum 0.0))
+                (maphash (lambda (term tf-idf) (incf score-sum tf-idf))
+                         sent-tf-idfs)
                 (list sentence
-                      ;; compute the average tf-idf
-                      (* score
-                         (length (division-divisions sentence))))))
-            sentences)))
+                      (/ score-sum (length (division-divisions sentence))))))
+            sentences
+            (tf-idfs-for-sentences sentences))))
 
 (defun scored-with-length-deviation (sentences)
   "Score sentences with their absolute deviation of length from the average."
@@ -139,3 +128,36 @@
                                 (mapcar #'division-raw-text (division-divisions sentence))))
                                  markers))))
           sentences))
+
+(defun scored-with-age (tv-divisions &key (dummy-value 1e15))
+  (mapcar
+    (lambda (division)
+      (list division
+            (if (not (read-attribute division "publication-date"))
+                           dummy-value
+                           (local-time:timestamp-to-universal
+                             (local-time:parse-rfc3339-timestring
+                               (read-attribute division "publication-date"))))))
+    tv-divisions))
+
+(defun top-terms-by-tf-idfs (tf-idfs-list &key (first-n-scored 5) (cutoff 2) (remove-stopwords t))
+  "Extract top terms as a list of two-elems lists from a list of tf-idfs hash tables for some docs.\
+   Note this doesn't seem to work well, since the top terms are spread thinly - maybe with better\
+   preprocessing?"
+  (let ((term-scores (make-hash-table :test #'equalp))
+        (term-score-values nil))
+    (dolist (tf-idfs tf-idfs-list)
+      (let ((term-score-values (alexandria:hash-table-alist tf-idfs)))
+        (setf term-score-values (sort term-score-values #'> :key #'cdr))
+        (dolist (entry (subseq term-score-values 0 (min first-n-scored (length term-score-values))))
+          (if (gethash (division-raw-text (car entry)) term-scores)
+              (incf (gethash (division-raw-text (car entry)) term-scores))
+              (setf (gethash (division-raw-text (car entry)) term-scores) 1)))))
+    (setf term-score-values (alexandria:hash-table-alist term-scores))
+    (when remove-stopwords
+      (setf term-score-values (remove-if (lambda (entry) (stopwordp (string-downcase (car entry))))
+                                         term-score-values)))
+    (setf term-score-values (sort term-score-values #'> :key #'cdr))
+    (subseq term-score-values 0
+            (or (position-if (lambda (entry) (> cutoff (cdr entry))) term-score-values)
+                (length term-score-values)))))

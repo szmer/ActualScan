@@ -10,14 +10,18 @@
       (list :sent-count (length tv-sentences)
             :typical (timed-execution (typical tv-sentences 10))
             :atypical (timed-execution (atypical tv-sentences 10))
+            :top-terms (tokens-frequency-list tv-tokens :cutoff (max 3 (/ (length tv-tokens) 800)))
+            ;; This gives more flat list of semi-obscure phrases like E.T., p.m., Chatham
+            ;; (top-terms-by-tf-idfs (tf-idfs-for-sections (tokens-sections tv-tokens)))
             ;; TODO get those directly from Solr with additional faceting?
             :sites-stats (timed-execution (sites-stats tv-sentences))
             :phrases (timed-execution
                       (phrases-info tv-sentences
-                                    (max 5
+                                    (max 5 ; the minimum phrase frequency
                                          (ceiling (* *phrase-freq-threshold* (length tv-sentences))))
                                     *phrase-example-count*
-                                    :sents-to-text nil))
+                                    :sents-to-text nil
+                                    :give-oldest 1))
             :years (getf solr-stats :years)
             :year-counts (getf solr-stats :year-counts)))))
 

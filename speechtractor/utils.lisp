@@ -21,3 +21,11 @@
 
 (defun server-debug-print (string)
   (hunchentoot:acceptor-log-message speechtractor::*server* :info string))
+
+(defun html-stripped (text)
+  (plump:render-text (plump:parse (format nil "<e>~A</e>" text))))
+
+(defun rejecting-when-true (fun argument)
+  (let ((value (funcall fun argument)))
+    (unless value
+      argument)))

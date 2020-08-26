@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 import http.client
+import json
 from logging import debug, warning
 import urllib
 from urllib.parse import urlparse
@@ -37,8 +38,9 @@ def stractor_reading(text, source_type):
     Get the text of JSON response of Speechtractor for text and source_type, or HTTP status error
     code as int.
     """
-    params = urllib.parse.urlencode({'html': text, 'sourcetype': source_type},
-            quote_via=urllib.parse.quote)
+    params = urllib.parse.urlencode({'html': text, 'sourcetype': source_type,
+        'emptyurl': '1' if source_type in ['media', 'blog'] else '0'},
+        quote_via=urllib.parse.quote)
     headers = {"Content-type": "application/x-www-form-urlencoded",
             "Accept": "text/json"}
     stractor_conn = http.client.HTTPConnection('speechtractor', port=3756, timeout=5)
@@ -70,9 +72,23 @@ def solr_update(req_body, req_id=None, req_class=False):
         return False
     return True
 
+def solr_check_urls(date_post_check, date_retr_check, urls):
+    urls_to_skip = set()
+    debug('Asking Solr about urls: {} or more'.format(urls[:20]))
+    query_str = ('/solr/lookupy/select?fl=url&q=date_post:{}%20date_retr:{}&q=url:({})'.format(
+        urllib.parse.quote(date_post_check), urllib.parse.quote(date_retr_check),
+        urllib.parse.quote(' '.join(urls), safe='')))
+    conn = http.client.HTTPConnection('solr', port=8983)
+    conn.request('GET', query_str, headers={'Content-type': 'application/json'})
+    response = conn.getresponse()
+    response_text = response.read().decode('utf-8')
+    response_json = json.loads(response_text)
+    for doc in response_json['response']['docs']:
+        urls_to_skip.add(doc['url'])
+    return urls_to_skip 
+
 def update_request_status(request, new_status, failure_comment=None):
-    request.status = new_status
-    request.status_changed = datetime.now(timezone.utc)
+    request.change_status(new_status)
     if failure_comment is not None:
         request.failure_comment = failure_comment
     request.save()

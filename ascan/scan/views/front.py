@@ -11,10 +11,10 @@ from dynamic_preferences.registries import global_preferences_registry
 from ipware import get_client_ip
 
 from scan.control import (maybe_issue_guest_scan_permission, request_scan, scan_progress_info,
-        verify_scan_permission, maybe_issue_feedback_permission)
+        terminate_scan, verify_scan_permission, maybe_issue_feedback_permission)
 from scan.forms import PublicScanForm
 from scan.utils import date_fmt, trust_level_to_numeric
-from scan.models import Site, TagSiteLink
+from scan.models import ScanJob, Site, TagSiteLink
 
 @login_required
 def accountinfo(request):
@@ -29,6 +29,27 @@ def index(request):
         can_scan = maybe_issue_guest_scan_permission(get_client_ip(request))
     return render(request, 'scan/home.html', context={ 'can_scan': can_scan, 'form': form })
 
+@login_required
+def scaninfo(request):
+    if not 'job_id' in request.GET:
+        messages.add_message(request, messages.ERROR, 'No scan job specified.')
+        context = { 'status_data': { 'phase': 'Unknown job.' }, 'is_good': False, 'result': False }
+        return render(request, 'scan/scanresults.html', context=context, status=400)
+    job_id = request.GET['job_id']
+    job = ScanJob.objects.get(id=job_id)
+    if job is None or not (request.user.is_staff or request.user == job.user):
+        messages.add_message(request, messages.ERROR, 'Bad scan job specified.')
+        context = { 'status_data': { 'phase': 'Bad job.' }, 'is_good': False, 'result': False }
+        return render(request, 'scan/scanresults.html', context=context, status=400)
+    if 'terminate' in request.GET and request.GET['terminate']:
+        terminate_scan(job.id)
+    progress_info = scan_progress_info(job.id)
+    return render(request, 'scan/scanresults.html',
+            { 'status_data': progress_info,
+                'scan_phrase': job.query_phrase, 'scan_id': job.id,
+                'is_good': True, # KLUDGE, just don't display warnings in HTML
+                'job_id': job_id })
+
 def scanresults(request):
     global_preferences = global_preferences_registry.manager()
 
@@ -37,12 +58,13 @@ def scanresults(request):
     if not form.is_valid():
         # Make a short dict compatible with what scan_progress_info would return.
         context = { 'status_data': { 'phase': 'Bad request failure.' },
-                'errors': form.errors, 'is_good': False, 'result': False }
+                'form': form, 'is_good': False, 'result': False }
         return render(request, 'scan/scanresults.html', context=context, status=400)
 
     # Unpacking the form data.
     scan_query = form.cleaned_data['scan_query']
     query_tags = [tag.name for tag in form.cleaned_data['query_tags']]
+    query_site_names = [site.site_name for site in form.cleaned_data['query_sites']]
     start_date = date_fmt(form.cleaned_data['start_date'])
     end_date = date_fmt(form.cleaned_data['end_date'])
     allow_undated = form.cleaned_data['allow_undated']
@@ -60,7 +82,7 @@ def scanresults(request):
             debug('A scan will be performed.')
             job = request_scan((request.user if request.user.is_authenticated
                 else get_client_ip(request)),
-                scan_query, query_tags,
+                scan_query, query_tags=query_tags, query_site_names=query_site_names,
                 minimal_level=minimal_level,
                 is_ip=not request.user.is_authenticated,
                 is_privileged=request.user.is_staff)
@@ -82,12 +104,11 @@ def scanresults(request):
                     'results instead.')
 
     # The index-only search response (if there is no scan or it finished).
-    query_site_names = [site.site_name
-            for site in Site.objects.filter(
-                tag_links__tag__in=form.cleaned_data['query_tags']).all()]
+    query_site_names += [site.site_name
+                for site in Site.objects.filter(
+                    tag_links__tag__in=form.cleaned_data['query_tags']).all()]
     try:
         omnivore_conn = http.client.HTTPConnection('omnivore', port=4242, timeout=10)
-        # TODO query tags (give Solr the acceptable sites)
         omnivore_addr = '/result?q={}&sdate={}&edate={}&undat={}&sites={}'.format(
             quote(scan_query), start_date, end_date, '1' if allow_undated else '0',
             ','.join(query_site_names))
@@ -102,9 +123,10 @@ def scanresults(request):
             info('Bad omnivore response for {}: {}'.format(scan_query,
                 omnivore_response_text))
             raise e
-        debug('Omnivore responded for {}: {}'.format(scan_query,
+        info('Omnivore responded for {}: {}'.format(scan_query,
             omnivore_results))
-        context = { 'result': omnivore_results, 'scan_phrase': scan_query, 'is_good': True }
+        context = { 'result': omnivore_results, 'scan_phrase': scan_query, 'is_good': True,
+                'form': form,  }
 
         # Try to issue and add a feedback permission.
         if (omnivore_results['sitesStats'] is not None
@@ -132,5 +154,5 @@ def scanresults(request):
     except Exception as e:
         info('Error processing scan/search request {}: {}'.format(type(e), e))
         context = { 'status_data': { 'phase': 'Internal error when processing the request.' },
-                'is_good': False, 'result': False }
+                'is_good': False, 'result': False, 'form': form }
         return render(request, 'scan/scanresults.html', context=context, status=500)

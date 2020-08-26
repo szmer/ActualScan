@@ -52,12 +52,17 @@
                                  (cons
                                    :typical
                                    (mapcar #'sent-alist-representation
-                                           (getf phrase-entry :typical)))))
+                                           (getf phrase-entry :typical)))
+                                 (cons
+                                   :oldest
+                                   (mapcar #'sent-alist-representation
+                                           (getf phrase-entry :oldest)))))
                          (getf query-result :phrases)))
            (cons :sites-stats
                  (mapcar (lambda (site-entry) (list (cons :site (car site-entry))
                                                     (cons :frequency (cdr site-entry))))
                          (getf query-result :sites-stats)))
+           (cons :top-terms (getf query-result :top-terms))
            (cons :years (getf query-result :years))
            (cons :year-counts (getf query-result :year-counts))))))
 

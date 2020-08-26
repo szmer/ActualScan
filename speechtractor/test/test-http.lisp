@@ -7,7 +7,7 @@
                          (format nil
                                  (concatenate 'string
                                               "http://127.0.0.1:~A/api/v01/interpret"
-                                              "?sourcetype=test&html=~A")
+                                              "?sourcetype=test&emptyurl=1&html=~A")
                                  speechtractor::*http-port*
                                  (drakma:url-encode
                                    "<body><p author='Sophie'>My very interesting and completely realistic example with lots of words</p></body>"

@@ -54,7 +54,7 @@ services:
      build:
         context: .
         dockerfile: Dockerfile_website
-     command: python reddit_scraper.py -L WARNING
+     command: python reddit_scraper.py -L INFO
      working_dir: /scrapies
      env_file:
         - '.env'

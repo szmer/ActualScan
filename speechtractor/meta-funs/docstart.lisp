@@ -43,6 +43,9 @@
          (cl-ppcre:scan (boundary-regex "next") (plump:attribute node "class"))
          ;; Wordpress search
          (cl-ppcre:scan (boundary-regex "post") (plump:attribute node "class"))
+         ;; CNET, some thin Solr wrapping?
+         (search "searchItem" (plump:attribute node "class"))
+         (search "next" (plump:attribute node "class"))
          ;; CNN: cnn-search__result--article or gallery
          (cl-ppcre:scan "result-+article" (plump:attribute node "class"))
          (cl-ppcre:scan "result-+gallery" (plump:attribute node "class"))

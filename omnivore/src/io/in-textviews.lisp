@@ -1,5 +1,14 @@
 (in-package :omnivore)
 
+(defun tokens-sections (tv-tokens &key (deduplicate t))
+  (if deduplicate
+      ;; NOTE We can deduplicate by object identity (#'eq) as long as string duplicates are filtered
+      ;; when loading from Solr.
+      (remove-duplicates
+        (mapcar (lambda (token) (record-parent (record-parent token)))
+                tv-tokens))
+      (mapcar (lambda (token) (record-parent (record-parent token)))
+              tv-tokens)))
 
 (defun tokens-sents (tv-tokens &key (deduplicate t))
   (if deduplicate
@@ -12,6 +21,7 @@
               tv-tokens)))
 
 (defun tokens-section-sents (tv-tokens &key (deduplicate t))
+  "Get all sentences of the sections where the tokens belong."
   (do* ((sections)
         (tokens-iterated (copy-list tv-tokens))
         (token (pop tokens-iterated) (pop tokens-iterated)))
@@ -24,6 +34,7 @@
       (pushnew (record-parent (record-parent token)) sections)))
 
 (defun tokens-sents-with-windows (window-side-size tv-tokens &key (deduplicate t))
+  "Get tokens sentences with windows of neighboring sentences of the desired size."
   (do* ((returned-sents)
         (tokens-iterated (copy-list tv-tokens))
         (token (pop tokens-iterated) (pop tokens-iterated)))

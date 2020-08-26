@@ -1,5 +1,6 @@
 {% extends 'scan/base.html' %}
 {% load bootstrap4 %}
+{% load crispy_forms_tags %}
 {% load static %}
 
 {% block page_title %}Search{% endblock %}
@@ -17,14 +18,8 @@
 
 <form action="/scanresults/">
    <dl>
-   {% csrf_token %}
-   {% bootstrap_form form %}
+   {% crispy form %}
    </dl>
-
-   <button type="submit" class="btn btn-primary btn-lg">Search the index</button>
-   {% if can_scan %}
-   <button name="is_scan" value="true" type="submit" class="btn btn-primary btn-lg">Scan the Web</button>
-   {% endif %}
 </form>
 </div>
 {% endblock %}

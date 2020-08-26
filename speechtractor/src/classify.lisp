@@ -120,16 +120,18 @@
 (defun html-document-data (html-string metadata-funs
                                        &key (classification-settings (make-hash-table))
                                        (initial-only nil))
-  "Returns two values: list of paragraph objects and a list of document metadata property \
-   lists for paragraphs marked as doc-startp. metadata-funs should be a property list \
-   containing functions that take a plump node and a DOM path (as a list) and possibly return \
-   relevant metadata. If no :doc-startp function is provided, we use *doc-startp-default-fun*.\
-   If a :skip-p function is provided, it will be used to skip some tag trees entirely. \
-   A :meta-burner function can be used to extract metadata from a HTML subtree that would be \
-   otherwise ignored. initial-only option is for debugging (display :near-good etc.)"
+  "Returns three values: 1) list of paragraph objects 2) a list of document metadata property \
+   lists for paragraphs marked as doc-startp 3) a log of metadata changes as a list. \
+   metadata-funs should be a property list containing functions that take a plump node and a \
+   DOM path (as a list) and possibly return relevant metadata. If no :doc-startp function is \
+   provided, we use *doc-startp-default-fun*. If a :skip-p function is provided, it will be \
+   used to skip some tag trees entirely. A :meta-burner function can be used to extract metadata \
+   from a HTML subtree that would be otherwise ignored. initial-only option is for debugging \
+   (display :near-good etc.)"
   (do* ((dom (plump:parse html-string))
         (paragraphs)
         (docs-metadata)
+        (metadata-log)
         (paths-nodes (mapcar (lambda (elem) (list nil elem))
                              (vector->list (plump:children dom))))
         (path-node (pop paths-nodes) (pop paths-nodes))
@@ -140,7 +142,8 @@
               (classify-paragraphs (reverse paragraphs)
                                    :classification-settings classification-settings
                                    :initial-only initial-only)
-              docs-metadata)))
+              docs-metadata
+              (reverse metadata-log))))
     (destructuring-bind (path node) path-node
       (if (or
             (plump:comment-p node)
@@ -154,6 +157,11 @@
             (let ((meta-output (funcall (getf metadata-funs :meta-burner) node path)))
               (when meta-output
                 (dolist (key (remove-if-not #'keywordp meta-output))
+                  (push (format nil "Doc ~A: ~A added from ~A/~A: ~A" (length docs-metadata) key
+                                (plump:tag-name node)
+                                (alexandria:hash-table-alist (plump:attributes node))
+                                (getf meta-output key))
+                        metadata-log)
                   (setf (getf (car (last docs-metadata)) key)
                         (getf meta-output key))))))
           ;; The normal procedure with non-refused tags.
@@ -198,6 +206,11 @@
                   (dolist (key property-keys)
                     (let ((value (funcall (getf metadata-funs key) node path)))
                       (when value
+                        (push (format nil "Doc ~A: ~A added from ~A/~A: ~A" (length docs-metadata) key
+                                      (plump:tag-name node)
+                                      (alexandria:hash-table-alist (plump:attributes node))
+                                      value)
+                              metadata-log)
                         (setf (getf (car (last docs-metadata)) key)
                               value)))))))
             ;; Add the text to the paragraph.

@@ -3,12 +3,12 @@ from datetime import datetime, timezone
 import json
 import logging
 from logging import getLogger
+import os
 import re
 
 # Connect to Django.
 import sys
 sys.path.append('/ascan')
-import os
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ascan.settings')
 import django
 django.setup()
@@ -34,10 +34,7 @@ from dynamic_preferences.registries import global_preferences_registry
 
 # We need to get one module deeper comparing to the general spider, because we're outside of the
 # Scrapy project.
-from genscrap.genscrap.lib import date_fmt, solr_update, update_request_status
-from genscrap.genscrap.flask_instance.settings import (
-        REDDIT_UA, REDDIT_CLIENT, REDDIT_SECRET
-        )
+from genscrap.genscrap.lib import date_fmt, solr_update, update_request_status, solr_check_urls
 #
 # Read command line args.
 #
@@ -94,25 +91,44 @@ def format_text(text):
             result += sent + '\n'
     return result
 
-def make_scrape_request(target, job_id, status='ran'):
-    logger.info('Ran a Reddit scrape request for {} ({})'.format(target, job_id))
+def make_scrape_request(base_scrape_request, target, job_id, status='ran'):
+    logger.debug('Ran a Reddit scrape request for {} ({})'.format(target, job_id))
     return ScrapeRequest.objects.create(target=target,
             is_search=False,
-            job_id=search_scrape_request.job_id, status=status,
+            job_id=base_scrape_request.job_id, status=status,
             status_changed=datetime.now(timezone.utc),
-            source_type=search_scrape_request.source_type,
-            site_name=search_scrape_request.site_name,
-            site_url=search_scrape_request.site_url,
-            site_id=search_scrape_request.site_id,
+            source_type=base_scrape_request.source_type,
+            site_name=base_scrape_request.site_name,
+            site_url=base_scrape_request.site_url,
+            site_id=base_scrape_request.site_id,
             site_type='reddit',
-            save_copies=search_scrape_request.save_copies)
+            save_copies=base_scrape_request.save_copies)
 
 def process_submission(submission, submission_scrape_request):
+    logger.info('Processing the submission: {}'.format(submission_scrape_request.target))
     try:
+        # Load all the 'load more's.
+        submission.comments.replace_more(limit=None)
+        # Apply some rules for deleting comments on the top level.
+        minimum_score = 0
+        if len(submission.comments) >= REDDIT_MANY_COMMENTS_THRESHOLD:
+            minimum_score = int(len(submission.comments) / REDDIT_MANY_COMMENTS_MINSCORE_RATIO)
+        # NOTE this relies on existing the _comments field in CommentsForest object as a list.
+        deletions = []
+        for comment_n, comment in enumerate(submission.comments._comments):
+            # Remove comments downvoted into oblivion.
+            if comment.score < minimum_score:
+                deletions.append(comment_n)
+        submission.comments._comments = [comment for comment_n, comment
+                in enumerate(submission.comments._comments)
+                if not comment_n in deletions]
+
+        # Possibly make the comment for the submission.
         if ok(submission, 'selftext'):
             submission_obj = {'reason_scraped': submission_scrape_request.job_id,
                     'source_type': 'f',
                     'date_retr': date_fmt(datetime.now(tz=timezone.utc)) }
+            logger.debug('JSON object for Solr created.')
             submission_obj['text'] = format_text(submission.selftext)
             if ok(submission, 'permalink'):
                 submission_obj['url'] = 'https://reddit.com'+submission.permalink
@@ -135,14 +151,16 @@ def process_submission(submission, submission_scrape_request):
             solr_json_text = json.dumps([submission_obj])
             solr_update(solr_json_text, req_id=submission_scrape_request.id,
                     req_class=ScrapeRequest)
-            update_request_status(submission_scrape_request, 'committed')
 
-            # Make the comment objects (Solr documents).
-            for comment in submission.comments.list():
-                # Notify the database.
-                comment_scrape_request = make_scrape_request(comment.permalink,
-                           submission_scrape_request.job_id)
-                process_comment(comment, comment_scrape_request)
+        # Make the comment objects (Solr documents).
+        logger.info('Going through the comments...')
+        for comment in submission.comments.list():
+            # Notify the database.
+            comment_scrape_request = make_scrape_request(submission_scrape_request,
+                    comment.permalink, submission_scrape_request.job_id)
+            process_comment(comment, comment_scrape_request)
+
+        update_request_status(submission_scrape_request, 'committed')
     except (PRAWException, NotFound, ServerError) as e:
         update_request_status(submission_scrape_request, 'failed',
                 failure_comment='{}: {}'.format(type(e).__name__, str(e)))
@@ -203,9 +221,12 @@ global_preferences = global_preferences_registry.manager()
 REDDIT_SEARCH_DEPTH = global_preferences['reddit_search_depth']
 REDDIT_MANY_COMMENTS_THRESHOLD = global_preferences['reddit_many_comments_threshold']
 REDDIT_MANY_COMMENTS_MINSCORE_RATIO = global_preferences['reddit_many_comments_minscore_ratio']
+DEDUP_DATE_POST_CHECK = global_preferences['dedup_date_post_check']
+DEDUP_DATE_RETR_CHECK = global_preferences['dedup_date_retr_check']
 
 logger.info('Reddit scraper connecting to Reddit.')
-reddit = praw.Reddit(user_agent=REDDIT_UA, client_id=REDDIT_CLIENT, client_secret=REDDIT_SECRET)
+reddit = praw.Reddit(user_agent=os.environ['REDDIT_UA'],
+        client_id=os.environ['REDDIT_CLIENT'], client_secret=os.environ['REDDIT_SECRET'])
 
 logger.info('Rerunning the leftover requests.')
 leftover_scrape_requests= ScrapeRequest.objects.filter(
@@ -213,12 +234,20 @@ leftover_scrape_requests= ScrapeRequest.objects.filter(
     status__in=['waiting', 'ran'],
     is_search=False)
 for scrape_request in leftover_scrape_requests:
+    # Deduplicate with Solr.
+    permalink = 'https://reddit.com'+scrape_request.target
+    is_url_skippable = solr_check_urls(DEDUP_DATE_POST_CHECK, DEDUP_DATE_RETR_CHECK,
+            [permalink])
+    if permalink in is_url_skippable:
+        update_request_status(scrape_request, 'cancelled', failure_comment='dupe')
+        continue
+
     slash_count = scrape_request.target.count('/')
     if slash_count == 6:
-        submission = Submission(reddit, url='https://reddit.com'+scrape_request.target)
+        submission = Submission(reddit, url=permalink)
         process_submission(submission, scrape_request)
     elif slash_count == 7:
-        comment = Comment(reddit, url='https://reddit.com'+scrape_request.target)
+        comment = Comment(reddit, url=permalink)
         process_comment(comment, scrape_request)
 # This looks for new awaiting ScrapeRequests in the database, put there by start_scan from
 # scan schedule control, from a ScanJob.
@@ -252,8 +281,12 @@ while True:
             for submission in submissions: # is seems that here bad subreddit names may fail
                 if not ok(submission, 'permalink'):
                     continue
-                submission_scrape_request = make_scrape_request(submission.permalink,
-                        search_scrape_request.job_id, status='scheduled')
+                is_url_skippable = solr_check_urls(DEDUP_DATE_POST_CHECK, DEDUP_DATE_RETR_CHECK,
+                        [submission.permalink])
+                if submission.permalink in is_url_skippable:
+                    continue
+                submission_scrape_request = make_scrape_request(search_scrape_request,
+                        submission.permalink, search_scrape_request.job_id, status='scheduled')
                 submissions_list.append(submission)
                 submission_requests[submission.permalink] = submission_scrape_request.id
         except (PRAWException, NotFound, ServerError) as e:
@@ -264,36 +297,20 @@ while True:
         # Only now mark the search request as ran - we now know the load of requests it introduces.
         update_request_status(search_scrape_request, 'ran')
 
-        # Scrape request level submission deduplication. TODO just consult with Solr!
-        downloaded_submissions = set()
         # Process submissions from this subreddit.
+        downloaded_submissions = set() # skip the same submission inside one search request
         for submission in submissions_list:
             if not ok(submission, 'permalink'):
                 continue
             if submission.permalink in downloaded_submissions:
                 continue
-            # Add to the dedup and to the database.
             downloaded_submissions.add(submission.permalink)
+
             submission_scrape_request = ScrapeRequest.objects.get(id=
                     submission_requests[submission.permalink])
             if submission_scrape_request.status == 'cancelled':
                 continue
             update_request_status(submission_scrape_request, 'ran')
-            # Load all the 'load more's.
-            submission.comments.replace_more(limit=None)
-            # Apply some rules for deleting comments on the top level.
-            minimum_score = 0
-            if len(submission.comments) >= REDDIT_MANY_COMMENTS_THRESHOLD:
-                minimum_score = int(len(submission.comments) / REDDIT_MANY_COMMENTS_MINSCORE_RATIO)
-            # NOTE this relies on existing the _comments field in CommentsForest object as a list.
-            deletions = []
-            for comment_n, comment in enumerate(submission.comments._comments):
-                # Remove comments downvoted into oblivion.
-                if comment.score < minimum_score:
-                    deletions.append(comment_n)
-            submission.comments._comments = [comment for comment_n, comment
-                    in enumerate(submission.comments._comments)
-                    if not comment_n in deletions]
             # Make the submission's object (Solr document).
             process_submission(submission, submission_scrape_request)
         update_request_status(search_scrape_request, 'committed')

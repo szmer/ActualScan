@@ -55,19 +55,7 @@ def do_scan_management():
     FeedbackPermission.objects.filter(time_issued__lte=expiration_threshold).delete()
     # Mark finished jobs and broadcast progress to WebSockets.
     channel_layer = channels.layers.get_channel_layer()
-    for job in ScanJob.objects.all():
-        debug('Notifying sockets about the job {}'.format(job.id))
-        try:
-            async_to_sync(channel_layer.group_send)(
-                    'scan_{}'.format(job.id), {
-                        "type": 'progress.info',
-                        "text": json.dumps({
-                            'subject': 'progress_info',
-                            'content': scan_progress_info(job.id)
-                            }),
-                        })
-        except Exception as e:
-            info('Websocket notification error: {}'.format(repr(e)))
+    for job in ScanJob.objects.all(): # TODO filter old finished?
         # The threshold to get scan jobs terminated due to timeout.
         scan_job_time_threshold = datetime.now(timezone.utc) - timedelta(
             seconds=global_preferences['scan_job_time_to_live'])
@@ -77,13 +65,26 @@ def do_scan_management():
                 info('Job {} marked as terminated (timeout).'.format(job.id))
                 job.change_status('terminated')
             else:
-                requests_waiting = [req for req in job.requests.all() if req.status in ['waiting',
-                    'scheduled', 'ran']]
-                if len(requests_waiting) > 0:
+                requests_waiting = job.requests.filter(status__in=
+                        ['waiting', 'scheduled', 'ran']).count()
+                if requests_waiting > 0:
                     continue
                 else:
                     info('Job {} marked as finished.'.format(job.id))
                     job.change_status('finished')
+        if job.status != 'finished' or job.status_changed > scan_job_time_threshold:
+            debug('Notifying sockets about the job {}'.format(job.id))
+            try:
+                async_to_sync(channel_layer.group_send)(
+                        'scan_{}'.format(job.id), {
+                            "type": 'progress.info',
+                            "text": json.dumps({
+                                'subject': 'progress_info',
+                                'content': scan_progress_info(job.id)
+                                }),
+                            })
+            except Exception as e:
+                info('Websocket notification error: {}'.format(repr(e)))
     # Run new jobs if possible.
     spare_capacity = spare_scan_capacity()
     debug('There is {} of spare capacity'.format(spare_capacity))
@@ -116,4 +117,4 @@ def do_scan_management():
 while True:
     do_scan_management()
     # Don't overwhelm the sockets and databases.
-    time.sleep(1.0)
+    time.sleep(2.0)

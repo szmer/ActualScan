@@ -147,7 +147,7 @@ LOGGING = {
                 'handlers': [
                     'console',
                     ],
-                'level': 'WARNING'
+                'level': 'INFO'
                 },
             }
         }

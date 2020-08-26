@@ -5,7 +5,7 @@
       (ignore-errors (hunchentoot:stop *server* :soft nil)))
 (defparameter *server* nil)
 
-(hunchentoot:define-easy-handler (interpret-01 :uri "/api/v01/interpret") (html sourcetype)
+(hunchentoot:define-easy-handler (interpret-01 :uri "/api/v01/interpret") (html sourcetype emptyurl)
   (setf (hunchentoot:content-type*) "text/json")
   (when *log-requests-p*
     (log:info "Received a request for processing ~A, source type ~A"
@@ -26,7 +26,7 @@
                                (gethash sourcetype *source-type-classification-settings*
                                         (format nil "no classif. settings for sourcetype ~S"
                                                 sourcetype))
-                               :split-sents t)))
+                               :split-sents t :remove-if-empty-url (not (equalp emptyurl "1")))))
 
 (hunchentoot:define-easy-handler (status-01 :uri "/api/v01/status") (html sourcetype)
   (setf (hunchentoot:content-type*) "text/plain")

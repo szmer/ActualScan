@@ -4,7 +4,7 @@
   :author "Lookupy"
 
   :depends-on ("chronicity" "cl-json" "cl-ppcre" "cl-strings" "fiasco" "hunchentoot" "local-time"
-               "plump" "log4cl"
+               "plump" "log4cl" "purl"
                ;; These are used strictly by the copied sentence-splitting code.
                "rutils" "rutilsx"
                ;; For testing http.

@@ -22,7 +22,9 @@ from asgiref.sync import sync_to_async
 from dynamic_preferences.registries import global_preferences_registry
 
 from genscrap.lib import (
-        write_to_file, stractor_reading, timestamp_now, full_url, solr_update, update_request_status)
+        write_to_file, stractor_reading, timestamp_now, full_url, solr_update, solr_check_urls,
+        update_request_status
+        )
 
 FILEDB_PATH = '/scrapies/pagecopies/'
 # Note it's the original port, not the one mapped by docker-compose.
@@ -195,6 +197,8 @@ async def get_js_search_pages(page_address, search_term, wait_time, max_tried_ne
 #
 logger.info('Scrapy loading ActualScan configuration.')
 global_preferences = global_preferences_registry.manager()
+DEDUP_DATE_POST_CHECK = global_preferences['dedup_date_post_check']
+DEDUP_DATE_RETR_CHECK = global_preferences['dedup_date_retr_check']
 SELENIUM_WAIT_TIME = global_preferences['selenium_wait_time']
 SELENIUM_MAX_CLICK_ELEMS_TRIED = global_preferences['selenium_max_click_elems_tried']
 NORMAL_SEARCH_DEPTH = global_preferences['web_normal_search_depth']
@@ -212,6 +216,8 @@ class GeneralSpider(scrapy.Spider):
 
     def __init__(self, **kwargs):
         self.at_first_request = True
+        self.dedup_date_post_check = DEDUP_DATE_POST_CHECK
+        self.dedup_date_retr_check = DEDUP_DATE_RETR_CHECK
         self.selenium_wait_time = SELENIUM_WAIT_TIME
         self.selenium_max_click_elems_tried = SELENIUM_MAX_CLICK_ELEMS_TRIED 
         self.normal_search_depth = NORMAL_SEARCH_DEPTH # NOTE not implemented
@@ -263,41 +269,6 @@ class GeneralSpider(scrapy.Spider):
             with open(db_path+'index.csv', 'a+') as db_index_file:
                 print(entry_n, url, file=db_index_file)
 
-    async def monitoring_parse(self, response):
-        """
-        Scrapy parse function for Solr dummy monitoring requests - we want to search Postgres for
-        new requests.
-
-        Due to the Redis lock it should be safe to call multiplw such requests at once, although
-        Scrapy will limit requesrs for the dummy Solr domain.
-        """
-        lock = redis_lock.Lock(redis, 'scrapy-monitoring-parse')
-        if lock.acquire():
-            if self.at_first_request:
-                logger.info('Renewing scheduled and ran requests not committed...')
-                scrape_requests_left = await sync_to_async(list)(ScrapeRequest.objects.filter(
-                    status__in=['scheduled', 'ran'], site_type='web').all())
-                for scrape_request in scrape_requests_left:
-                    await sync_to_async(update_request_status)(scrape_request, 'waiting')
-                logger.info('{} requests renewed.'.format(len(scrape_requests_left)))
-                self.at_first_request = False
-            scrape_requests_waiting = await sync_to_async(list)(ScrapeRequest.objects.filter(
-                status='waiting', site_type='web').all())
-            logger.debug('{} waiting requests to be made'.format(len(scrape_requests_waiting)))
-            for scrape_request in scrape_requests_waiting:
-                await sync_to_async(update_request_status)(scrape_request, 'scheduled')
-                meta = {attr: getattr(scrape_request, attr)
-                            for attr
-                            in REQUEST_META}
-                url = full_url(scrape_request.target, scrape_request.site_url)
-                #logger.debug('Sending the waiting request for {}'.format(url))
-                # Make sure that even the ordinary requests have higher priority than monitoring.
-                yield scrapy.Request(url=url, callback=self.parse, meta=meta, errback=self.fail,
-                        priority=5 if 'is_search' in meta and meta['is_search'] else 1)
-            lock.release() # NOTE on some failure above the lock won't be released and the spider wil finish
-            yield scrapy.Request(url=SOLR_PING_URL, callback=self.monitoring_parse,
-                    errback=self.fail)
-
     async def interpret_stractor(self, source_type, html_text, request_id):
         """
         Interpret the html_text on source_type with Speechtractor. Indicate failure in request_id.
@@ -314,8 +285,12 @@ class GeneralSpider(scrapy.Spider):
 
     async def requests_from_search(self, response, stractor_response_json):
         reqs = []
+        # We should skip the requests before trying to download them for that to make sense.
+        urls_to_request = [doc['url'] for doc in stractor_response_json if 'url' in doc]
+        urls_to_skip = solr_check_urls(self.dedup_date_post_check, self.dedup_date_retr_check,
+                urls_to_request)
         for found_page in stractor_response_json:
-            if 'url' in found_page:
+            if 'url' in found_page and not found_page['url'] in urls_to_skip:
                 is_page_search = (True
                         if 'is_search' in found_page and found_page['is_search']
                         else False)
@@ -340,6 +315,51 @@ class GeneralSpider(scrapy.Spider):
                     priority=5 if is_page_search else 1))
         return reqs
 
+    async def monitoring_parse(self, response):
+        """
+        Scrapy parse function for Solr dummy monitoring requests - we want to search Postgres for
+        new requests.
+
+        Due to the Redis lock it should be safe to call multiplw such requests at once, although
+        Scrapy will limit requesrs for the dummy Solr domain.
+        """
+        # NOTE this is also verbatim in normal parse(), see the explanation there
+        lock = redis_lock.Lock(redis, 'scrapy-monitoring-parse')
+        if lock.acquire():
+            if self.at_first_request:
+                logger.info('Renewing scheduled and ran requests not committed...')
+                scrape_requests_left = await sync_to_async(list)(ScrapeRequest.objects.filter(
+                    status__in=['scheduled', 'ran'], site_type='web').order_by(
+                        '-is_search'))
+                renewed_count = 0
+                for scrape_request in scrape_requests_left:
+                    # Check if the job wasn't terminated just now.
+                    job_objs = await sync_to_async(list)(ScanJob.objects.filter(
+                        id=scrape_request.job_id).all())
+                    logger.info(job_objs[0].status)
+                    if job_objs[0].status != 'terminated':
+                        await sync_to_async(update_request_status)(scrape_request, 'waiting')
+                        renewed_count += 1
+                logger.info('{} requests renewed.'.format(renewed_count))
+                self.at_first_request = False
+            scrape_requests_waiting = await sync_to_async(list)(ScrapeRequest.objects.filter(
+                status='waiting', site_type='web').order_by('-is_search')[:100])
+            logger.debug('{} waiting requests to be made'.format(len(scrape_requests_waiting)))
+            for scrape_request in scrape_requests_waiting:
+                await sync_to_async(update_request_status)(scrape_request, 'scheduled')
+                meta = {attr: getattr(scrape_request, attr)
+                            for attr
+                            in REQUEST_META}
+                url = full_url(scrape_request.target, scrape_request.site_url)
+                #logger.debug('Sending the waiting request for {}'.format(url))
+                # Make sure that even the ordinary requests have higher priority than monitoring.
+                yield scrapy.Request(url=url, callback=self.parse, meta=meta, errback=self.fail,
+                        priority=5 if 'is_search' in meta and meta['is_search'] else 1)
+            # NOTE on some failure above the lock won't be released and the spider wil finish
+            lock.release()
+            yield scrapy.Request(url=SOLR_PING_URL, callback=self.monitoring_parse,
+                    errback=self.fail)
+
     async def parse(self, response):
         """
         The "regular" Scrapy parse function for search pages and indexed pages. The former should
@@ -360,6 +380,24 @@ class GeneralSpider(scrapy.Spider):
         else:
             await sync_to_async(update_request_status)(db_request, 'ran')
 
+        # NOTE this is copied from the monitoring_parse. We need to set "monitoring parses" to
+        # lesser priority to let the normal parses through, but then we still need to monitor the DB.
+        lock = redis_lock.Lock(redis, 'scrapy-monitoring-parse')
+        if lock.acquire():
+            scrape_requests_waiting = await sync_to_async(list)(ScrapeRequest.objects.filter(
+                status='waiting', site_type='web').order_by('-is_search')[:10])# NOTE less than monitor
+            logger.debug('{} waiting requests to be made'.format(len(scrape_requests_waiting)))
+            for scrape_request in scrape_requests_waiting:
+                await sync_to_async(update_request_status)(scrape_request, 'scheduled')
+                meta = {attr: getattr(scrape_request, attr)
+                            for attr
+                            in REQUEST_META}
+                url = full_url(scrape_request.target, scrape_request.site_url)
+                # Make sure that even the ordinary requests have higher priority than monitoring.
+                yield scrapy.Request(url=url, callback=self.parse, meta=meta, errback=self.fail,
+                        priority=5 if 'is_search' in meta and meta['is_search'] else 1)
+            # NOTE on some failure above the lock won't be released and the spider wil finish
+            lock.release()
 
         # Interpret the webpage with speechtractor.
         if response.meta['is_search']:

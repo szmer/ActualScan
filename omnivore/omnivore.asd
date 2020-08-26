@@ -4,7 +4,7 @@
   :author "Therminsley"
 
   :depends-on ("alexandria" "babel" "cl-conllu" "cl-json" "cl-stopwatch" "cl-strings"
-               "drakma" "html-template" "hunchentoot" "plump" "purl" "trivial-types"
+               "drakma" "html-template" "hunchentoot" "local-time" "plump" "purl" "trivial-types"
                "xml-emitter" "yason" "textviews"
                ;"pg-textviews"
                )
@@ -26,7 +26,8 @@
                               :depends-on ("omnivore" "logic"))
                              (:module "raw"
                               :components ((:file "stopwords")
-                                           (:file "scoring")
+                                           (:file "frequency" :depends-on ("stopwords"))
+                                           (:file "scoring" :depends-on ("frequency")) 
                                            (:file "collocations" :depends-on ("stopwords")))
                               :depends-on ("omnivore" "utils" "logic" "io"))
                              ))

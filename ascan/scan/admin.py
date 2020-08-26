@@ -12,6 +12,7 @@ class ScanJobAdmin(admin.ModelAdmin):
 
 class ScrapeRequestAdmin(admin.ModelAdmin):
     readonly_fields = ('status_changed',)
+    list_filter = ('is_search', 'status', 'job_id', 'site_type', 'site_name')
 
 admin.site.register(Site)
 admin.site.register(Tag)

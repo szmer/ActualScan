@@ -1,4 +1,4 @@
-from dynamic_preferences.types import IntegerPreference, FloatPreference
+from dynamic_preferences.types import IntegerPreference, FloatPreference, StringPreference
 from dynamic_preferences.registries import global_preferences_registry
 
 @global_preferences_registry.register
@@ -169,4 +169,21 @@ class LinkFeedbackCountGlobally(IntegerPreference):
 class FeedbackAskFrequency(FloatPreference):
     name = 'feedback_ask_frequency'
     default = 0.5
+    required = True
+
+#
+# Deduplicating with Solr.
+#
+# These are the conditions for URL duplicates from Solr to be actually considered dupes and skipped.
+# They function both as OR, not AND.
+@global_preferences_registry.register
+class DedupDatePostCheck(StringPreference):
+    name = 'dedup_date_post_check'
+    default = '[* TO NOW-1YEARS]'
+    required = True
+
+@global_preferences_registry.register
+class DedupDateRetrCheck(StringPreference):
+    name = 'dedup_date_retr_check'
+    default = '[NOW-12HOURS TO NOW]'
     required = True

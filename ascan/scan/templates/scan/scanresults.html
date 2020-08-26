@@ -18,7 +18,7 @@
 {% endblock %}
 
 {% block container %}
-<h2>{{ scan_phrase }}</h2>
+<h2>{{ scan_phrase }}{% if job_id %} (job id: {{ job_id }}){% endif %}</h2>
 
 {# If there is no result, show the status data #}
 {% if not result %}
@@ -27,7 +27,6 @@
    <script type="application/javascript" src="{% static 'scan/js/scanprogress.js' %}"></script>
 
    <div class="alert alert-success" role="alert">
-{# TODO add noscript when ready #}
       <p>We are currently processing your request, please wait.</p>
 
       <p>If your browser doesn't refresh this page automatically, please
@@ -37,6 +36,18 @@
    {% else %}
    <div class="alert alert-danger" role="alert">
       <p>Sorry, we experienced a problem with your request.</p>
+      <ul>
+         {% if form.errors %}
+         {% for field in form %}
+         {% for error in field.errors %}
+         <li>{{ error|escape }}</li>
+         {% endfor %}
+         {% endfor %}
+         {% for error in form.non_field_errors %}
+         <li>{{ error|escape }}</li>
+         {% endfor %}
+         {% endif %}
+      </ul>
    </div>
    {% endif %}
 
@@ -64,10 +75,30 @@
          <th scope="row">at least % done (estimated)</th>
          <td id='scan_dl_proportion'>{% if status_data.dl_proportion %}{% widthratio status_data.dl_proportion 1 100 %}%{% else %}-{% endif %}</td>
          </tr>
+         <tr>
+         <th scope="row">Request stats</th>
+         <td id='scan_req_stats'>{% if status_data.req_stats %}
+            Search pages: {{ status_data.req_stats.searches }},
+            content pages: {{ status_data.req_stats.crawls }}<br>
+            Committed: {{ status_data.req_stats.commits }},
+            waiting and being processed: {{ status_data.req_stats.wait_runs }},
+            failed: {{ status_data.req_stats.fails }}<br>
+            Estimated potential (max): {{ status_data.req_stats.future }}
+            {% if status_data.req_stats.reddit_blocking %}<br>Waiting for Reddit API allowance...{% endif %}
+            {% else %}-{% endif %}</td>
+         </tr>
       </tbody>
    </table>
-   <div id='go_to_results'></div>
 
+   <div>
+      <form action="/scan/scaninfo/">
+         <input type="hidden" value="{{ scan_id }}" name="job_id">
+         <input type="hidden" value="1" name="terminate">
+         <button type="submit" class="btn btn-secondary">Terminate the scan</button>
+         </form>
+   </div>
+   <div id='go_to_results_options'>
+   </div>
 {# If we have the result, show it. #}
 {% else %}
 {% if result.sentCount == 0 %}
@@ -88,7 +119,7 @@
 {% if result.years %}
 <div class="card">
   <div class="card-header">
-    Trend
+    Time
   </div>
   <div class="chart">
   <div id="ct-chart-trend" class="ct-chart ct-golden-section"></div>
@@ -108,7 +139,7 @@
 {% if result.typical %}
 <div class="card">
   <div class="card-header">
-    Common opinion
+    Typical samples
   </div>
        {% for sent in result.typical %}
        <div class="card-body p-2">
@@ -127,7 +158,7 @@
 {% if result.phrases %}
 <div class="card">
   <div class="card-header">
-    Key phrases
+    Ordinary samples
   </div>
        {% for phrase in result.phrases %}
        <div class="card-body p-2">
@@ -144,15 +175,44 @@
              </li>
              {% endfor %}
           </ul>
+          {% if phrase.oldest %}
+          <div class="px-3">
+          <span class="text-muted">Oldest:</span>
+          {% for sent in phrase.oldest %}
+          <span class="card-text"><strong>({{ sent.date }})</strong>
+             {{ sent.text }}</span>
+          <small class="text-muted">by {{ sent.author }}
+             at {{ sent.domain }}
+             <br><a href="{{ sent.url }}">{{ sent.url }}</a></small>
+          {% include "widgets/feedback_prompt.html" with site_name=sent.domain %}
+          {% endfor %}
+          </div>
+          {% endif %}
        </div>
        {% endfor %}
+</div>
+{% endif %}
+
+{% if result.topTerms %}
+<div class="card">
+  <div class="card-header">
+    Top terms
+  </div>
+       <div class="card-body p-2">
+       {% for term, freq in result.topTerms.items %}
+       {% if freq > 50 %}
+       <big>{{ term }}</big>{% elif freq < 30 %}
+       <small>{{ term }}</small>{% else %}
+       {{ term }}{% endif %}<small><sub>{{ freq }}</sub></small>
+       {% endfor %}
+       </div>
 </div>
 {% endif %}
 
 {% if result.atypical %}
 <div class="card">
   <div class="card-header">
-    Oddball posters
+    Other opinions
   </div>
        {% for sent in result.atypical %}
        <div class="card-body p-2">
