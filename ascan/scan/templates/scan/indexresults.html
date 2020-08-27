@@ -4,103 +4,34 @@
 
 {% block page_title %}{% if scan_phrase %}{{ scan_phrase }}{% else %}Searching{% endif %}{% endblock %}
 
-{% block metas %}
-{% if is_good and not result %}
-<noscript>
-<meta http-equiv="refresh" content="2">
-</noscript>
-{% endif %}
-{% endblock %}
-
 {% block scripts %}
 <script type="application/javascript" src="{% static 'scan/js/chartist.min.js' %}"></script>
 <link rel="stylesheet" href="{% static 'scan/css/chartist.min.css' %}">
 {% endblock %}
 
-{% block container %}
-<h2>{{ scan_phrase }}{% if job_id %} (job id: {{ job_id }}){% endif %}</h2>
+{% block big_container %}
+<h2>{{ scan_phrase }}</h2>
 
-{# If there is no result, show the status data #}
-{% if not result %}
-   {% if is_good %}
-   <script type="text/javascript">window.SCAN_ID = {{ scan_id }}</script>
-   <script type="application/javascript" src="{% static 'scan/js/scanprogress.js' %}"></script>
+{% if with_errors %}
+<div class="alert alert-danger" role="alert">
+   <p>Sorry, we experienced a problem with your request.</p>
+   <ul>
+      {% if form.errors %}
+      {% for field in form %}
+      {% for error in field.errors %}
+      <li>{{ field.label }}: {{ error|escape }}</li>
+      {% endfor %}
+      {% endfor %}
+      {% for error in form.non_field_errors %}
+      <li>{{ error|escape }}</li>
+      {% endfor %}
+      {% endif %}
+   </ul>
+</div>
+<noscript><a class="btn btn-primary" href="/">Go back</a></noscript>
+<script>document.write('<a class="btn btn-primary" href="javascript:history.go(-1)">Go back</a>')</script>
+{% endif %}
 
-   <div class="alert alert-success" role="alert">
-      <p>We are currently processing your request, please wait.</p>
-
-      <p>If your browser doesn't refresh this page automatically, please
-      <a href="">click here</a>
-      after a moment.</p>
-   </div>
-   {% else %}
-   <div class="alert alert-danger" role="alert">
-      <p>Sorry, we experienced a problem with your request.</p>
-      <ul>
-         {% if form.errors %}
-         {% for field in form %}
-         {% for error in field.errors %}
-         <li>{{ error|escape }}</li>
-         {% endfor %}
-         {% endfor %}
-         {% for error in form.non_field_errors %}
-         <li>{{ error|escape }}</li>
-         {% endfor %}
-         {% endif %}
-      </ul>
-   </div>
-   {% endif %}
-
-   <table class="table">
-      <thead class="thead-light">
-         <tr>
-         <th scope="col">Item</th>
-         <th scope="col">Information</th>
-         </tr>
-      </thead>
-      <tbody>
-         <tr>
-         <th scope="row">Scan status</th>
-         <td id='scan_phase'>{{ status_data.phase }}</td>
-         </tr>
-         <tr>
-         <th scope="row">No. of failures</th>
-         <td id='scan_fails'>{% if status_data.failures %}{{ status_data.failures }}{% else %}0{% endif %}</td>
-         </tr>
-         <tr>
-         <th scope="row">Last page processed</th>
-         <td id='scan_last_url'>{% if status_data.last_url %}{{ status_data.last_url }}{% else %}-{% endif %}</td>
-         </tr>
-         <tr>
-         <th scope="row">at least % done (estimated)</th>
-         <td id='scan_dl_proportion'>{% if status_data.dl_proportion %}{% widthratio status_data.dl_proportion 1 100 %}%{% else %}-{% endif %}</td>
-         </tr>
-         <tr>
-         <th scope="row">Request stats</th>
-         <td id='scan_req_stats'>{% if status_data.req_stats %}
-            Search pages: {{ status_data.req_stats.searches }},
-            content pages: {{ status_data.req_stats.crawls }}<br>
-            Committed: {{ status_data.req_stats.commits }},
-            waiting and being processed: {{ status_data.req_stats.wait_runs }},
-            failed: {{ status_data.req_stats.fails }}<br>
-            Estimated potential (max): {{ status_data.req_stats.future }}
-            {% if status_data.req_stats.reddit_blocking %}<br>Waiting for Reddit API allowance...{% endif %}
-            {% else %}-{% endif %}</td>
-         </tr>
-      </tbody>
-   </table>
-
-   <div>
-      <form action="/scan/scaninfo/">
-         <input type="hidden" value="{{ scan_id }}" name="job_id">
-         <input type="hidden" value="1" name="terminate">
-         <button type="submit" class="btn btn-secondary">Terminate the scan</button>
-         </form>
-   </div>
-   <div id='go_to_results_options'>
-   </div>
-{# If we have the result, show it. #}
-{% else %}
 {% if result.sentCount == 0 %}
 <div class="p-2">Sorry, we have no sufficient information for the specified parameters in the index.</div>
 <noscript><a class="btn btn-primary" href="/">Try something different</a></noscript>
@@ -263,6 +194,4 @@ var yearCounts = [{% for c in result.yearCounts %}{{ c }},{% endfor %}];
 new Chartist.Line('#ct-chart-trend', {labels: years, series: [yearCounts]}, chartOptions);
 {% endif %}
 </script>
-
-{% endif %}
 {% endblock %}

@@ -5,6 +5,10 @@
 
 {% block page_title %}Add a site{% endblock %}
 
+{% block scripts %}
+<script type="application/javascript" src="{% static 'scan/js/list.min.js' %}"></script>
+{% endblock %}
+
 {% block container %}
 {% if site_form_submitted %}
 <script type="application/javascript">window.SITE_FORM_SUBMITTED = true</script>
@@ -17,4 +21,12 @@
    <button type="submit" class="btn btn-primary">Add the site</button>
    </dl>
 </form>
+
+   <script defer type="application/javascript">
+      var options = {
+         valueNames: [ 'possible-choice' ]
+      };
+
+      var tagList = new List('tags-searchable', options)
+   </script>
 {% endblock %}

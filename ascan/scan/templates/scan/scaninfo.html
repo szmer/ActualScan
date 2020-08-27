@@ -1,0 +1,78 @@
+{% extends 'scan/base.html' %}
+{% load static %}
+{% load bootstrap4 %}
+{% load scan_extras %}
+
+{% block page_title %}{{ scan_job.query_phrase }}{% endblock %}
+
+{% block container %}
+<h2>{{ scan_job.query_phrase }}{% if scan_job.id %} (job id: {{ scan_job.id }}){% endif %}</h2>
+
+<script type="text/javascript">window.SCAN_ID = {{  scan_job.id }}</script>
+<script type="application/javascript" src="{% static 'scan/js/scanprogress.js' %}"></script>
+
+<table class="table">
+   <thead class="thead-light">
+      <tr>
+      <th scope="col">Item</th>
+      <th scope="col">Information</th>
+      </tr>
+   </thead>
+   <tbody>
+      <tr>
+      <th scope="row">Scan status</th>
+      <td id='scan_phase'>{{ status_data.phase }}</td>
+      </tr>
+      <tr>
+      <th scope="row">No. of failures</th>
+      <td id='scan_fails'>{% if status_data.failures %}{{ status_data.failures }}{% else %}0{% endif %}</td>
+      </tr>
+      <tr>
+      <th scope="row">Last page processed</th>
+      <td id='scan_last_url'>{% if status_data.last_url %}{{ status_data.last_url }}{% else %}-{% endif %}</td>
+      </tr>
+      <tr>
+      <th scope="row">at least % done (estimated)</th>
+      <td id='scan_dl_proportion'>{% if status_data.dl_proportion %}{% widthratio status_data.dl_proportion 1 100 %}%{% else %}-{% endif %}</td>
+      </tr>
+      <tr>
+      <th scope="row">Request stats</th>
+      <td id='scan_req_stats'>{% if status_data.req_stats %}
+         Search pages: {{ status_data.req_stats.searches }},
+         content pages: {{ status_data.req_stats.crawls }}<br>
+         Committed: {{ status_data.req_stats.commits }},
+         waiting and being processed: {{ status_data.req_stats.wait_runs }},
+         failed: {{ status_data.req_stats.fails }}<br>
+         Estimated additional potential (max): {{ status_data.req_stats.future }}
+         {% if status_data.req_stats.reddit_blocking %}<br>Waiting for Reddit API allowance...{% endif %}
+         {% else %}-{% endif %}</td>
+      </tr>
+   </tbody>
+</table>
+
+<div class="m-1 d-inline-block">
+<a class="btn btn-secondary" href="/manager/scans/">Back to the list</a>
+</div>
+{% if terminable %}
+<div class="m-1 d-inline-block">
+   <form action="/scan/scaninfo/">
+      <input type="hidden" value="{{ scan_job.id }}" name="job_id">
+      <input type="hidden" value="1" name="terminate">
+      <button type="submit" class="btn btn-secondary">Terminate the scan</button>
+   </form>
+</div>
+{% endif %}
+<div class="m-1 d-inline-block">
+   <form action="/scan/search/">
+   <input type="hidden" value="{{ scan_job.query_phrase }}" name="scan_query">
+   {% for tag in tag_names %}{% if tag %}<input type="hidden" value="{{ tag }}" name="query_tags">
+   {% endif %}{% endfor %}
+   {% for site in site_names %}{% if site %}<input type="hidden" value="{{ site }}" name="query_sites">
+   {% endif %}{% endfor %}
+   <input type="hidden" value="{{ scan_job.minimal_level | format_trust_level }}" name="minimal_level">
+   <input type="hidden" value="{{ scan_job.start_date }}" name="start_date">
+   <input type="hidden" value="{{ scan_job.end_date }}" name="end_date">
+   <button type="submit" class="btn btn-primary">Search the index now</button>
+   </form>
+</div>
+{% endblock %}

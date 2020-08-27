@@ -38,7 +38,8 @@ class SiteForm(ModelForm):
                 Div('search_pointer'),
                 Div('homepage_url'),
                 Div(InlineRadios('source_type')),
-                Div(InlineCheckboxes('tags'))
+                Div(InlineCheckboxes('tags', css_class='list',
+                    template='widgets/form_searchable_multiplechoicefield.html'))
                 )
 
 class TagForm(ModelForm):

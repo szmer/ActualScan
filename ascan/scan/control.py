@@ -88,8 +88,9 @@ def maybe_issue_feedback_permission(user_iden, possible_subject_links, is_ip=Fal
                 return link
     return False
 
-def request_scan(user_iden, query_phrase : str, query_tags=[], query_site_names=[],
-        minimal_level=0, force_new=False, is_ip=False, is_privileged=False):
+def request_scan(user_iden, query_phrase : str, start_date, end_date,
+        query_tags=[], query_site_names=[], allow_undated=True, minimal_level=0,
+        force_new=False, is_ip=False, is_privileged=False):
     """
     Put an awaiting scan job in the database. query_tags should be a list of strings. If force_new
     is set and the job already exists, a ValueError is raised. Return the ScanJob object.
@@ -106,6 +107,7 @@ def request_scan(user_iden, query_phrase : str, query_tags=[], query_site_names=
         # Try to find still working jobs.
         jobs = ScanJob.objects.filter(query_phrase=query_phrase, query_tags=query_tags_str,
                 query_site_names=query_sites_str, status__in=['waiting', 'working'],
+                start_date=start_date, end_date=end_date, allow_undated=allow_undated,
                 minimal_level=minimal_level)
         if not jobs:
             # TODO let them choose if the scan should be new
@@ -113,12 +115,14 @@ def request_scan(user_iden, query_phrase : str, query_tags=[], query_site_names=
             jobs = ScanJob.objects.filter(query_phrase=query_phrase, query_tags=query_tags_str,
                     query_site_names=query_sites_str, status='finished',
                     status_changed__gte=time_threshold,
+                    start_date=start_date, end_date=end_date, allow_undated=allow_undated,
                     minimal_level=minimal_level)
     # Non-privileged users can start a scan every 30 minutes. TODO notify them
     else:
         time_threshold = datetime.now() - timedelta(minutes=30)
         jobs = ScanJob.objects.filter(query_phrase=query_phrase, query_tags=query_tags_str,
                 query_site_names=query_sites_str, minimal_level=minimal_level,
+                start_date=start_date, end_date=end_date, allow_undated=allow_undated,
                 status_changed__gte=time_threshold)
     debug('The user is privileged: {}, number of jobs found:'.format(is_privileged,
         0 if not jobs else len(jobs)))
@@ -128,9 +132,11 @@ def request_scan(user_iden, query_phrase : str, query_tags=[], query_site_names=
     if not jobs:
         if not is_ip:
             job = ScanJob.objects.create(user=user_iden, query_phrase=query_phrase,
+                    start_date=start_date, end_date=end_date, allow_undated=allow_undated,
                     query_tags=query_tags_str, query_site_names=query_sites_str, status='waiting')
         else:
             job = ScanJob.objects.create(user_ip=user_iden, query_phrase=query_phrase,
+                    start_date=start_date, end_date=end_date, allow_undated=allow_undated,
                     query_tags=query_tags_str, query_site_names=query_sites_str, status='waiting')
         jobs = [job] # the return statement wants a list
     return jobs[0]

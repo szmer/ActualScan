@@ -4,6 +4,12 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.utils.timezone import now
 
+TRUST_LEVELS = [(x, x) for x in [
+    'spam',
+    'community',
+    'respected',
+    'base'
+    ]]
 SCAN_JOB_STATUSES = [(x, x) for x in [
     'waiting',
     'working',
@@ -21,7 +27,7 @@ SCRAPE_REQUEST_STATUSES = [(x, x) for x in [
     ]]
 
 class Tag(models.Model):
-    name = models.CharField(max_length=256, unique=True)
+    name = models.CharField(max_length=256, unique=True) # TODO disallow commas
     description = models.CharField(max_length=1024)
     creator = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='tags', null=True)
 
@@ -34,7 +40,7 @@ class Tag(models.Model):
 class Site(models.Model):
     homepage_url = models.CharField(max_length=8192)
     # Homepage url w/o protocol and www, or /r/subreddit
-    site_name = models.CharField(max_length=2048, unique=True)
+    site_name = models.CharField(max_length=2048, unique=True) # TODO disallow commas
     # An url with search for "twenty cats"
     # For Reddit, the subreddit name without /r/
     search_pointer = models.CharField(max_length=8192)
@@ -116,6 +122,10 @@ class ScanJob(models.Model):
     # This controls whether scrapy should also save raw copies of html to disk. Setting spread to
     # requests.
     save_copies = models.BooleanField(default=False)
+    # These aren't currently used in scans, but are needed for going to the index results.
+    start_date = models.CharField(max_length=16, default='01/2010') # the value from the form
+    end_date = models.CharField(max_length=16, default='01/2030')
+    allow_undated = models.BooleanField(default=True)
 
     def change_status(self, status):
         self.status = status

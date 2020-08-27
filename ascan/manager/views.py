@@ -12,7 +12,7 @@ from django.views.generic import ListView
 from django.views.generic.detail import DetailView
 
 from manager.forms import SiteForm, TagForm
-from scan.models import Site, Tag, TagSiteLink
+from scan.models import Site, Tag, TagSiteLink, ScanJob, ScrapeRequest
 from scan.templatetags.scan_extras import format_trust_level
 
 class HomeURLParsingError(Error):
@@ -43,6 +43,13 @@ def tagname(request, tag_name):
     """
     tag = get_object_or_404(Tag, name=tag_name)
     return render(request, 'scan/tag_detail.html', { 'tag': tag })
+
+def scanlist(request):
+    jobs = ScanJob.objects.filter(user=request.user).order_by('-status_changed').all()
+    page_counts = []
+    for job in jobs:
+        page_counts.append(ScrapeRequest.objects.filter(job=job).count())
+    return render(request, 'manager/scanlist.html', { 'scans': zip(jobs, page_counts) })
 
 def tagsites(request, tag_name):
     tag_site_links = get_object_or_404(Tag, name=tag_name).site_links.all()

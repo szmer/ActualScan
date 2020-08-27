@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 from django import forms
 from django.core.exceptions import ValidationError
+from django.db.models import Count
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Row, Column, HTML
 from crispy_forms.bootstrap import InlineCheckboxes
@@ -21,10 +22,12 @@ def get_next_month():
 
 class PublicScanForm(forms.Form):
     scan_query = forms.CharField(label='Search for')
-    query_tags = forms.ModelMultipleChoiceField(Tag.objects.all(),
-            label='On sites with these tags', required=False)
-    query_sites = forms.ModelMultipleChoiceField(Site.objects.all(),
-            label='On these sites', required=False)
+    query_tags = forms.ModelMultipleChoiceField(Tag.objects.annotate(Count('site_links')).order_by(
+        '-site_links__count').all(),
+        label='On sites with these tags', to_field_name='name', required=False)
+    query_sites = forms.ModelMultipleChoiceField(Site.objects.annotate(
+        Count('scraperequest')).order_by('-scraperequest__count').all(),
+        label='On these sites', to_field_name='site_name', required=False)
     minimal_level = forms.ChoiceField(
             label='Minimal trustworthiness level',
             choices=[(x, x) for x in ['spam', 'community', 'respected', 'base']],
@@ -59,8 +62,13 @@ class PublicScanForm(forms.Form):
         self.helper.disable_csrf = True # not desirable for the scan form
         self.helper.layout = Layout(
                 Div('scan_query'),
-                Row(Column(InlineCheckboxes('query_tags')),
-                    Column(InlineCheckboxes('query_sites'))),
+                # NOTE We have a custom template to accomodate list.js needs with the "list" class
+                # and adding an invisible span with actual option text (bootstrap moves the label
+                # text to ::before, ::after)
+                Row(Column(InlineCheckboxes('query_tags', css_class='list',
+                    template='widgets/form_searchable_multiplechoicefield.html')),
+                    Column(InlineCheckboxes('query_sites', css_class='list',
+                        template='widgets/form_searchable_multiplechoicefield.html'))),
                 Row(Column('start_date'),
                     Column('end_date')),
                 Row(Column('allow_undated'),

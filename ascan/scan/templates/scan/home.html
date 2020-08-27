@@ -7,19 +7,27 @@
 
 {% block scripts %}
 <script type="application/javascript" src="{% static 'scan/js/datepicker.min.js' %}"></script>
+<script type="application/javascript" src="{% static 'scan/js/list.min.js' %}"></script>
 <link rel="stylesheet" href="{% static 'scan/css/datepicker.min.css' %}">
 {% endblock %}
 
 {% block container %}
-<div class="col-lg-6">
 <div class="text-center">
-<img src="{% static 'scan/logo1.png' %}" alt="ActualScan" style="width: 90%; margin: 40px">
+<img src="{% static 'scan/logo1.png' %}" alt="ActualScan" style="width: 65%; margin: 40px">
 </div>
 
-<form action="/scanresults/">
+<form action="/scan/search/">
    <dl>
    {% crispy form %}
    </dl>
 </form>
-</div>
+
+   <script defer type="application/javascript">
+      var options = {
+         valueNames: [ 'possible-choice' ]
+      };
+
+      var siteList = new List('query_sites-searchable', options)
+      var tagList = new List('query_tags-searchable', options)
+   </script>
 {% endblock %}

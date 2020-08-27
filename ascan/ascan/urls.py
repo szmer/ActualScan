@@ -19,12 +19,10 @@ from django.contrib.auth import views as auth_views
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import include, path
 
-from scan.views import index, myscans, scanresults, accountinfo
+from scan.views import index, accountinfo
 
 urlpatterns = [
     path('', index),
-    path('myscans/', myscans),
-    path('scanresults/', scanresults),
     path('scan/', include('scan.urls')),
     path('manager/', include('manager.urls')),
     path('admin/', admin.site.urls),

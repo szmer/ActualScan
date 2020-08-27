@@ -34,7 +34,7 @@
 
         {% if request.user.is_authenticated %}
         <li class="nav-item active">
-           <a class="nav-link" href="/manager/scans/">Scans</a>
+           <a class="nav-link" href="/manager/scans/">My Scans</a>
         </li>
         {% endif %}
 
@@ -53,16 +53,17 @@
 
 
 {% block content %}
+<div class="justify-content-center">
+<main class="container-fluid">
 {% block big_container %}
-<main class="container-fluid p-5">
-   {# Display django.contrib.messages as Bootstrap alerts #}
+   <div class="col-lg-6 offset-lg-3 p-3">
    {% bootstrap_messages %}
 
-   <div class="p-2">
    {% block container %}{% endblock %}
    </div>
- </main>
 {% endblock %}
+ </main>
+</div>
 
  <footer class="footer text-center">
    <div class="container">

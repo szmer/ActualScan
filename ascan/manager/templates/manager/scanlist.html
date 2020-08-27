@@ -1,0 +1,25 @@
+{% extends 'scan/base.html' %}
+{% load bootstrap4 %}
+
+{% block page_title %}My scans{% endblock %}
+
+{% block container %}
+<h2>My scans</h2>
+Here you can review your past and pending scans.
+
+<div class="list-group list-group-flush">
+   {% for scan, page_count in scans %}
+   <a href="/scan/scaninfo?job_id={{ scan.id }}"
+      class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+      <span>
+         <strong>{{ scan.query_phrase }}</strong>
+         {% if scan.query_tags %}{{ scan.query_tags }}{% endif %}
+         {% if scan.query_site_names %}<em>{{ scan.query_site_names }}</em>{% endif %}
+         <span class="badge badge-primary">{{ scan.status }}</span>
+         <small>({{ scan.status_changed }})</small>
+      </span>
+      <span class="badge badge-dark badge-pill">{{ page_count }}</span>
+   </a>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -14,4 +14,5 @@ urlpatterns = [
     path('tagsites/<str:tag_name>/', views.tagsites, name='tagsites'),
     path('makesite/', views.makesite, name='makesite'),
     path('maketag/', views.maketag, name='maketag'),
+    path('scans/', views.scanlist, name='scans'),
 ]
