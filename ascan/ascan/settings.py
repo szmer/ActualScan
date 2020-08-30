@@ -33,6 +33,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'scan.apps.ScanConfig',
     'manager.apps.ManagerConfig',
+    'bg.apps.BgConfig',
     'django.contrib.auth',
     'django.contrib.admin',
     'channels',
@@ -169,3 +170,6 @@ ASGI_APPLICATION = "ascan.routing.application"
 
 # Crispy forms.
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
+
+# Our custom settings.
+SOLR_CORE = os.environ['SOLR_CORE']

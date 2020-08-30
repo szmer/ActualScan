@@ -58,3 +58,8 @@ transaction, so it may have to be restarted.
 ## Debugging Scrapy, Reddit scraper
 
 - change the call in scrapy_process.py, reddit_process.py to -L INFO or -L DEBUG
+
+# Solr cores
+
+docker-compose exec solr solr create_core -c ascan -d server/solr/configsets/ascan
+docker-compose exec solr solr delete -c ascan

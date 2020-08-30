@@ -1220,4 +1220,25 @@
       EditorialMarkerFactory will do exactly that:
      <transformer name="qecBooster" class="org.apache.solr.response.transform.EditorialMarkerFactory" />
     -->
+
+     <searchComponent name="suggest" class="solr.SuggestComponent">
+        <lst name="suggester">
+           <str name="name">querySuggester</str>
+           <str name="lookupImpl">FuzzyLookupFactory</str>
+           <str name="dictionaryImpl">HighFrequencyDictionaryFactory</str>
+           <str name="field">text</str>
+           <str name="suggestAnalyzerFieldType">text_en</str>
+           <float name="threshold">0.00005</float>
+        </lst>
+     </searchComponent>
+     <requestHandler name="/suggest" class="solr.SearchHandler" startup="lazy">
+        <lst name="defaults">
+           <str name="suggest">true</str>
+           <str name="suggest.count">10</str>
+           <str name="suggest.dictionary">querySuggester</str>
+        </lst>
+        <arr name="components">
+           <str>querySuggester</str>
+        </arr>
+     </requestHandler>
 </config>

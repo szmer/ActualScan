@@ -1073,4 +1073,6 @@
         Adultness indication. (_b by config convention). Only set if true.
         -->
      <field name="adult_b" type="boolean" indexed="true" stored="true"/>
+
+        <similarity class="solr.ClassicSimilarityFactory"/>
 </schema>

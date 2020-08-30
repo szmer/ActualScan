@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 import http.client
 import json
 from logging import debug, warning
+import os
 import urllib
 from urllib.parse import urlparse
 
@@ -58,7 +59,7 @@ def solr_update(req_body, req_id=None, req_class=False):
     """
     # Recreate the connection each time to avoid getting stuck in bad states.
     solr_conn = http.client.HTTPConnection('solr', port=8983, timeout=10)
-    solr_conn.request('GET', '/solr/lookupy/update', body=req_body,
+    solr_conn.request('GET', '/solr/{}/update'.format(os.environ['SOLR_CORE']), body=req_body,
         headers={'Content-type': 'application/json'})
     debug('Sent to Solr: {}'.format(req_body))
     solr_response = solr_conn.getresponse()
@@ -75,7 +76,8 @@ def solr_update(req_body, req_id=None, req_class=False):
 def solr_check_urls(date_post_check, date_retr_check, urls):
     urls_to_skip = set()
     debug('Asking Solr about urls: {} or more'.format(urls[:20]))
-    query_str = ('/solr/lookupy/select?fl=url&q=date_post:{}%20date_retr:{}&q=url:({})'.format(
+    query_str = ('/solr/{}/select?fl=url&q=date_post:{}%20date_retr:{}&q=url:({})'.format(
+        os.environ['SOLR_CORE'],
         urllib.parse.quote(date_post_check), urllib.parse.quote(date_retr_check),
         urllib.parse.quote(' '.join(urls), safe='')))
     conn = http.client.HTTPConnection('solr', port=8983)

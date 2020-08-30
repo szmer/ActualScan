@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
 from django import forms
-from django.core.exceptions import ValidationError
 from django.db.models import Count
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Row, Column, HTML
@@ -24,10 +23,10 @@ class PublicScanForm(forms.Form):
     scan_query = forms.CharField(label='Search for')
     query_tags = forms.ModelMultipleChoiceField(Tag.objects.annotate(Count('site_links')).order_by(
         '-site_links__count').all(),
-        label='On sites with these tags', to_field_name='name', required=False)
+        label='If you want, limit to these tags...', to_field_name='name', required=False)
     query_sites = forms.ModelMultipleChoiceField(Site.objects.annotate(
         Count('scraperequest')).order_by('-scraperequest__count').all(),
-        label='On these sites', to_field_name='site_name', required=False)
+        label='...and/or these sites', to_field_name='site_name', required=False)
     minimal_level = forms.ChoiceField(
             label='Minimal trustworthiness level',
             choices=[(x, x) for x in ['spam', 'community', 'respected', 'base']],
@@ -46,22 +45,12 @@ class PublicScanForm(forms.Form):
             )
     allow_undated = forms.BooleanField(initial=True, required=False) # don't require to allow False
 
-    def clean(self):
-        cleaned_data = super().clean()
-        query_tags = cleaned_data.get('query_tags')
-        query_sites = cleaned_data.get('query_sites')
-        
-        if not (query_tags or query_sites):
-            raise ValidationError('You must specify either tags or a site name for a query.')
-
-        return cleaned_data
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.disable_csrf = True # not desirable for the scan form
         self.helper.layout = Layout(
-                Div('scan_query'),
+                Div('scan_query', css_class='typeahead'),
                 # NOTE We have a custom template to accomodate list.js needs with the "list" class
                 # and adding an invisible span with actual option text (bootstrap moves the label
                 # text to ::before, ::after)

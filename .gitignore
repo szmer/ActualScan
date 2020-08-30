@@ -41,4 +41,5 @@ webpack/package-lock.json
 ## Django
 ascan/scan/migrations/
 ascan/manager/migrations/
+ascan/bg/migrations/
 ascan/staticfiles/admin/

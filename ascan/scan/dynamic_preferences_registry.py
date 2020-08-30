@@ -187,3 +187,9 @@ class DedupDateRetrCheck(StringPreference):
     name = 'dedup_date_retr_check'
     default = '[NOW-12HOURS TO NOW]'
     required = True
+
+@global_preferences_registry.register
+class TopTermsWithAutocompletePhrases(IntegerPreference):
+    name = 'top_terms_with_autocomplete_phrases'
+    default = 5000
+    required = True

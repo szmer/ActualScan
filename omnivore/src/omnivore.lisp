@@ -16,7 +16,7 @@
 
 (defparameter *solr-address* "solr")
 (defparameter *solr-port* 8983)
-(defparameter *solr-collection* "lookupy")
+(defparameter *solr-collection* "ascan")
 (defparameter *solr-total-row-limit* 800)
 ;; getting less seems to encourage more site diversity, although it's ambivalent by itself
 (defparameter *solr-group-row-limit* 500);150)

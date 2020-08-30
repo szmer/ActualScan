@@ -25,6 +25,7 @@ urlpatterns = [
     path('', index),
     path('scan/', include('scan.urls')),
     path('manager/', include('manager.urls')),
+    path('bg/', include('bg.urls')),
     path('admin/', admin.site.urls),
     path('accounts/login/', auth_views.LoginView.as_view()),
     path('accounts/info/', accountinfo),

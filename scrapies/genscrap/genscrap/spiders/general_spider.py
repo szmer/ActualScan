@@ -29,7 +29,7 @@ from genscrap.lib import (
 FILEDB_PATH = '/scrapies/pagecopies/'
 # Note it's the original port, not the one mapped by docker-compose.
 SOLR_NETLOC = 'solr:8983'
-SOLR_PING_URL = 'http://solr:8983/solr/lookupy/admin/ping'
+SOLR_PING_URL = 'http://solr:8983/solr/{}/admin/ping'.format(os.environ['SOLR_CORE'])
 REQUEST_META = ['id', 'is_search', 'job_id', 'save_copies', 'site_name', 'site_url',
         'site_id', 'source_type']
 

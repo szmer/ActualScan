@@ -98,9 +98,13 @@ def search(request):
                 for site in Site.objects.filter(
                     tag_links__tag__in=form.cleaned_data['query_tags']).all()]
     omnivore_conn = http.client.HTTPConnection('omnivore', port=4242, timeout=10)
-    omnivore_addr = '/result?q={}&sdate={}&edate={}&undat={}&sites={}'.format(
-        quote(scan_query), start_date, end_date, '1' if allow_undated else '0',
-        ','.join(query_site_names))
+    if query_site_names:
+        omnivore_addr = '/result?q={}&sdate={}&edate={}&undat={}&sites={}'.format(
+            quote(scan_query), start_date, end_date, '1' if allow_undated else '0',
+            ','.join(query_site_names))
+    else: # search everything
+        omnivore_addr = '/result?q={}&sdate={}&edate={}&undat={}'.format(
+            quote(scan_query), start_date, end_date, '1' if allow_undated else '0')
     debug('Omnivore query: {}'.format(omnivore_addr))
     omnivore_conn.request('GET', omnivore_addr,
         headers={'Content-type': 'application/json'})
