@@ -193,3 +193,18 @@ class TopTermsWithAutocompletePhrases(IntegerPreference):
     name = 'top_terms_with_autocomplete_phrases'
     default = 5000
     required = True
+
+#
+# Limiting omnivore usage.
+#
+@global_preferences_registry.register
+class OmnvioreConcurrentJobs(IntegerPreference):
+    name = 'omnivore_concurrent_jobs'
+    default = 3
+    required = True
+
+@global_preferences_registry.register
+class OmnvioreTimeout(IntegerPreference):
+    name = 'omnivore_timeout'
+    default = 60
+    required = True

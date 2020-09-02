@@ -1,6 +1,7 @@
 ;;;;;
 ;;;;; Score sentences for business purposes.
 ;;;;;
+(declaim (optimize (space 3)))
 
 ;;;; TODO BUG scoring the same list of sents two times messes up the older ranking?
 

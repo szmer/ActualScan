@@ -2,7 +2,7 @@
 ;;;; This file implements logic for using the berry-stalk-graph representation for our semantic
 ;;;; metalanguage.
 ;;;;
-(declaim (optimize (debug 3)))
+;;;;-(declaim (optimize (debug 3)))
 (in-package :omnivore)
 
 (defparameter *prefix-unknown-token* "??;")

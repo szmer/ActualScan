@@ -14,10 +14,15 @@ services:
         - '.env'
      depends_on:
         - postgres
-        - omnivore
         - speechtractor
      volumes:
         - ./ascan:/ascan
+        # Persist quicklisp in a named volume. NOTE thanks to dependency on stractor, this should
+        # populate itself but we should think of something else if decoupling
+        - quicklisp:/root/quicklisp:Z
+        - ./lisp-startup:/lisp/startup
+        - ./textviews:/lisp/textviews
+        - ./omnivore:/lisp/omnivore
 
   maintenance:
      build:
@@ -29,6 +34,12 @@ services:
         - '.env'
      volumes:
         - ./ascan:/ascan
+        - quicklisp:/root/quicklisp:Z
+        - ./lisp-startup:/lisp/startup
+        - ./textviews:/lisp/textviews
+        - ./omnivore:/lisp/omnivore
+     # This should restart on crashes.
+     restart: unless-stopped
      depends_on:
         - website # to get DB initialization
 
@@ -64,27 +75,6 @@ services:
         - website
      volumes:
         - ./ascan:/ascan
-
-  omnivore:
-     build:
-        context: .
-        dockerfile: Dockerfile_omnivore
-     volumes:
-        # Persist quicklisp in a named volume.
-        - quicklisp:/root/quicklisp:Z
-        - ./lisp-startup:/lisp/startup
-        - ./textviews:/lisp/textviews
-        - ./omnivore:/lisp/omnivore
-     ports:
-        # Map the original 4242 to 4243.
-        - '4243:4242'
-        # Expose Swank.
-        - '4006:4005'
-     command: 'sbcl --load /lisp/startup/lisp-startup-omnivore.lisp'
-     # Make sbcl not exit immediately.
-     tty: true
-     depends_on:
-        - solr
 
   speechtractor:
      build:

@@ -5,7 +5,7 @@
 ;;;; (berries) unfolded, eventually to be constructed only from semantic primes and unknown token
 ;;;; marks.
 ;;;;
-(declaim (optimize (debug 3)))
+;;;;-(declaim (optimize (debug 3)))
 (in-package :omnivore)
 
 (defclass graph ()
@@ -204,62 +204,3 @@ entirely of newly copied berries and stalks."
                     ;; breadth-first search.
                     (append paths
                             (%tracing-stalks-from copied-berry next-berry stalk-forward-function)))))))))
-
-(let* ((test-graph
-         (create-graph :syntax
-                       (list "aaa" "bbb" "ccc" (list "ddd" :verbalp :graph-exit-p) "eee"
-                             (list "fff" :verbalp))
-                       ;; Two berries connected to ccc, ddd and fff, are verbals.
-                       (list '(0 1) '(1 2 "pred") '(2 3) '(3 4) '(2 5))))
-       (subgraph (subgraph-from (find-if (lambda (berry) (equalp (seme-label berry) "bbb"))
-                                         (graph-berries test-graph))
-                                #'berry-verbalp)))
-  (labels ((%good-stalk-p-fun (from-label to-label)
-             (lambda (stalk)
-               (and (equalp (seme-label (stalk-from stalk)) from-label)
-                    (equalp (seme-label (stalk-to stalk)) to-label)))))
-    (format t "The subgraph representation: ~A~%"
-            subgraph)
-    (format t "The subgraph should contain two berries. ~A~%"
-            (= (length (graph-berries subgraph)) 2))
-    (format t "The subgraph should contain bbb and ccc. ~A ~A~%"
-            (truep (find-if (lambda (berry) (equalp (seme-label berry) "bbb"))
-                            (graph-berries subgraph)))
-            (truep (find-if (lambda (berry) (equalp (seme-label berry) "ccc"))
-                            (graph-berries subgraph))))
-    (format t "bbb (the root) should be first. ~A~%"
-            (eq 0 (position "bbb" (graph-berries subgraph)
-                            :test #'equalp :key #'seme-label)))
-    (format t "The subgraph should contain only one stalk, between bbb and ccc ~A ~A~%"
-            (= (length (graph-stalks subgraph)) 1)
-            (truep (find-if (%good-stalk-p-fun "bbb" "ccc")
-                            (graph-stalks subgraph))))
-    (format t "The bbb should have only one stalk, between bbb and ccc ~A ~A~%"
-            (ignore-errors
-             (= (length (berry-stalks
-                         (find-if (lambda (berry) (equalp (seme-label berry) "bbb"))
-                                  (graph-berries subgraph))))
-                1))
-            (ignore-errors
-             (truep (find-if (%good-stalk-p-fun "bbb" "ccc")
-                             (berry-stalks
-                              (find-if (lambda (berry) (equalp (seme-label berry) "bbb"))
-                                       (graph-berries subgraph)))))))
-    (format t "The ccc should have only one stalk, between bbb and ccc ~A ~A~%"
-            (ignore-errors
-             (= (length (berry-stalks
-                         (find-if (lambda (berry) (equalp (seme-label berry) "ccc"))
-                                  (graph-berries subgraph))))
-                1))
-            (ignore-errors
-             (truep (find-if (%good-stalk-p-fun "bbb" "ccc")
-                             (berry-stalks
-                              (find-if (lambda (berry) (equalp (seme-label berry) "ccc"))
-                                       (graph-berries subgraph)))))))
-    (format t "The bbb should lead to the same ccc that is included in the graph berry list ~A~%"
-            (ignore-errors
-             (eq (find-if (lambda (berry) (equalp (seme-label berry) "ccc"))
-                          (graph-berries subgraph))
-                 (stalk-to (first (berry-stalks
-                                   (find-if (lambda (berry) (equalp (seme-label berry) "bbb"))
-                                            (graph-berries subgraph))))))))))

@@ -1,7 +1,7 @@
 ;;;;
 ;;;; Building semantic representations from preprocessed text (syntactic trees).
 ;;;;
-(declaim (optimize (debug 3)))
+;;;;-(declaim (optimize (debug 3)))
 (in-package :omnivore)
 
 ;;;
@@ -165,21 +165,21 @@
    :test #'equal))
 
 ;;; Temporary 'fake' dictionary, serving only for associating the "people" berry with some lemmas.
-(defparameter *temp-dictionary*
-  (alexandria:alist-hash-table
-   (mapcar (lambda (term)
-             (cons term
-                   `(create-graph :explication-definition (list ,term "people") '((0 1)))))
-           ;; We skip "headband" because its semantic relation to people is probably indirect.
-           ;; similarly technoical terms like "frequency", "gain"
-           ;; a "design" is made by people, but not necessarily affecting them?
-           (list "anyone" "audio" "audiophile" "bass" "bright" "can" "comfortable" "detail" "difficult"
-                 "ear" "easy" "experience" "friend" "forum" "gear"
-                 "hard" "harsh" "head" "headphone" "high" "hobby" "idea" "imaging"
-                 "music" "musical" "mid" "midrange" "natural" "neutral" "order"
-                 "pad" "person" "price" "product" "recording" "someone" "sound" "soundstage" "small"
-                 "treble" "warm" "volume"))
-   :test #'equalp))
+;;;-(defparameter *temp-dictionary*
+;;;-  (alexandria:alist-hash-table
+;;;-   (mapcar (lambda (term)
+;;;-             (cons term
+;;;-                   `(create-graph :explication-definition (list ,term "people") '((0 1)))))
+;;;-           ;; We skip "headband" because its semantic relation to people is probably indirect.
+;;;-           ;; similarly technoical terms like "frequency", "gain"
+;;;-           ;; a "design" is made by people, but not necessarily affecting them?
+;;;-           (list "anyone" "audio" "audiophile" "bass" "bright" "can" "comfortable" "detail" "difficult"
+;;;-                 "ear" "easy" "experience" "friend" "forum" "gear"
+;;;-                 "hard" "harsh" "head" "headphone" "high" "hobby" "idea" "imaging"
+;;;-                 "music" "musical" "mid" "midrange" "natural" "neutral" "order"
+;;;-                 "pad" "person" "price" "product" "recording" "someone" "sound" "soundstage" "small"
+;;;-                 "treble" "warm" "volume"))
+;;;-   :test #'equalp))
 
 ;;;
 ;;; Reading functions.
@@ -283,9 +283,6 @@ assuming that we have no definition for that term."
                                                       ;; these token ids are one-based
                                                       (nth (1- token-id) tokens))
                                                     level-token-ids))))))
-;; Notes for testing.
-;;(mapcar #'cl-conllu:token-id (sentence-semantic-token-order (fifth *sents*)))
-;;(4 8 3 22 9 7 5 2 1 23 21 20 19 11 6 24 12 10 25 16 28 17 15 27 18 14 13 26)
 
 (defun sentence->representation (sentence &key debug-info)
   (let ((token-id->representation (make-hash-table))
@@ -339,12 +336,5 @@ assuming that we have no definition for that term."
           marker-count
           ;; expected mean
           (max 4 ; don't encourage short sentences
-               (/ (length lemmas) 3)) 
+               (/ (length lemmas) 3))
           2)))))
-
-(list "anyone" "audio" "audiophile" "bass" "bright" "can" "comfortable" "detail" "difficult"
-                 "ear" "easy" "experience" "friend" "forum" "gear"
-                 "hard" "harsh" "head" "headphone" "high" "hobby" "idea" "imaging"
-                 "music" "musical" "mid" "midrange" "natural" "neutral" "order"
-                 "pad" "person" "price" "product" "recording" "someone" "sound" "soundstage" "small"
-                 "treble" "warm" "volume")

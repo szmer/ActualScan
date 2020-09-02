@@ -340,6 +340,8 @@ class GeneralSpider(scrapy.Spider):
                     if job_objs[0].status != 'terminated':
                         await sync_to_async(update_request_status)(scrape_request, 'waiting')
                         renewed_count += 1
+                    else:
+                        await sync_to_async(update_request_status)(scrape_request, 'cancelled')
                 logger.info('{} requests renewed.'.format(renewed_count))
                 self.at_first_request = False
             scrape_requests_waiting = await sync_to_async(list)(ScrapeRequest.objects.filter(

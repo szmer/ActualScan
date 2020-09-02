@@ -2,8 +2,9 @@
 
 (defun solr-tokens (address port core solr-query &key (start-date nil) (end-date nil) (undated nil)
                             (sites nil))
-  "Values: loose tokens with sentence references, plist of additional stats (years, document counts\
-   for the year"
+  "Sites should be provided space-separated as one string. Start, end date as Solr date strings.\
+   Values: loose tokens with sentence references, plist of additional stats (years, document counts\
+   for the year."
   ;;; One of general KLUDGE s is that there is no corpus object here.
   "The second value contains statistics got directly from Solr."
   (assert (not (and end-date (not start-date))))
@@ -34,8 +35,8 @@
                                                             (mapcar (lambda (name)
                                                                       ;; quotes
                                                                       (format nil "%22~A%22" name))
-                                                                    sites)
-                                                            ;; space
+                                                                    (cl-strings:split sites " "))
+                                                            ;; encoded space
                                                             :separator "%20")
                                                           ;; Solr has a problem with slashes.
                                                           "/" "%5C%2F"))
@@ -83,7 +84,7 @@
                       (error (format nil "No highlighting field in ~A~%" response))))
          (result-tokens)
          (sentence-strings-table (make-hash-table :test #'equalp)))
-    (format t "~A~%" http-query)
+    (when *debug-solr-connection* (format t "~A~%" http-query))
     (when *debug-scoring*
       (format t "~A documents received~%" (length json-docs)))
     (timed-execution

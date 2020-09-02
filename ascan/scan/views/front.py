@@ -1,19 +1,17 @@
-import http.client
-import json
 from logging import debug, info
 import random
-from urllib.parse import quote
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from dynamic_preferences.registries import global_preferences_registry
 from ipware import get_client_ip
+import pexpect
 
 from scan.control import (maybe_issue_guest_scan_permission, request_scan, scan_progress_info,
         terminate_scan, verify_scan_permission, maybe_issue_feedback_permission)
 from scan.forms import PublicScanForm
-from scan.utils import date_fmt, trust_level_to_numeric
+from scan.utils import date_fmt, trust_level_to_numeric, omnivore_call, OmnivoreError, OmnivoreBlocked
 from scan.models import ScanJob, Site, TagSiteLink
 
 @login_required
@@ -32,13 +30,13 @@ def index(request):
 def scaninfo(request):
     if not 'job_id' in request.GET:
         messages.add_message(request, messages.ERROR, 'No scan job specified.')
-        context = { 'status_data': { 'phase': 'Unknown job.' }, 'is_good': False, 'result': False }
+        context = { 'status_data': { 'phase': 'Unknown job.' }, 'result': False }
         return render(request, 'scan/scaninfo.html', context=context, status=400)
     job_id = request.GET['job_id']
     job = ScanJob.objects.get(id=job_id)
     if job is None or not (request.user.is_staff or request.user == job.user):
         messages.add_message(request, messages.ERROR, 'Bad scan job specified.')
-        context = { 'status_data': { 'phase': 'Bad job.' }, 'is_good': False, 'result': False }
+        context = { 'status_data': { 'phase': 'Bad job.' }, 'result': False }
         return render(request, 'scan/scaninfo.html', context=context, status=400)
     if 'terminate' in request.GET and request.GET['terminate']:
         terminate_scan(job.id)
@@ -97,27 +95,20 @@ def search(request):
     query_site_names += [site.site_name
                 for site in Site.objects.filter(
                     tag_links__tag__in=form.cleaned_data['query_tags']).all()]
-    omnivore_conn = http.client.HTTPConnection('omnivore', port=4242, timeout=10)
-    if query_site_names:
-        omnivore_addr = '/result?q={}&sdate={}&edate={}&undat={}&sites={}'.format(
-            quote(scan_query), start_date, end_date, '1' if allow_undated else '0',
-            ','.join(query_site_names))
-    else: # search everything
-        omnivore_addr = '/result?q={}&sdate={}&edate={}&undat={}'.format(
-            quote(scan_query), start_date, end_date, '1' if allow_undated else '0')
-    debug('Omnivore query: {}'.format(omnivore_addr))
-    omnivore_conn.request('GET', omnivore_addr,
-        headers={'Content-type': 'application/json'})
-    omnivore_response = omnivore_conn.getresponse()
-    omnivore_response_text = omnivore_response.read()
+    context = { 'scan_phrase': scan_query }
     try:
-        omnivore_results = json.loads(omnivore_response_text)
-    except json.JSONDecodeError as e:
-        info('Bad omnivore response for {}: {}'.format(scan_query,
-            omnivore_response_text))
-        raise e
+        omnivore_results = omnivore_call(scan_query, args=
+                '--start-date {} --end-date {} {} {}'.format(
+                    start_date, end_date,
+                    '--undated' if allow_undated else '',
+                    '--sites '+' '.join(query_site_names) if query_site_names else ''))
+    except (pexpect.TIMEOUT, OmnivoreError,  OmnivoreBlocked) as e:
+        info('Exception {} blocked getting a result from omnivore'.format(type(e).__name__))
+        messages.add_message(request, messages.ERROR, 'Our server seems to be overloaded now.')
+        context['with_errors'] = True
+        return render(request, 'scan/indexresults.html', context=context, status=503)
     info('Omnivore responded for {}: {}'.format(scan_query, omnivore_results))
-    context = { 'result': omnivore_results, 'scan_phrase': scan_query, 'is_good': True }
+    context['result'] = omnivore_results
 
     # Try to issue and add a feedback permission.
     if (omnivore_results['sitesStats'] is not None

@@ -1,4 +1,5 @@
 (in-package :omnivore)
+(declaim (optimize (space 3)))
 
 (defun typical (tv-sentences n &key (strip-scores t))
     (when *debug-scoring*
@@ -29,12 +30,10 @@
     (when *debug-scoring*
       (format t "Looking for atypical sentences.~%"))
   (mapcar (if strip-scores #'first #'identity)
-          (ranked-high (corrected-with #'*
-                               (corrected-with #'/
-                                               (scored-with-average-tfidf tv-sentences)
-                                               (scored-with-length-deviation tv-sentences))
-                               (scored-with-markers tv-sentences))
-               :n n)))
+          (ranked-high (corrected-with #'/
+                                       (scored-with-average-tfidf tv-sentences)
+                                       (scored-with-length-deviation tv-sentences))
+                       :n n)))
 
 (defun phrases-info (tv-sentences freq num-examples &key (sents-to-text t) (give-atypical nil)
                                   (give-oldest nil))
@@ -72,7 +71,7 @@
             (sort (append (alexandria:hash-table-alist bigrams)
                          ;;- (alexandria:hash-table-alist trigrams)
                           )
-                  #'> 
+                  #'>
                   :key #'cdr))))
 
 (defun sites-stats (tv-sentences &key (max-entries 5) (others-name "others"))

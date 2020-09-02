@@ -5,9 +5,13 @@ import json
 import logging
 from logging import getLogger, debug, info, warning
 import os
+import random
 import socket
 from threading import Thread
 import time
+
+import pexpect
+
 #
 # Read command line args.
 #
@@ -38,6 +42,7 @@ from dynamic_preferences.registries import global_preferences_registry
 
 from scan.models import ScanJob, ScrapeRequest, ScanPermission, FeedbackPermission
 from scan.control import start_scan, spare_scan_capacity, scan_progress_info
+from scan.utils import omnivore_call, OmnivoreError, OmnivoreBlocked
 from bg.models import AutocompleteTerm
 
 TOP_TERMS = []
@@ -55,8 +60,15 @@ class SuggestionUpdatingThread(Thread):
                 settings.SOLR_CORE,
                 global_preferences['top_terms_with_autocomplete_phrases']))
             term_conn = http.client.HTTPConnection('solr', port=8983)
-            term_conn.request('GET', query_str, headers={'Content-type': 'application/json'})
-            term_response = term_conn.getresponse()
+            try:
+                term_conn.request('GET', query_str, headers={'Content-type': 'application/json'})
+                term_response = term_conn.getresponse()
+            except ConnectionRefusedError:
+                warning('Solr unreachable when getting terms for autocomplete')
+                return
+            except socket.timeout:
+                warning('Solr timed out when getting terms for autocomplete')
+                return
             term_response_text = term_response.read().decode('utf-8')
             try:
                 term_response_json = json.loads(term_response_text)
@@ -83,19 +95,18 @@ class SuggestionUpdatingThread(Thread):
         term = TOP_TERMS[TOP_TERMS_N]
         debug('Trying to get autocompletion phrases for {}'.format(term))
         TOP_TERMS_N += 1
-        omnivore_addr = '/result?q={}'.format(term)
-        omnivore_conn = http.client.HTTPConnection('omnivore', port=4242, timeout=60)
-        omnivore_conn.request('GET', omnivore_addr, headers={'Content-type': 'application/json'})
         try:
-            omnivore_response = omnivore_conn.getresponse()
-        except socket.timeout:
-            warning('Omnivore timeouted for autocomplete term {}'.format(term))
+            omnivore_results = omnivore_call(term,
+                    # most often give way to the user requests
+                    low_priority=random.randint(0, 2) != 0)
+        except pexpect.TIMEOUT:
+            warning('Omnivore timed out for autocomplete term {}'.format(term))
             return
-        omnivore_response_text = omnivore_response.read()
-        try:
-            omnivore_results = json.loads(omnivore_response_text)
-        except json.JSONDecodeError:
-            warning('Bad omnivore response for {}: {}'.format(term, omnivore_response_text))
+        except OmnivoreError:
+            warning('Omnivore crashed for autocomplete term {}'.format(term))
+            return
+        except OmnivoreBlocked:
+            info('Omnivore blocked for autocomplete term {}'.format(term))
             return
         if not 'phrases' in omnivore_results or omnivore_results['phrases'] is None:
             debug('No phrases in omnivore results')

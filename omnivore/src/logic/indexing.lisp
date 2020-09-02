@@ -1,7 +1,7 @@
 ;;;;;
 ;;;;; Finding important traits (currently berry communities) in graphs.
 ;;;;;
-(declaim (optimize (debug 3)))
+;;;;-(declaim (optimize (debug 3)))
 (in-package :omnivore)
 
 ;;;
@@ -22,39 +22,6 @@ represented in the same manner."
                                           (berry-stalks berry))))))
     (%berry-list-tree (graph-root-berry graph))))
 ;; TODO consistent order (alphabetic?)
-
-(let* ((test-graph
-         (create-graph :syntax
-                       (list "aaa" "bbb" "ccc" (list "ddd" :verbalp :graph-exit-p) "eee" "fff")
-                       (list '(0 1) '(1 2 "pred") '(2 3) '(3 4) '(2 5))))
-       (representation (graph->list-tree test-graph)))
-  (pprint representation))
-;;; -> ("aaa" ("-" "bbb" ("pred" "ccc" ("-" "fff") ("-" "ddd" ("-" "eee")))))
-;;;
-;;; Warning, not checked:
-;;; (graph->list-tree (sentence->representation (fifth *sents*)))
-;;; ->
-;;;("_they_??;provide_them"
-;;; ("obj" "something"
-;;;        ("-" "_they_??;yield_them"
-;;;             ("-" "??;to"
-;;;                  ("-" "??;that"
-;;;                       ("-" "??;of"
-;;;                            ("-" "something" ("-" "something" ("-" "??;the") ("-" "Phiaton"))
-;;;                                 ("-" "MS400")))))
-;;;             ("pred" "??;just") ("pred" "??;only") ("subj" "??;that"))
-;;;        ("-" "??;with"
-;;;             ("-" "something"
-;;;                  ("-" "??;for"
-;;;                       ("pred" "_they_??;result_them"
-;;;                               ("-" "??;in" ("-" "something" ("-" "??;isolation")))
-;;;                               ("subj" "something" ("pred" "__they_be_" ("pred" "??;supraaural"))
-;;;                                       ("-" "??;a") ("-" "??;headphone,"))))
-;;;                  ("-" "??;the") ("-" "??;ear")))
-;;;        ("pred" "__they_be_" ("pred" "??;surprisingly") ("pred" "??;good"))
-;;;        ("-" "??;a") ("-" "??;coupling"))
-;;; ("subj" "something" ("-" "something" ("-" "??;lambskin")) ("-" "??;the")
-;;;         ("-" "??;earpad")))
 
 (defun graph-traits (graph &key (minimum-complexity 3))
   "Return a list of string traits indentifying the graph."

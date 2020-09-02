@@ -33,6 +33,5 @@
                              ))
                 (:module "biz"
                  :components ((:file "basic")
-                              (:file "main" :depends-on ("basic"))
-                              (:file "server" :depends-on ("main")))
+                              (:file "main" :depends-on ("basic")))
                  :depends-on ("src"))))

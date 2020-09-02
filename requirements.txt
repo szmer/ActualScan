@@ -15,6 +15,9 @@ django-dynamic-preferences==1.9
 celery==4.4.2
 redis==3.4.1
 
+# Communicating with Omnivore.
+pexpect==4.8.0
+
 # Scrapy.
 Scrapy==2.2.1
 simpleflock==0.0.3
