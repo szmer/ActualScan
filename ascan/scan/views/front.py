@@ -10,7 +10,7 @@ import pexpect
 
 from scan.control import (maybe_issue_guest_scan_permission, request_scan, scan_progress_info,
         terminate_scan, verify_scan_permission, maybe_issue_feedback_permission)
-from scan.forms import PublicScanForm
+from scan.forms import PublicScanForm, EditableScanForm
 from scan.utils import date_fmt, trust_level_to_numeric, omnivore_call, OmnivoreError, OmnivoreBlocked
 from scan.models import ScanJob, Site, TagSiteLink
 
@@ -51,7 +51,7 @@ def search(request):
     global_preferences = global_preferences_registry.manager()
 
     # Parse the form information to know what to search for.
-    form = PublicScanForm(data=request.GET)
+    form = EditableScanForm(data=request.GET)
     if not form.is_valid():
         context = { 'with_errors': True, 'form': form }
         return render(request, 'scan/indexresults.html', context=context, status=400)
@@ -92,19 +92,28 @@ def search(request):
                     'results instead.')
 
     # The index-only search response (if there is no scan or it finished).
+    # TODO KLUDGE currently unlimited scan permissions for registered
+    if request.user.is_authenticated:
+        can_scan = True
+    else:
+        can_scan = maybe_issue_guest_scan_permission(get_client_ip(request))
     query_site_names += [site.site_name
                 for site in Site.objects.filter(
                     tag_links__tag__in=form.cleaned_data['query_tags']).all()]
-    context = { 'scan_phrase': scan_query }
+    context = { 'scan_phrase': scan_query, 'form': form, 'can_scan': can_scan }
     try:
         omnivore_results = omnivore_call(scan_query, args=
                 '--start-date {} --end-date {} {} {}'.format(
                     start_date, end_date,
                     '--undated' if allow_undated else '',
-                    '--sites '+' '.join(query_site_names) if query_site_names else ''))
-    except (pexpect.TIMEOUT, OmnivoreError,  OmnivoreBlocked) as e:
-        info('Exception {} blocked getting a result from omnivore'.format(type(e).__name__))
+                    '--sites \'{}\''.format(' '.join(query_site_names)) if query_site_names else ''))
+    except OmnivoreBlocked:
         messages.add_message(request, messages.ERROR, 'Our server seems to be overloaded now.')
+        context['with_errors'] = True
+        return render(request, 'scan/indexresults.html', context=context, status=503)
+    except (pexpect.TIMEOUT, OmnivoreError) as e:
+        info('Exception {} blocked getting a result from omnivore: {}'.format(type(e).__name__, e))
+        messages.add_message(request, messages.ERROR, 'We experienced an internal error.')
         context['with_errors'] = True
         return render(request, 'scan/indexresults.html', context=context, status=503)
     info('Omnivore responded for {}: {}'.format(scan_query, omnivore_results))

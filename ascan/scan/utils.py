@@ -1,4 +1,5 @@
 import json
+from logging import info
 import os
 
 from dynamic_preferences.registries import global_preferences_registry
@@ -40,9 +41,10 @@ def omnivore_call(query_phrase, args='', low_priority=False):
             else:
                 continue
         # May signal a pexpect.TIMEOUT.
-        (output, status) = pexpect.run(
-                'sbcl --script /lisp/startup/lisp-startup-omnivore.lisp {} {}'.format(
-                    args, query_phrase), timeout=timeout, withexitstatus=1)
+        run_str = 'sbcl --script /lisp/startup/lisp-startup-omnivore.lisp {} \'{}\''.format(
+                    args, query_phrase)
+        info('Running omnivore with: {}'.format(run_str))
+        (output, status) = pexpect.run(run_str, timeout=timeout, withexitstatus=1)
         if lock.locked():
             lock.release()
         if status == 0:

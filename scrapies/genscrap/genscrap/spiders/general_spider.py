@@ -215,7 +215,6 @@ class GeneralSpider(scrapy.Spider):
             414, 415, 416, 417, 500, 501, 502, 503, 504, 505]
 
     def __init__(self, **kwargs):
-        self.at_first_request = True
         self.dedup_date_post_check = DEDUP_DATE_POST_CHECK
         self.dedup_date_retr_check = DEDUP_DATE_RETR_CHECK
         self.selenium_wait_time = SELENIUM_WAIT_TIME
@@ -225,10 +224,13 @@ class GeneralSpider(scrapy.Spider):
         self.infiscroll_search_depth = INFISCROLL_SEARCH_DEPTH
         super().__init__(self, **kwargs)
 
-    def start_requests(self):
-        # Start mock-pinging Solr and getting requests from DB.
-        yield scrapy.Request(url=SOLR_PING_URL, callback=self.monitoring_parse,
-                errback=self.fail)
+        logger.info('Renewing scheduled and ran requests not committed...')
+        cancelled_count = ScrapeRequest.objects.filter(status__in=['scheduled', 'ran', 'waiting'],
+                site_type='web', job__status='terminated').update(status='cancelled')
+        logger.info('{} requests cancelled (terminated jobs).'.format(cancelled_count))
+        renewed_count = ScrapeRequest.objects.filter(status__in=['scheduled', 'ran'],
+                site_type='web').update(status='waiting')
+        logger.info('{} requests renewed.'.format(renewed_count))
 
     async def fail(self, failure):
         """
@@ -315,6 +317,11 @@ class GeneralSpider(scrapy.Spider):
                     priority=5 if is_page_search else 1))
         return reqs
 
+    def start_requests(self):
+        # Start mock-pinging Solr and getting requests from DB.
+        yield scrapy.Request(url=SOLR_PING_URL, callback=self.monitoring_parse,
+                errback=self.fail)
+
     async def monitoring_parse(self, response):
         """
         Scrapy parse function for Solr dummy monitoring requests - we want to search Postgres for
@@ -323,27 +330,10 @@ class GeneralSpider(scrapy.Spider):
         Due to the Redis lock it should be safe to call multiplw such requests at once, although
         Scrapy will limit requesrs for the dummy Solr domain.
         """
+        logger.debug('A monitoring pagse')
         # NOTE this is also verbatim in normal parse(), see the explanation there
         lock = redis_lock.Lock(redis, 'scrapy-monitoring-parse')
         if lock.acquire():
-            if self.at_first_request:
-                logger.info('Renewing scheduled and ran requests not committed...')
-                scrape_requests_left = await sync_to_async(list)(ScrapeRequest.objects.filter(
-                    status__in=['scheduled', 'ran'], site_type='web').order_by(
-                        '-is_search'))
-                renewed_count = 0
-                for scrape_request in scrape_requests_left:
-                    # Check if the job wasn't terminated just now.
-                    job_objs = await sync_to_async(list)(ScanJob.objects.filter(
-                        id=scrape_request.job_id).all())
-                    logger.info(job_objs[0].status)
-                    if job_objs[0].status != 'terminated':
-                        await sync_to_async(update_request_status)(scrape_request, 'waiting')
-                        renewed_count += 1
-                    else:
-                        await sync_to_async(update_request_status)(scrape_request, 'cancelled')
-                logger.info('{} requests renewed.'.format(renewed_count))
-                self.at_first_request = False
             scrape_requests_waiting = await sync_to_async(list)(ScrapeRequest.objects.filter(
                 status='waiting', site_type='web').order_by('-is_search')[:100])
             logger.debug('{} waiting requests to be made'.format(len(scrape_requests_waiting)))

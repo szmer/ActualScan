@@ -90,7 +90,6 @@ def solr_check_urls(date_post_check, date_retr_check, urls):
     return urls_to_skip 
 
 def update_request_status(request, new_status, failure_comment=None):
-    request.change_status(new_status)
     if failure_comment is not None:
         request.failure_comment = failure_comment
-    request.save()
+    request.change_status(new_status) # this should also save()

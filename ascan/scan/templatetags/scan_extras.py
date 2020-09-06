@@ -1,3 +1,5 @@
+from urllib.parse import quote
+
 from django import template
 from dynamic_preferences.registries import global_preferences_registry
 
@@ -12,3 +14,7 @@ def format_trust_level(value):
         return 'respected'
     if value >= global_preferences['trust_level_threshold_community']:
         return 'community'
+
+@register.filter
+def full_escape(value):
+    return quote(repr(value).replace('\'', ''), safe='')

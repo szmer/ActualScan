@@ -1,17 +1,22 @@
 {% extends 'scan/base.html' %}
 {% load static %}
+{% load crispy_forms_tags %}
 {% load bootstrap4 %}
 
 {% block page_title %}{% if scan_phrase %}{{ scan_phrase }}{% else %}Searching{% endif %}{% endblock %}
 
 {% block scripts %}
 <script type="application/javascript" src="{% static 'scan/js/chartist.min.js' %}"></script>
+<script type="application/javascript" src="{% static 'scan/js/datepicker.min.js' %}"></script>
+<script type="application/javascript" src="{% static 'scan/js/list.min.js' %}"></script>
+<script type="application/javascript" src="{% static 'scan/js/typeahead.min.js' %}"></script>
 <link rel="stylesheet" href="{% static 'scan/css/chartist.min.css' %}">
+<link rel="stylesheet" href="{% static 'scan/css/datepicker.min.css' %}">
+<link rel="stylesheet" href="{% static 'scan/css/typeaheadjs.css' %}"></script>
 {% endblock %}
 
 {% block big_container %}
-<h2>{{ scan_phrase }}</h2>
-
+{% bootstrap_messages %}
 {% if with_errors %}
 <div class="alert alert-danger" role="alert">
    <p>Sorry, we experienced a problem with your request.</p>
@@ -27,15 +32,20 @@
       {% endfor %}
       {% endif %}
    </ul>
+<noscript><a class="btn btn-primary mx-4" href="/">Go back</a></noscript>
+<script>document.write('<a class="btn btn-primary align-middle mx-4" href="javascript:history.go(-1)">Go back</a>')</script>
 </div>
-<noscript><a class="btn btn-primary" href="/">Go back</a></noscript>
-<script>document.write('<a class="btn btn-primary" href="javascript:history.go(-1)">Go back</a>')</script>
 {% endif %}
 
+<div class="text-center p-3 m-3 border border-dark" style='background-color: #f8f8f8'>
+{% crispy form %}
+</div>
+
 {% if result.sentCount == 0 %}
-<div class="p-2">Sorry, we have no sufficient information for the specified parameters in the index.</div>
-<noscript><a class="btn btn-primary" href="/">Try something different</a></noscript>
-<script>document.write('<a class="btn btn-primary" href="javascript:history.go(-1)">Try something different</a>')</script>
+<div class="alert alert-info" role="alert">Sorry, we have no sufficient information for the specified parameters in the index.
+<noscript><a class="btn btn-primary mx-4" href="/">Try something different</a></noscript>
+<script>document.write('<a class="btn btn-primary align-middle mx-4" href="javascript:history.go(-1)">Try something different</a>')</script>
+</div>
 {% endif %}
 
 {% if possible_feedback %}
@@ -93,7 +103,11 @@
   </div>
        {% for phrase in result.phrases %}
        <div class="card-body p-2">
-          <h5 class="card-title">{{ phrase.text }}</h5>
+          <big class="card-title">{{ phrase.text }}</big>
+          <small>
+          <a href="/scan/search/?scan_query={{ phrase.text }}{% include 'widgets/form_link.html' with repl_field='scan_query' %}">search</a>
+          | <a href="/scan/search/?scan_query={{ scan_phrase }}%20{{ phrase.text }}{% include 'widgets/form_link.html' with repl_field='scan_query' %}">search both</a>
+          </small>
           <ul>
              {% for sent in phrase.typical %}
              <li>
@@ -132,9 +146,10 @@
        <div class="card-body p-2">
        {% for term, freq in result.topTerms.items %}
        {% if freq > 50 %}
-       <big>{{ term }}</big>{% elif freq < 30 %}
-       <small>{{ term }}</small>{% else %}
-       {{ term }}{% endif %}<small><sub>{{ freq }}</sub></small>
+       <big><a href="/scan/search/?scan_query={{ term }}{% include 'widgets/form_link.html' with repl_field='scan_query' %}">{{ term }}</a></big>{% elif freq < 30 %}
+       <small><a href="/scan/search/?scan_query={{ term }}{% include 'widgets/form_link.html' with repl_field='scan_query' %}">{{ term }}</a></small>{% else %}
+       <a href="/scan/search/?scan_query={{ term }}{% include 'widgets/form_link.html' with repl_field='scan_query' %}">{{ term }}</a>{% endif %}<small><sub>{{ freq }}</sub>
+       <a href="/scan/search/?scan_query={{ scan_phrase }}%20{{ term }}{% include 'widgets/form_link.html' with repl_field='scan_query' %}">(+)</a></small>
        {% endfor %}
        </div>
 </div>

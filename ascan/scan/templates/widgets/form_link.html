@@ -1,0 +1,1 @@
+{% load scan_extras %}{% for field in form %}{% if field.html_name != repl_field and field.value %}&{{ field.html_name }}={{ field.value | full_escape }}{% endif %}{% endfor %}
