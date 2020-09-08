@@ -11,7 +11,10 @@ import pexpect
 from scan.control import (maybe_issue_guest_scan_permission, request_scan, scan_progress_info,
         terminate_scan, verify_scan_permission, maybe_issue_feedback_permission)
 from scan.forms import PublicScanForm, EditableScanForm
-from scan.utils import date_fmt, trust_level_to_numeric, omnivore_call, OmnivoreError, OmnivoreBlocked
+from scan.utils import (
+        date_fmt, trust_level_to_numeric, omnivore_call, OmnivoreError, OmnivoreBlocked,
+        numeric_to_trust_level
+        )
 from scan.models import ScanJob, Site, TagSiteLink
 
 @login_required
@@ -41,11 +44,17 @@ def scaninfo(request):
     if 'terminate' in request.GET and request.GET['terminate']:
         terminate_scan(job.id)
     progress_info = scan_progress_info(job.id)
+    index_form_data = {field: getattr(job, field) for field in ['query_tags', 'start_date',
+        'end_date', 'allow_undated']}
+    index_form_data['scan_query'] = job.query_phrase
+    index_form_data['query_sites'] = job.query_site_names
+    index_form_data['minimal_level'] = numeric_to_trust_level(job.minimal_level)
+    index_form = PublicScanForm(data=index_form_data)
     return render(request, 'scan/scaninfo.html',
             { 'status_data': progress_info, 'terminable': job.status in ['waiting', 'working'],
                 'site_names': job.query_site_names.strip().split(','),
                 'tag_names': job.query_tags.strip().split(','),
-                'scan_job': job })
+                'scan_job': job, 'form': index_form })
 
 def search(request):
     global_preferences = global_preferences_registry.manager()
@@ -76,10 +85,10 @@ def search(request):
             debug('A scan will be performed.')
             job = request_scan((request.user if request.user.is_authenticated
                 else get_client_ip(request)),
-                scan_query, query_tags=query_tags, query_site_names=query_site_names,
+                scan_query, form.cleaned_data['start_date'].strftime('%m/%Y'),
+                form.cleaned_data['end_date'].strftime('%m/%Y'),
+                query_tags=query_tags, query_site_names=query_site_names,
                 minimal_level=minimal_level,
-                start_date=form.cleaned_data['start_date'],
-                end_date=form.cleaned_data['end_date'],
                 allow_undated=allow_undated,
                 is_ip=not request.user.is_authenticated,
                 is_privileged=request.user.is_staff)
@@ -121,7 +130,7 @@ def search(request):
 
     # Try to issue and add a feedback permission.
     if (omnivore_results['sitesStats'] is not None
-            and random.random() < global_preferences['feedback_ask_frequency']):
+            and random.random() < global_preferences['trust_levels__feedback_ask_frequency']):
         debug('Trying to issue a feedback permission...')
         site_names = [item['site'] for item in omnivore_results['sitesStats']]
         gradable_links = TagSiteLink.objects.filter(tag__name__in=query_tags,

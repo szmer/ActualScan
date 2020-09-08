@@ -58,7 +58,7 @@ class SuggestionUpdatingThread(Thread):
             global_preferences = global_preferences_registry.manager()
             query_str = ('/solr/{}/terms?terms.fl=text&terms.limit={}'.format(
                 settings.SOLR_CORE,
-                global_preferences['top_terms_with_autocomplete_phrases']))
+                global_preferences['index_searching__top_terms_with_autocomplete_phrases']))
             term_conn = http.client.HTTPConnection('solr', port=8983)
             try:
                 term_conn.request('GET', query_str, headers={'Content-type': 'application/json'})
@@ -139,18 +139,18 @@ def do_scan_management():
     global_preferences = global_preferences_registry.manager()
     # Remove expired scan permissions.
     expiration_threshold = datetime.now(timezone.utc) - timedelta(
-            seconds=global_preferences['guest_scan_permission_time_to_live'])
+            seconds=global_preferences['scanning__guest_scan_permission_time_to_live'])
     # __lte is less than (<)
     ScanPermission.objects.filter(time_issued__lte=expiration_threshold).delete()
     # Similarly with the feedback permissions.
     expiration_threshold = datetime.now(timezone.utc) - timedelta(
-            seconds=global_preferences['feedback_permission_time_to_exist'])
+            seconds=global_preferences['trust_levels__feedback_permission_time_to_exist'])
     FeedbackPermission.objects.filter(time_issued__lte=expiration_threshold).delete()
     # Mark finished jobs and broadcast progress to WebSockets.
     channel_layer = channels.layers.get_channel_layer()
     # The threshold to get scan jobs terminated due to timeout.
     scan_job_time_threshold = datetime.now(timezone.utc) - timedelta(
-        seconds=global_preferences['scan_job_time_to_live'])
+        seconds=global_preferences['scanning__scan_job_time_to_live'])
     debug('Jobs last changed before {} would be terminated now.'.format(scan_job_time_threshold))
     for job in ScanJob.objects.all(): # TODO filter old finished?
         if job.status == 'working':
@@ -190,14 +190,14 @@ def do_scan_management():
         spare_capacity -= len(jobs_to_start)
     # Remove old jobs and requests.
     scan_job_time_threshold = datetime.now(timezone.utc) - timedelta(
-            seconds=global_preferences['scan_job_time_to_exist'])
+            seconds=global_preferences['scanning__scan_job_time_to_exist'])
     old_jobs_finished = ScanJob.objects.filter(status='working',
         status_changed__lte=scan_job_time_threshold)
     if len(old_jobs_finished) > 0:
         info('Removing {} old jobs.'.format(len(old_jobs_finished)))
     old_jobs_finished.delete()
     scrape_request_time_threshold = datetime.now(timezone.utc) - timedelta(
-            seconds=global_preferences['scrape_request_time_to_exist'])
+            seconds=global_preferences['scanning__scrape_request_time_to_exist'])
     old_reqs_finished = ScrapeRequest.objects.filter(status='working',
         status_changed__lte=scrape_request_time_threshold)
     if len(old_reqs_finished) > 0:

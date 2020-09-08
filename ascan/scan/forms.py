@@ -13,7 +13,7 @@ from scan.widgets import MonthPickerInput
 def get_default_timedelta():
     global_preferences = global_preferences_registry.manager()
     return (datetime.now(timezone.utc) -  timedelta(
-            weeks=global_preferences['default_scan_timedelta_start'])
+            weeks=global_preferences['index_searching__default_scan_timedelta_start'])
             ).strftime('%m/%Y')
 
 def get_next_month():

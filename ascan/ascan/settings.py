@@ -148,7 +148,7 @@ LOGGING = {
                 'handlers': [
                     'console',
                     ],
-                'level': 'INFO'
+                'level': 'DEBUG'
                 },
             }
         }
@@ -170,6 +170,8 @@ ASGI_APPLICATION = "ascan.routing.application"
 
 # Crispy forms.
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
+
+LOGOUT_REDIRECT_URL = '/'
 
 # Our custom settings.
 SOLR_CORE = os.environ['SOLR_CORE']

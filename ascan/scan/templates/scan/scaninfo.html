@@ -24,12 +24,28 @@
       <td id='scan_phase'>{{ status_data.phase }}</td>
       </tr>
       <tr>
-      <th scope="row">No. of failures</th>
-      <td id='scan_fails'>{% if status_data.failures %}{{ status_data.failures }}{% else %}0{% endif %}</td>
+      <th scope="row">Tags queried</th>
+      <td id='query_tags'>{% for tag in tag_names %}<a href="/manager/tagsites/{{ tag }}/" class="card-link">{{ tag }}</a>{% endfor %}</td>
       </tr>
       <tr>
-      <th scope="row">Last page processed</th>
-      <td id='scan_last_url'>{% if status_data.last_url %}{{ status_data.last_url }}{% else %}-{% endif %}</td>
+      <th scope="row">Sites queried</th>
+      <td id='query_sites'>{{ scan_job.query_sites }}</td>
+      </tr>
+      <tr>
+      <th scope="row">No. of failures</th>
+      <td id='scan_fails'>{% if status_data.fails %}{{ status_data.fails }}{% else %}0{% endif %}</td>
+      </tr>
+      <tr>
+      <th scope="row">Last pages processed</th>
+      <td id='scan_last_urls'>{% for pg in status_data.last_urls %}({{ pg.site }}) {{ pg.url }} ({{ pg.time }})<br> {% endfor %}</td>
+      </tr>
+      <tr>
+      <th scope="row">Sites completed</th>
+      <td id='sites_completed'>{% for site in status_data.sites_done %}{{ site }} {% endfor %}</td>
+      </tr>
+      <tr>
+      <th scope="row">Sites worked</th>
+      <td id='sites_worked'>{% for site in status_data.sites_worked %}{{ site }} {% endfor %}</td>
       </tr>
       <tr>
       <th scope="row">at least % done (estimated)</th>
@@ -63,16 +79,6 @@
 </div>
 {% endif %}
 <div class="m-1 d-inline-block">
-   <form action="/scan/search/">
-   <input type="hidden" value="{{ scan_job.query_phrase }}" name="scan_query">
-   {% for tag in tag_names %}{% if tag %}<input type="hidden" value="{{ tag }}" name="query_tags">
-   {% endif %}{% endfor %}
-   {% for site in site_names %}{% if site %}<input type="hidden" value="{{ site }}" name="query_sites">
-   {% endif %}{% endfor %}
-   <input type="hidden" value="{{ scan_job.minimal_level | format_trust_level }}" name="minimal_level">
-   <input type="hidden" value="{{ scan_job.start_date }}" name="start_date">
-   <input type="hidden" value="{{ scan_job.end_date }}" name="end_date">
-   <button type="submit" class="btn btn-primary">Search the index now</button>
-   </form>
+   <a href="/scan/search/?{% include 'widgets/form_link.html' %}" class="btn btn-primary">Search the index now</a>
 </div>
 {% endblock %}

@@ -28,6 +28,7 @@ urlpatterns = [
     path('bg/', include('bg.urls')),
     path('admin/', admin.site.urls),
     path('accounts/login/', auth_views.LoginView.as_view()),
+    path('accounts/logout/', auth_views.LogoutView.as_view()),
     path('accounts/info/', accountinfo),
 ]
 

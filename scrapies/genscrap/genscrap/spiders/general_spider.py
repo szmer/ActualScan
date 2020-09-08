@@ -197,13 +197,13 @@ async def get_js_search_pages(page_address, search_term, wait_time, max_tried_ne
 #
 logger.info('Scrapy loading ActualScan configuration.')
 global_preferences = global_preferences_registry.manager()
-DEDUP_DATE_POST_CHECK = global_preferences['dedup_date_post_check']
-DEDUP_DATE_RETR_CHECK = global_preferences['dedup_date_retr_check']
-SELENIUM_WAIT_TIME = global_preferences['selenium_wait_time']
-SELENIUM_MAX_CLICK_ELEMS_TRIED = global_preferences['selenium_max_click_elems_tried']
-NORMAL_SEARCH_DEPTH = global_preferences['web_normal_search_depth']
-JS_SEARCH_DEPTH = global_preferences['web_js_search_depth']
-INFISCROLL_SEARCH_DEPTH = global_preferences['web_infiscroll_search_depth']
+DEDUP_DATE_POST_CHECK = global_preferences['scanning__dedup_date_post_check']
+DEDUP_DATE_RETR_CHECK = global_preferences['scanning__dedup_date_retr_check']
+SELENIUM_WAIT_TIME = global_preferences['scanning__selenium_wait_time']
+SELENIUM_MAX_CLICK_ELEMS_TRIED = global_preferences['scanning__selenium_max_click_elems_tried']
+NORMAL_SEARCH_DEPTH = global_preferences['scanning__web_normal_search_depth']
+JS_SEARCH_DEPTH = global_preferences['scanning__web_js_search_depth']
+INFISCROLL_SEARCH_DEPTH = global_preferences['scanning__web_infiscroll_search_depth']
 
 #
 # The spider.
@@ -226,10 +226,11 @@ class GeneralSpider(scrapy.Spider):
 
         logger.info('Renewing scheduled and ran requests not committed...')
         cancelled_count = ScrapeRequest.objects.filter(status__in=['scheduled', 'ran', 'waiting'],
-                site_type='web', job__status='terminated').update(status='cancelled')
+                site_type='web', job__status='terminated').update(status='cancelled', 
+                        status_changed=datetime.now(timezone.utc))
         logger.info('{} requests cancelled (terminated jobs).'.format(cancelled_count))
         renewed_count = ScrapeRequest.objects.filter(status__in=['scheduled', 'ran'],
-                site_type='web').update(status='waiting')
+                site_type='web').update(status='waiting', status_changed=datetime.now(timezone.utc))
         logger.info('{} requests renewed.'.format(renewed_count))
 
     async def fail(self, failure):
@@ -285,7 +286,7 @@ class GeneralSpider(scrapy.Spider):
             return None
         return json.loads(stractor_output)
 
-    async def requests_from_search(self, response, stractor_response_json):
+    async def requests_from_search(self, response, stractor_response_json, lead_count=0):
         reqs = []
         # We should skip the requests before trying to download them for that to make sense.
         urls_to_request = [doc['url'] for doc in stractor_response_json if 'url' in doc]
@@ -300,6 +301,7 @@ class GeneralSpider(scrapy.Spider):
                         target=found_page['url'],
                         is_search=is_page_search,
                         job_id=response.meta['job_id'],
+                        lead_count=lead_count if is_page_search else 0,
                         status='scheduled',
                         status_changed=datetime.now(timezone.utc),
                         source_type=response.meta['source_type'],
@@ -377,7 +379,8 @@ class GeneralSpider(scrapy.Spider):
         lock = redis_lock.Lock(redis, 'scrapy-monitoring-parse')
         if lock.acquire():
             scrape_requests_waiting = await sync_to_async(list)(ScrapeRequest.objects.filter(
-                status='waiting', site_type='web').order_by('-is_search')[:10])# NOTE less than monitor
+                # NOTE we take less request to queue than monitor parses
+                status='waiting', site_type='web').order_by('-is_search')[:10])
             logger.debug('{} waiting requests to be made'.format(len(scrape_requests_waiting)))
             for scrape_request in scrape_requests_waiting:
                 await sync_to_async(update_request_status)(scrape_request, 'scheduled')
@@ -390,6 +393,13 @@ class GeneralSpider(scrapy.Spider):
                         priority=5 if 'is_search' in meta and meta['is_search'] else 1)
             # NOTE on some failure above the lock won't be released and the spider wil finish
             lock.release()
+
+        # Cancel requests exceeding the maximum search depth.
+        if (response.meta['is_search']
+                and db_request.lead_count > global_preferences['scanning__web_normal_search_depth']):
+            await sync_to_async(update_request_status)(db_request, 'cancelled',
+                    failure_comment='exceeded web search depth')
+            return
 
         # Interpret the webpage with speechtractor.
         if response.meta['is_search']:
@@ -406,9 +416,25 @@ class GeneralSpider(scrapy.Spider):
         if response.meta['is_search']:
             # If we have a good response with pages.
             if stractor_response_json is not None and stractor_response_json:
-                reqs = await self.requests_from_search(response, stractor_response_json)
+                reqs = await self.requests_from_search(response, stractor_response_json,
+                        # increment the lead count for subsequent pages
+                        lead_count=db_request.lead_count+1)
+                # Cancel the scrape requests for the same search site.
+                ScrapeRequest.objects.filter(target=db_request.target).exclude(
+                        id=db_request.id).update(status='cancelled',
+                                failure_comment='duplicate search page',
+                                status_changed=datetime.now(timezone.utc))
                 for req in reqs:
-                    yield req
+                    if req.meta['is_search']: # stop other duplicate searches
+                        earlier_requests = await sync_to_async(list)(ScrapeRequest.objects.filter(
+                            status='committed', is_search=True, target=req.url))
+                        if len(earlier_requests):
+                            ScrapeRequest.objects.filter(target=req.url).update(status='cancelled',
+                                            failure_comment='duplicate search page',
+                                            status_changed=datetime.now(timezone.utc))
+                            continue
+                    if req.url != db_request.target:
+                        yield req
                 await sync_to_async(update_request_status)(db_request, 'committed')
             # On empty response, try the JS search extraction with Selenium.
             elif stractor_response_json is not None: # reachable but empty
@@ -464,7 +490,7 @@ class GeneralSpider(scrapy.Spider):
                         else:
                             search_pages_fail_count += 1
                     if search_pages_fail_count:
-                        # NOTE we fail even with only some pages being empty!
+                        # NOTE we fail even with only some Speechtractor responses being empty!
                         logger.info('Empty Speechtractor reponse for JS extraction of {}/{} pages from:'
                                 ' {}'.format(search_pages_fail_count, search_pages_count,
                                     response.url))

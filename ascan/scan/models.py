@@ -112,10 +112,10 @@ class ScanJob(models.Model):
     status_changed = models.DateTimeField(auto_now_add=True)
     query_phrase = models.CharField(max_length=512)
     # Just separate tags with commas in the string. It's written and read mostly once, so we don't
-    # bother with native Postgres arrays.
-    query_tags = models.CharField(max_length=8192, default='')
+    # bother with native Postgres arrays. (explicitly allow blank values for django admin editing)
+    query_tags = models.CharField(max_length=8192, default='', blank=True)
     # This overwrites the tags if present.
-    query_site_names = models.CharField(max_length=20480, default='')
+    query_site_names = models.CharField(max_length=20480, default='', blank=True)
     # These counts should be filled out when starting the job; they're needed for progress reporting
     website_count = models.IntegerField(default=0)
     subreddit_count = models.IntegerField(default=0)
@@ -166,9 +166,9 @@ class ScrapeRequest(models.Model):
     site_type = models.CharField(max_length=32)
     site_url = models.CharField(max_length=8192)
     # This has meaning for search requests. For website requests, this should contain the number of
-    # search pages (not implemented except for leads obtained through running JS with Selenium). For
-    # Reddit requests, this should contain the number total of comments yielded by the search from
-    # all submissions in the subreddit.
+    # search pages leading up to the page in question, or yielded by it in case of executing inside
+    # Selenium (only scrapy uses this). For Reddit requests, this should contain the number total 
+    # of comments yielded by the search from all submissions in the subreddit.
     lead_count = models.IntegerField(default=0)
     # The job id is also used in reason_scraped in Solr.
     job = models.ForeignKey(ScanJob, related_name='requests', on_delete=models.CASCADE)

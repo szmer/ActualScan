@@ -47,7 +47,7 @@ services:
      build:
         context: .
         dockerfile: Dockerfile_website
-     command: scrapy crawl general -L DEBUG
+     command: scrapy crawl general -L WARNING
      working_dir: /scrapies/genscrap
      env_file:
         - '.env'

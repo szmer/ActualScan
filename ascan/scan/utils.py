@@ -23,7 +23,16 @@ def date_fmt(time_obj):
 
 def trust_level_to_numeric(str_level):
     global_preferences = global_preferences_registry.manager()
-    return global_preferences['trust_level_threshold_'+str_level]
+    return global_preferences['trust_levels__trust_level_threshold_'+str_level]
+
+def numeric_to_trust_level(value):
+    global_preferences = global_preferences_registry.manager()
+    if value >= global_preferences['trust_levels__trust_level_threshold_base']:
+        return 'base'
+    if value >= global_preferences['trust_levels__trust_level_threshold_respected']:
+        return 'respected'
+    if value >= global_preferences['trust_levels__trust_level_threshold_community']:
+        return 'community'
 
 def omnivore_call(query_phrase, args='', low_priority=False):
     """
@@ -31,8 +40,8 @@ def omnivore_call(query_phrase, args='', low_priority=False):
     we will give up if the first lock isn't free.
     """
     global_preferences = global_preferences_registry.manager()
-    locks_count = global_preferences['omnivore_concurrent_jobs']
-    timeout = global_preferences['omnivore_timeout']
+    locks_count = global_preferences['index_searching__omnivore_concurrent_jobs']
+    timeout = global_preferences['index_searching__omnivore_timeout']
     for lock_n in range(locks_count):
         lock = redis_lock.Lock(redis, 'omnivore-process-{}'.format(lock_n), expire=timeout+3)
         if not lock.acquire():

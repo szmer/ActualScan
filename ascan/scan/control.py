@@ -1,6 +1,5 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from logging import debug, info, error
-from urllib.parse import urlparse
 
 from scan.models import Site, Tag, ScanJob, ScrapeRequest, ScanPermission, FeedbackPermission
 
@@ -40,7 +39,7 @@ def spare_scan_capacity():
     Return the number of additional scan jobs we can accept right now.
     """
     global_preferences = global_preferences_registry.manager()
-    spare_capacity = global_preferences['concurrent_jobs_allowed'] - ScanJob.objects.filter(
+    spare_capacity = global_preferences['scanning__concurrent_jobs_allowed'] - ScanJob.objects.filter(
             status__in=['waiting', 'working']).count()
     return spare_capacity
 
@@ -51,7 +50,7 @@ def maybe_issue_guest_scan_permission(ip_address):
     """
     global_preferences = global_preferences_registry.manager()
     spare_capacity = spare_scan_capacity()
-    if spare_capacity >= global_preferences['guest_scan_permissions_threshold']:
+    if spare_capacity >= global_preferences['scanning__guest_scan_permissions_threshold']:
         ScanPermission.objects.create(user_ip=ip_address)
         return True
     return False
@@ -77,10 +76,11 @@ def maybe_issue_feedback_permission(user_iden, possible_subject_links, is_ip=Fal
     # Go through the possible links and try to find one where feedback should be possible.
     for link in possible_subject_links:
         if (not link.site in site_feedback_counts
-                or site_feedback_counts[link.site] < global_preferences['site_feedback_count_per_user']):
+                or site_feedback_counts[link.site]
+                < global_preferences['trust_levels__site_feedback_count_per_user']):
             # TODO apply this only to IPs and untrusted users
             global_feedback_count = FeedbackPermission.objects.filter(subject=link).count()
-            if global_feedback_count < global_preferences['link_feedback_count_globally']:
+            if global_feedback_count < global_preferences['trust_levels__link_feedback_count_globally']:
                 if is_ip:
                     FeedbackPermission.objects.create(user_ip=user_iden, subject=link)
                 else:
@@ -207,10 +207,8 @@ def terminate_scan(scan_job_id):
     made unless we restart Scrapy.
     """
     scan_job = ScanJob.objects.get(id=scan_job_id)
-    waiting_requests = [req for req in scan_job.requests.all() if req.status in ['waiting',
-        'scheduled']]
-    for req in waiting_requests:
-        req.change_status('cancelled')
+    scan_job.requests.filter(status__in=['waiting', 'scheduled']).update(status='cancelled',
+                                            status_changed=datetime.now(timezone.utc))
     scan_job.change_status('terminated')
 
 def scan_progress_info(scan_job_id):
@@ -257,13 +255,13 @@ def scan_progress_info(scan_job_id):
     if committed_reddit_search_count > 0:
         average_reddit_search_yield = committed_reddit_crawl_count / committed_reddit_search_count
     else:
-        average_reddit_search_yield = global_preferences['subreddit_estimation_multiplier']
+        average_reddit_search_yield = global_preferences['estimations__subreddit_estimation_multiplier']
     reddit_current_yield_from_search = current_reddit_search_count * average_reddit_search_yield
     # The average number of scraped pages produced by each search page.
     if committed_web_search_count > 0:
         average_search_page_yield = committed_web_crawl_count / committed_web_search_count 
     else:
-        average_search_page_yield = global_preferences['search_page_yield_estimation']
+        average_search_page_yield = global_preferences['estimations__search_page_yield_estimation']
     # Unfinished search pages, which we will estimate with average yield from above.
     unfinished_search_pages_sum = ScrapeRequest.objects.filter(
             is_search=True,
@@ -284,11 +282,16 @@ def scan_progress_info(scan_job_id):
             status='ran', site_type='reddit', is_search=True,
             job=scan_job).count()
     # See search for how many sites already fully committed.
-    unique_done_web_search_count = ScrapeRequest.objects.filter(
-            site_type='web',
-            is_search=True,
+    unique_sites_committed = set(ScrapeRequest.objects.filter(
             job=scan_job,
-            status='committed').values_list('site_name', flat=True).distinct().count()
+            status__in=['committed', 'failed']).values_list('site_name', flat=True))
+    unique_sites_waiting = set(ScrapeRequest.objects.filter(
+            job=scan_job,
+            status__in=['scheduled', 'waiting', 'ran']).values_list('site_name', flat=True))
+    unique_sites_done = unique_sites_committed.difference(unique_sites_waiting)
+    unique_sites_worked = unique_sites_waiting.difference(unique_sites_done)
+    unique_web_sites_known_count = len([site for site in unique_sites_worked
+        if site[:3] != '/r/'] + [site for site in unique_sites_done if site[:3] != '/r/'])
 
     # Count failures.
     fails_count = ScrapeRequest.objects.filter(status='failed', job=scan_job).count()
@@ -303,9 +306,10 @@ def scan_progress_info(scan_job_id):
                 +committed_web_search_count+committed_web_crawl_count),
             'wait_runs': unfinished_crawl_pages_sum+unfinished_search_pages_sum,
             'fails': fails_count,
-            'future': ((scan_job.website_count - unique_done_web_search_count)
-                * global_preferences['website_estimation_multiplier'] 
-                + (scan_job.subreddit_count - waiting_reddit_search_count)
+            'future': ((scan_job.website_count - unique_web_sites_known_count)
+                * global_preferences['estimations__website_estimation_multiplier'] 
+                + (scan_job.subreddit_count - waiting_reddit_search_count
+                    - committed_reddit_search_count)
                 * average_reddit_search_yield),
             'reddit_blocking': (waiting_reddit_search_count and not committed_reddit_crawl_count
                 and not reddit_current_yield_from_search)
@@ -315,7 +319,7 @@ def scan_progress_info(scan_job_id):
     # for done search requests and the estimators from config for the future ones.
     reddit_full_estimation = (
             # Estimation for future search requests.
-            ((scan_job.subreddit_count - waiting_reddit_search_count)
+            ((scan_job.subreddit_count - waiting_reddit_search_count - committed_reddit_search_count)
             * average_reddit_search_yield)
             # Current load from search.
             + reddit_current_yield_from_search
@@ -324,8 +328,8 @@ def scan_progress_info(scan_job_id):
             )
     web_full_estimation = (
             # Estimation for future search requests.
-            ((scan_job.website_count - unique_done_web_search_count)
-            * global_preferences['website_estimation_multiplier'])
+            ((scan_job.website_count - unique_web_sites_known_count)
+            * global_preferences['estimations__website_estimation_multiplier'])
             # Current load from search.
             + web_current_yield_from_search
             # Known yield from search - requests from the search sites that were already scheduled,
@@ -353,7 +357,8 @@ def scan_progress_info(scan_job_id):
                     # Reddit done
                     reddit_known_yield_from_search,
                     # Reddit future
-                    (scan_job.subreddit_count - waiting_reddit_search_count)
+                    (scan_job.subreddit_count - waiting_reddit_search_count
+                        - committed_reddit_search_count)
                     * average_reddit_search_yield,
                     # Reddit current
                     reddit_current_yield_from_search,
@@ -365,8 +370,8 @@ def scan_progress_info(scan_job_id):
                     web_known_yield_from_search,
                     web_search_count,
                     # Web future
-                    (scan_job.website_count - unique_done_web_search_count)
-                    * global_preferences['website_estimation_multiplier'],
+                    (scan_job.website_count - unique_web_sites_known_count)
+                    * global_preferences['estimations__website_estimation_multiplier'],
                     # Web estimation of the current yield
                     web_current_yield_from_search,
                     # Web full estimation
@@ -383,13 +388,12 @@ def scan_progress_info(scan_job_id):
             dl_proportion /= full_estimation
         else:
             dl_proportion = 0.0
-    done_request = ScrapeRequest.objects.filter(
+    done_requests = ScrapeRequest.objects.filter(
             status__in=['committed', 'failed'], job=scan_job).exclude(
-                    site_type='reddit', is_search=True).order_by('-status_changed')[:1]
+                    site_type='reddit', is_search=True).order_by('-status_changed')[:3]
     return {'phase': phase, 'fails': fails_count,
-            'last_url': (
-                (done_request[0].target if urlparse(done_request[0].target).netloc
-                    else done_request[0].site_url + '/' + done_request[0].target)
-                if len(done_request) > 0 else None),
-            'req_stats': req_stats,
+            'last_urls': [{'time': req.status_changed.strftime('%b %d %Y, %H:%I %Z'),
+                'url': req.target, 'site': req.site_name } for req in done_requests],
+            'req_stats': req_stats, 'sites_done': list(unique_sites_done),
+            'sites_worked': list(unique_sites_worked),
             'dl_proportion': dl_proportion}

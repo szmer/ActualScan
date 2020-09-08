@@ -221,11 +221,11 @@ def process_comment(comment, comment_scrape_request):
 #
 logger.debug('Reddit scraper loading configuration.')
 global_preferences = global_preferences_registry.manager()
-REDDIT_SEARCH_DEPTH = global_preferences['reddit_search_depth']
-REDDIT_MANY_COMMENTS_THRESHOLD = global_preferences['reddit_many_comments_threshold']
-REDDIT_MANY_COMMENTS_MINSCORE_RATIO = global_preferences['reddit_many_comments_minscore_ratio']
-DEDUP_DATE_POST_CHECK = global_preferences['dedup_date_post_check']
-DEDUP_DATE_RETR_CHECK = global_preferences['dedup_date_retr_check']
+REDDIT_SEARCH_DEPTH = global_preferences['scanning__reddit_search_depth']
+REDDIT_MANY_COMMENTS_THRESHOLD = global_preferences['scanning__reddit_many_comments_threshold']
+REDDIT_MANY_COMMENTS_MINSCORE_RATIO = global_preferences['scanning__reddit_many_comments_minscore_ratio']
+DEDUP_DATE_POST_CHECK = global_preferences['scanning__dedup_date_post_check']
+DEDUP_DATE_RETR_CHECK = global_preferences['scanning__dedup_date_retr_check']
 
 logger.info('Reddit scraper connecting to Reddit.')
 reddit = praw.Reddit(user_agent=os.environ['REDDIT_UA'],

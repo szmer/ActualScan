@@ -14,7 +14,23 @@ scanSocket.onmessage = function(event) {
             var progressObj = JSON.parse(eventObj['text'])['content']
             document.getElementById('scan_phase').innerHTML = progressObj['phase']
             document.getElementById('scan_fails').innerHTML = progressObj['fails']
-            document.getElementById('scan_last_url').innerHTML = progressObj['last_url']
+            var sitesCompletedInfo = ''
+            for (var i = 0; i < progressObj['sites_done'].length; i++) {
+               sitesCompletedInfo += progressObj['sites_done'][i] + ' '
+            }
+            document.getElementById('sites_completed').innerHTML = sitesCompletedInfo
+            var sitesWorkedInfo = ''
+            for (var i = 0; i < progressObj['sites_done'].length; i++) {
+               sitesWorkedInfo += progressObj['sites_done'][i] + ' '
+            }
+            document.getElementById('sites_completed').innerHTML = sitesWorkedInfo
+            var lastPagesInfo = ''
+            for (var i = 0; i < progressObj['last_urls'].length; i++) {
+               lastPagesInfo += ('(' + progressObj['last_urls'][i]['site'] + ') '
+                  + progressObj['last_urls'][i]['url'] +
+                  ' (' + progressObj['last_urls'][i]['time'] + ')<br> ')
+            }
+            document.getElementById('scan_last_urls').innerHTML = lastPagesInfo
             document.getElementById('scan_dl_proportion').innerHTML = (parseFloat(
                progressObj['dl_proportion']) * 100).toFixed(2) + '%'
             document.getElementById('scan_req_stats').innerHTML = ''.concat(

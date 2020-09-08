@@ -34,6 +34,9 @@
    </ul>
 <noscript><a class="btn btn-primary mx-4" href="/">Go back</a></noscript>
 <script>document.write('<a class="btn btn-primary align-middle mx-4" href="javascript:history.go(-1)">Go back</a>')</script>
+{% if not form.errors %}
+<a class="btn btn-primary mx-4" href="{{ request.path }}">Retry</a>
+{% endif %}
 </div>
 {% endif %}
 
