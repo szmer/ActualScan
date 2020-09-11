@@ -19,7 +19,8 @@ from django.contrib.auth import views as auth_views
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import include, path
 
-from scan.views import index, accountinfo
+from scan.views import index
+from ascan.views import accountinfo
 
 urlpatterns = [
     path('', index),

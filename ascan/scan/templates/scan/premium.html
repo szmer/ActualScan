@@ -1,0 +1,64 @@
+{% extends 'scan/base.html' %}
+{% load bootstrap4 %}
+{% load static %}
+
+{% block page_title %}Premium & Services{% endblock %}
+
+{% block scripts %}
+{% endblock %}
+
+{% block container %}
+<div class="row">
+   <div class="col-md text-center">
+      <img src="{% static 'scan/CHANGE.jpg' %}">
+   </div>
+   <div class="col-md jumbotron">
+      <h1 class="display-4">Thank you for using ActualScan!</h1>
+        <p class="lead">You can continue to use the public search and scanning functions for as long as you like.</p>
+        <p class="lead">But if you want something more, we've got you covered.</p>
+   </div>
+</div>
+<div class="row premium-info">
+   <div class="col-md">
+      <h2 class="text-center">Become a Premium User (TODO)</h2>
+      <ul>
+         <li>Support the site</li>
+         <li>Your scans will be prioritized</li>
+      </ul>
+
+      <div class="text-center p-2">
+         <button class='btn btn-primary btn-lg'>Start now</button><br>
+         <div class="p-1 text-faded"><small>
+         $$$ per month, with 30 day money back guarantee.
+         </small></div>
+      </div>
+   </div>
+   <div class="col-md">
+      <h2 class="text-center">ActualScan installations</h2>
+      <ul>
+         <li>Get a custom installation of the software with your own <strong>private index</strong></li>
+         <li>ActualScan can be ran <strong>out-of-the-box</strong> or we can <strong>tailor</strong> it for you
+            (<a href="#">see the schematics</a>)</li>
+      </ul>
+
+      <h2 class="text-center">Page parsing API</h2>
+      <ul>
+         <li>Get a scalable access to our API that transforms <strong>raw HTML into clean text</strong> with author and date information</li>
+         <li>The underlying engine is <strong>continuously updated</strong> to cover more sites on the ever-changing Internet</li>
+         <li>We will make sure that your main <strong>sites of interest are read perfectly</strong></li>
+      </ul>
+
+      <h2 class="text-center">Search and analytics consulting</h2>
+      <ul>
+         <li>Text and discourse analysis with symbolic techniques and machine learning</li>
+         <li>Web scraping</li>
+         <li>Efficient storage and retrieval of text</li>
+         <li>We don't fear anything Scrapy+Solr+Django+Torch!</li>
+      </ul>
+
+      <div class="text-center p-2">
+         <button class='btn btn-primary btn-lg'>Contact us</button><br>
+      </div>
+   </div>
+</div>
+{% endblock %}

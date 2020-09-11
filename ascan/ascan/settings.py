@@ -148,7 +148,7 @@ LOGGING = {
                 'handlers': [
                     'console',
                     ],
-                'level': 'DEBUG'
+                'level': 'INFO'
                 },
             }
         }
@@ -171,6 +171,7 @@ ASGI_APPLICATION = "ascan.routing.application"
 # Crispy forms.
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
+LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
 # Our custom settings.

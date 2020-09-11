@@ -5,6 +5,7 @@ import logging
 from logging import getLogger
 import os, os.path
 import re
+import socket
 import time
 
 import simpleflock
@@ -129,7 +130,11 @@ async def get_js_search_pages(page_address, search_term, wait_time, max_tried_ne
                             break
                         for click_n in range(click_search_depth):
                             prev_content_len = len(driver.page_source)
+                            try_n = 0
                             while True:
+                                try_n += 1
+                                if try_n > 7:
+                                    break
                                 try:
                                     # Re-get the elements with the "next" string and see if the
                                     # number is the same as at the start.
@@ -287,7 +292,6 @@ class GeneralSpider(scrapy.Spider):
         return json.loads(stractor_output)
 
     async def requests_from_search(self, response, stractor_response_json, lead_count=0):
-        reqs = []
         # We should skip the requests before trying to download them for that to make sense.
         urls_to_request = [doc['url'] for doc in stractor_response_json if 'url' in doc]
         urls_to_skip = solr_check_urls(self.dedup_date_post_check, self.dedup_date_retr_check,
@@ -297,12 +301,17 @@ class GeneralSpider(scrapy.Spider):
                 is_page_search = (True
                         if 'is_search' in found_page and found_page['is_search']
                         else False)
-                scrape_request = await sync_to_async(ScrapeRequest.objects.create)(
+                earlier_requests = await sync_to_async(list)(ScrapeRequest.objects.filter(
+                    status__in=['committed', 'ran', 'scheduled'],
+                    target=found_page['url'], job_id=response.meta['job_id']))
+                if len(earlier_requests):
+                    continue
+                await sync_to_async(ScrapeRequest.objects.create)(
                         target=found_page['url'],
                         is_search=is_page_search,
                         job_id=response.meta['job_id'],
                         lead_count=lead_count if is_page_search else 0,
-                        status='scheduled',
+                        status='waiting',
                         status_changed=datetime.now(timezone.utc),
                         source_type=response.meta['source_type'],
                         site_name=response.meta['site_name'],
@@ -312,12 +321,6 @@ class GeneralSpider(scrapy.Spider):
                         save_copies=response.meta['save_copies'])
                 logger.debug('Created a scrape request for {} from search, for {}'.format(
                     found_page['url'], response.meta['job_id']))
-                reqs.append(response.follow(found_page['url'],
-                    callback=self.parse,
-                    meta={attr: getattr(scrape_request, attr) for attr
-                        in REQUEST_META},
-                    priority=5 if is_page_search else 1))
-        return reqs
 
     def start_requests(self):
         # Start mock-pinging Solr and getting requests from DB.
@@ -340,12 +343,11 @@ class GeneralSpider(scrapy.Spider):
                 status='waiting', site_type='web').order_by('-is_search')[:100])
             logger.debug('{} waiting requests to be made'.format(len(scrape_requests_waiting)))
             for scrape_request in scrape_requests_waiting:
-                await sync_to_async(update_request_status)(scrape_request, 'scheduled')
                 meta = {attr: getattr(scrape_request, attr)
                             for attr
                             in REQUEST_META}
                 url = full_url(scrape_request.target, scrape_request.site_url)
-                #logger.debug('Sending the waiting request for {}'.format(url))
+                await sync_to_async(update_request_status)(scrape_request, 'scheduled')
                 # Make sure that even the ordinary requests have higher priority than monitoring.
                 yield scrapy.Request(url=url, callback=self.parse, meta=meta, errback=self.fail,
                         priority=5 if 'is_search' in meta and meta['is_search'] else 1)
@@ -376,23 +378,23 @@ class GeneralSpider(scrapy.Spider):
 
         # NOTE this is copied from the monitoring_parse. We need to set "monitoring parses" to
         # lesser priority to let the normal parses through, but then we still need to monitor the DB.
-        lock = redis_lock.Lock(redis, 'scrapy-monitoring-parse')
-        if lock.acquire():
-            scrape_requests_waiting = await sync_to_async(list)(ScrapeRequest.objects.filter(
-                # NOTE we take less request to queue than monitor parses
-                status='waiting', site_type='web').order_by('-is_search')[:10])
-            logger.debug('{} waiting requests to be made'.format(len(scrape_requests_waiting)))
-            for scrape_request in scrape_requests_waiting:
-                await sync_to_async(update_request_status)(scrape_request, 'scheduled')
-                meta = {attr: getattr(scrape_request, attr)
-                            for attr
-                            in REQUEST_META}
-                url = full_url(scrape_request.target, scrape_request.site_url)
-                # Make sure that even the ordinary requests have higher priority than monitoring.
-                yield scrapy.Request(url=url, callback=self.parse, meta=meta, errback=self.fail,
-                        priority=5 if 'is_search' in meta and meta['is_search'] else 1)
-            # NOTE on some failure above the lock won't be released and the spider wil finish
-            lock.release()
+###-        lock = redis_lock.Lock(redis, 'scrapy-monitoring-parse')
+###-        if lock.acquire():
+###-            scrape_requests_waiting = await sync_to_async(list)(ScrapeRequest.objects.filter(
+###-                # NOTE we take less request to queue than monitor parses
+###-                status='waiting', site_type='web').order_by('-is_search')[:10])
+###-            logger.debug('{} waiting requests to be made'.format(len(scrape_requests_waiting)))
+###-            for scrape_request in scrape_requests_waiting:
+###-                await sync_to_async(update_request_status)(scrape_request, 'scheduled')
+###-                meta = {attr: getattr(scrape_request, attr)
+###-                            for attr
+###-                            in REQUEST_META}
+###-                url = full_url(scrape_request.target, scrape_request.site_url)
+###-                # Make sure that even the ordinary requests have higher priority than monitoring.
+###-                yield scrapy.Request(url=url, callback=self.parse, meta=meta, errback=self.fail,
+###-                        priority=5 if 'is_search' in meta and meta['is_search'] else 1)
+###-            # NOTE on some failure above the lock won't be released and the spider wil finish
+###-            lock.release()
 
         # Cancel requests exceeding the maximum search depth.
         if (response.meta['is_search']
@@ -409,32 +411,16 @@ class GeneralSpider(scrapy.Spider):
         try:
             stractor_response_json = await self.interpret_stractor(source_type, response.text,
                     response.meta['id'])
-        except JSONDecodeError:
+        except (JSONDecodeError, socket.timeout):
             stractor_response_json = None
 
         # Handling search pages.
         if response.meta['is_search']:
             # If we have a good response with pages.
             if stractor_response_json is not None and stractor_response_json:
-                reqs = await self.requests_from_search(response, stractor_response_json,
+                await self.requests_from_search(response, stractor_response_json,
                         # increment the lead count for subsequent pages
                         lead_count=db_request.lead_count+1)
-                # Cancel the scrape requests for the same search site.
-                ScrapeRequest.objects.filter(target=db_request.target).exclude(
-                        id=db_request.id).update(status='cancelled',
-                                failure_comment='duplicate search page',
-                                status_changed=datetime.now(timezone.utc))
-                for req in reqs:
-                    if req.meta['is_search']: # stop other duplicate searches
-                        earlier_requests = await sync_to_async(list)(ScrapeRequest.objects.filter(
-                            status='committed', is_search=True, target=req.url))
-                        if len(earlier_requests):
-                            ScrapeRequest.objects.filter(target=req.url).update(status='cancelled',
-                                            failure_comment='duplicate search page',
-                                            status_changed=datetime.now(timezone.utc))
-                            continue
-                    if req.url != db_request.target:
-                        yield req
                 await sync_to_async(update_request_status)(db_request, 'committed')
             # On empty response, try the JS search extraction with Selenium.
             elif stractor_response_json is not None: # reachable but empty
@@ -483,9 +469,7 @@ class GeneralSpider(scrapy.Spider):
                                     in enumerate(stractor_response_json)
                                     if not doc_n in idxs_to_remove]
                             # Run the requests from search.
-                            reqs = await self.requests_from_search(response, stractor_response_json)
-                            for req in reqs:
-                                yield req
+                            await self.requests_from_search(response, stractor_response_json)
                             await sync_to_async(update_request_status)(db_request, 'committed')
                         else:
                             search_pages_fail_count += 1

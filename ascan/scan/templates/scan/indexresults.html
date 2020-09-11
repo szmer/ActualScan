@@ -41,7 +41,11 @@
 {% endif %}
 
 <div class="text-center p-3 m-3 border border-dark" style='background-color: #f8f8f8'>
-{% crispy form %}
+<form action="/scan/search/">
+   <dl>
+      {% crispy form %}
+   </dl>
+</form>
 </div>
 
 {% if result.sentCount == 0 %}

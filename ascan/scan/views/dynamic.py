@@ -2,9 +2,9 @@ from logging import debug, info
 import random
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from dynamic_preferences.registries import global_preferences_registry
+from django.views.decorators.csrf import csrf_exempt
 from ipware import get_client_ip
 import pexpect
 
@@ -16,19 +16,6 @@ from scan.utils import (
         numeric_to_trust_level
         )
 from scan.models import ScanJob, Site, TagSiteLink
-
-@login_required
-def accountinfo(request):
-    return render(request, 'registration/info.html')
-
-def index(request):
-    form = PublicScanForm()
-    # TODO KLUDGE currently unlimited scan permissions for registered
-    if request.user.is_authenticated:
-        can_scan = True
-    else:
-        can_scan = maybe_issue_guest_scan_permission(get_client_ip(request))
-    return render(request, 'scan/home.html', context={ 'can_scan': can_scan, 'form': form })
 
 def scaninfo(request):
     if not 'job_id' in request.GET:
@@ -56,6 +43,7 @@ def scaninfo(request):
                 'tag_names': job.query_tags.strip().split(','),
                 'scan_job': job, 'form': index_form })
 
+@csrf_exempt
 def search(request):
     global_preferences = global_preferences_registry.manager()
 

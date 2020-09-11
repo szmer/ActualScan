@@ -9,10 +9,21 @@
 .link-trust-spam {
    font-size: small;
 }
+
 .feedback-prompt {
    font-size: small;
 }
+
 .asteriskField {
    color: red;
 }
 
+.premium-info ul {
+   line-height: 130%
+}
+.premium-info li {
+   margin-top: 1em;
+}
+.premium-info strong {
+   font-size: 105%
+}

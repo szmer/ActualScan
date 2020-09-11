@@ -37,7 +37,7 @@
       </tr>
       <tr>
       <th scope="row">Last pages processed</th>
-      <td id='scan_last_urls'>{% for pg in status_data.last_urls %}({{ pg.site }}) {{ pg.url }} ({{ pg.time }})<br> {% endfor %}</td>
+      <td id='scan_last_urls'>{% for pg in status_data.last_urls %}({{ pg.site }}) {{ pg.url }} ({{ pg.status }} {{ pg.time }})<br> {% endfor %}</td>
       </tr>
       <tr>
       <th scope="row">Sites completed</th>

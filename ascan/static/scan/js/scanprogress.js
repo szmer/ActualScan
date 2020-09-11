@@ -28,7 +28,8 @@ scanSocket.onmessage = function(event) {
             for (var i = 0; i < progressObj['last_urls'].length; i++) {
                lastPagesInfo += ('(' + progressObj['last_urls'][i]['site'] + ') '
                   + progressObj['last_urls'][i]['url'] +
-                  ' (' + progressObj['last_urls'][i]['time'] + ')<br> ')
+                  ' (' + progressObj['last_urls'][i]['status'] +
+                  ' ' + progressObj['last_urls'][i]['time'] + ')<br> ')
             }
             document.getElementById('scan_last_urls').innerHTML = lastPagesInfo
             document.getElementById('scan_dl_proportion').innerHTML = (parseFloat(

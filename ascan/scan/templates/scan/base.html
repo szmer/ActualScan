@@ -24,6 +24,32 @@
 
   <div class="collapse navbar-collapse" id="navbarSupportedContent">
      <ul class="navbar-nav mr-auto">
+
+        <div class="border-right mx-1"></div>
+        {% if request.user.is_authenticated %}
+        <li class="nav-item active">
+           <a class="nav-link" href="/accounts/logout/">Log out</a>
+        </li>
+
+        <li class="nav-item active">
+           <a class="nav-link" href="/manager/scans/">My scans</a>
+        </li>
+
+        <li class="nav-item active">
+           <a class="nav-link" href="/manager/searches/">My searches</a>
+        </li>
+
+        <li class="nav-item active">
+           <a class="nav-link" href="/accounts/info/">My account</a>
+        </li>
+        {% else %}
+        <li class="nav-item active">
+           <a class="nav-link" href="/accounts/login/">Log in</a>
+        </li>
+        {% endif %}
+
+        <div class="border-right mx-1"></div>
+
         <li class="nav-item active">
            <a class="nav-link" href="/manager/sites/">Sites</a>
         </li>
@@ -32,17 +58,19 @@
            <a class="nav-link" href="/manager/tags/">Tags</a>
         </li>
 
-        {% if request.user.is_authenticated %}
-        <li class="nav-item active">
-           <a class="nav-link" href="/manager/scans/">My Scans</a>
-        </li>
-        {% endif %}
+        <div class="border-right mx-1"></div>
 
         <li class="nav-item active">
-           <a class="nav-link" href="/accounts/info/">Your account</a>
+           <a class="nav-link" href="/scan/help/">Help</a>
+        </li>
+
+        <li class="nav-item active">
+           <a class="nav-link" href="/scan/premium/">Premium &amp; Services</a>
         </li>
 
         {% if request.user.is_staff %}
+        <div class="border-right mx-1"></div>
+
         <li class="nav-item active">
            <a class="nav-link" href="/admin/">Admin</a>
         </li>

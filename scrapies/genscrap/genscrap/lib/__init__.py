@@ -3,6 +3,7 @@ import http.client
 import json
 from logging import debug, warning
 import os
+import socket
 import urllib
 from urllib.parse import urlparse
 
@@ -37,16 +38,20 @@ def write_to_file(path, content):
 def stractor_reading(text, source_type):
     """
     Get the text of JSON response of Speechtractor for text and source_type, or HTTP status error
-    code as int.
+    code as int, or -1 on local timeout.
     """
     params = urllib.parse.urlencode({'html': text, 'sourcetype': source_type,
         'emptyurl': '1' if source_type in ['media', 'blog'] else '0'},
         quote_via=urllib.parse.quote)
     headers = {"Content-type": "application/x-www-form-urlencoded",
             "Accept": "text/json"}
-    stractor_conn = http.client.HTTPConnection('speechtractor', port=3756, timeout=5)
+    stractor_conn = http.client.HTTPConnection('speechtractor', port=3756, timeout=15)
     stractor_conn.request('POST', '/api/v01/interpret', params, headers)
-    stractor_response = stractor_conn.getresponse()
+    try:
+        stractor_response = stractor_conn.getresponse()
+    except socket.timeout:
+        warning('Speechtractor timed out')
+        return -1
     if stractor_response.status != 200:
         warning(stractor_response.read())
         return stractor_response.status
@@ -58,19 +63,24 @@ def solr_update(req_body, req_id=None, req_class=False):
     req_class) on failure. Return a boolean indicating success or failure.
     """
     # Recreate the connection each time to avoid getting stuck in bad states.
-    solr_conn = http.client.HTTPConnection('solr', port=8983, timeout=10)
+    solr_conn = http.client.HTTPConnection('solr', port=8983, timeout=15)
     solr_conn.request('GET', '/solr/{}/update'.format(os.environ['SOLR_CORE']), body=req_body,
         headers={'Content-type': 'application/json'})
     debug('Sent to Solr: {}'.format(req_body))
-    solr_response = solr_conn.getresponse()
-    debug('Solr response: {}'.format(solr_response.status))
-    if solr_response.status != 200:
+    timeouted = False
+    try:
+        solr_response = solr_conn.getresponse()
+    except socket.timeout:
+        timeouted = True
+    if timeouted or solr_response.status != 200:
         if req_id is not None:
             db_request = req_class.objects.get(id=req_id)
             db_request.status = 'failed'
             db_request.failure_comment = 'Could not reach Solr, status code {}'.format(
                     solr_response.status)
         return False
+    else:
+        debug('Solr response: {}'.format(solr_response.status))
     return True
 
 def solr_check_urls(date_post_check, date_retr_check, urls):

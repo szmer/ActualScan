@@ -388,12 +388,11 @@ def scan_progress_info(scan_job_id):
             dl_proportion /= full_estimation
         else:
             dl_proportion = 0.0
-    done_requests = ScrapeRequest.objects.filter(
-            status__in=['committed', 'failed'], job=scan_job).exclude(
-                    site_type='reddit', is_search=True).order_by('-status_changed')[:3]
+    done_requests = ScrapeRequest.objects.filter(job=scan_job).order_by('-status_changed')[:5]
     return {'phase': phase, 'fails': fails_count,
             'last_urls': [{'time': req.status_changed.strftime('%b %d %Y, %H:%I %Z'),
-                'url': req.target, 'site': req.site_name } for req in done_requests],
+                'url': req.target, 'site': req.site_name, 'status': req.status }
+                for req in done_requests],
             'req_stats': req_stats, 'sites_done': list(unique_sites_done),
             'sites_worked': list(unique_sites_worked),
             'dl_proportion': dl_proportion}

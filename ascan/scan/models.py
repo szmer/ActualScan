@@ -131,7 +131,7 @@ class ScanJob(models.Model):
         self.status = status
         self.status_changed = now()
         self.save()
-        debug('Status of the job {} being changed to {}'.format(self.id, status))
+        debug('Status of the job {} being changed to {}'.format(self, status))
 
     def __repr__(self):
         return '({})job {}/{}/{}, {}'.format(self.pk, self.query_phrase, self.query_tags,
@@ -182,7 +182,7 @@ class ScrapeRequest(models.Model):
         self.status = status
         self.status_changed = now()
         self.save()
-        debug('Status of the scrape request {} being changed to {}'.format(self.id, status))
+        debug('Status of the scrape request {} being changed to {}'.format(self, status))
 
     def __repr__(self):
         return '({})request {}, {}'.format(self.pk, self.target, self.status)
