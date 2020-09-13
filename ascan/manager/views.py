@@ -1,4 +1,4 @@
-from logging import info
+from logging import info, warning
 import re
 from urllib.parse import urlparse
 
@@ -11,7 +11,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import ListView
 from django.views.generic.detail import DetailView
 
-from manager.forms import SiteForm, TagForm
+from manager.forms import SiteForm, TagForm, EditRequestSiteForm, EditRequestTagForm
+from manager.models import EditSuggestion
 from scan.models import Site, Tag, TagSiteLink, ScanJob, ScrapeRequest
 from scan.templatetags.scan_extras import format_trust_level
 
@@ -24,18 +25,53 @@ class SearchURLParsingError(Error):
 class SiteList(ListView):
     model = Site
     context_object_name = 'sites'
+    paginate_by = 18
 
-class SiteDetails(DetailView):
+class SiteSearchList(ListView):
     model = Site
-    context_object_name = 'site'
+    context_object_name = 'sites'
+    paginate_by = 18
+
+    template_name = 'scan/site_list.html'
+
+    def get_queryset(self):
+        return Site.objects.filter(site_name__contains=self.request.GET['q'])
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['q'] = self.request.GET['q']
+        return context
 
 class TagList(ListView):
     model = Tag
     context_object_name = 'tags'
+    paginate_by = 18
+
+class TagSearchList(ListView):
+    model = Tag
+    context_object_name = 'tags'
+    paginate_by = 18
+
+    template_name = 'scan/tag_list.html'
+
+    def get_queryset(self):
+        return Tag.objects.filter(name__contains=self.request.GET['q'])
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['q'] = self.request.GET['q']
+        return context
 
 class TagDetails(DetailView):
     model = Tag
     context_object_name = 'tag'
+
+def site_details(request, pk):
+    site = Site.objects.get(id=pk)
+    form = EditRequestSiteForm(instance=site,
+            initial={'tags': [link.tag for link in site.tag_links.all()]})
+    context = { 'site': site, 'form': form }
+    return render(request, 'scan/site_detail.html', context=context)
 
 def tagname(request, tag_name):
     """
@@ -178,3 +214,68 @@ def maketag(request):
         tag_form = TagForm()
     context = { 'form': tag_form }
     return render(request, 'manager/maketag.html', context)
+
+@login_required
+def suggest(request):
+    context = { 'record_type': request.GET['record_type'], 'target': request.GET['target'] }
+    suggestion_dict = {} # we'll fill it only with the values that are changed
+    form_ok = False
+    # Process possible suggestion types.
+    if request.GET['record_type'] == 'site':
+        form = EditRequestSiteForm(data=request.GET)
+        if form.is_valid():
+            form_ok = True
+            site = Site.objects.get(site_name=form.cleaned_data['target'])
+            context['target_id'] = site.id
+            for field in ['site_type', 'source_type', 'homepage_url', 'search_pointer']:
+                if form.cleaned_data[field] != getattr(site, field):
+                    # This field is hidden and non-suggestable for reddit sites.
+                    if not (field == 'search_pointer' and site.site_type == 'reddit'):
+                        suggestion_dict[field] = form.cleaned_data[field]
+            if form.cleaned_data['tags'] != [link.tag for link in site.tag_links.all()]:
+                suggestion_dict['tags'] = ' '.join([tag.name for tag in form.cleaned_data['tags']])
+    elif request.GET['record_type'] == 'tag':
+        form = EditRequestTagForm(data=request.GET)
+        if form.is_valid():
+            form_ok = True
+            tag = Tag.objects.get(name=form.cleaned_data['target'])
+            context['target_id'] = tag.id
+            if form.cleaned_data['description'] != tag.description:
+                suggestion_dict['description'] = form.cleaned_data['description']
+    else:
+        warning('Unknown suggestion record type {}'.format(request.GET['record_type']))
+    # Use the assembled information to possibly create the suggestion.
+    if form_ok:
+        # When a change was actually requested:
+        if suggestion_dict:
+            suggestion_dict['target'] = form.cleaned_data['target']
+            suggestion_dict['record_type'] = form.cleaned_data['record_type']
+            EditSuggestion.objects.create(creator=request.user, suggestion=suggestion_dict)
+            messages.add_message(request, messages.SUCCESS,
+                    'We\'ve received your suggestion. Thank you!')
+        else:
+            messages.add_message(request, messages.WARNING,
+                    'To suggest a modification, change the values on the site page and click the\
+                            "Suggest yourrget changes" button.')
+    else:
+        messages.add_message(request, messages.ERROR,
+                'We were unable to process you suggestion, sorry! Please contact the admins.')
+    return render(request, 'manager/suggest.html', context=context)
+
+@login_required
+def suggestionlist(request):
+    suggestions = EditSuggestion.objects.filter(
+            creator=request.user).order_by('-date_submitted').all()
+    obj_ids = []
+    for sug in suggestions:
+        if not 'target' in sug.suggestion or not 'record_type' in sug.suggestion:
+            obj_ids.append(-1)
+            continue
+        if sug.suggestion['record_type'] == 'site':
+            obj_ids.append(Site.objects.get(site_name=sug.suggestion['target']).id)
+        elif sug.suggestion['record_type'] == 'tag':
+            obj_ids.append(Tag.objects.get(name=sug.suggestion['target']).id)
+        else:
+            obj_ids.append(-1)
+    return render(request, 'manager/suggestionlist.html',
+            { 'suggestions': zip(suggestions, obj_ids) })

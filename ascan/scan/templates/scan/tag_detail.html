@@ -6,16 +6,20 @@
 
 {% block container %}
 <h2>Tag {{ tag.name }}</h2>
-<table class="table">
-   <tr>
-      <th scope="row">Description</th>
-      <td>{{ tag.description }}</td>
-   </tr>
-   <tr>
-      <th scope="row">Added by</th>
-      <td>{% if tag.creator %}{{ tag.creator.username }}{% endif %}</td>
-   </tr>
-</table>
-
-<a href="/manager/tagsites/{{ tag.name }}/">See tagged sites</a>
+<form action="/manager/suggest/" method="GET">
+   <table class="table">
+      <tr>
+         <th scope="row">Description</th>
+         <td><input class="form-control" name="description" value="{{ tag.description }}"></td>
+      </tr>
+      <tr>
+         <th scope="row">Added by</th>
+         <td>{% if tag.creator %}{{ tag.creator.username }}{% endif %}</td>
+      </tr>
+   </table>
+   <input type="hidden" name="record_type" value="tag">
+   <input type="hidden" name="target" value="{{ tag.name }}">
+   <button type="submit" class="btn btn-secondary">Suggest your changes</button>
+   <a href="/manager/tagsites/{{ tag.name }}/" class="btn btn-primary">See tagged sites</a>
+</form>
 {% endblock %}

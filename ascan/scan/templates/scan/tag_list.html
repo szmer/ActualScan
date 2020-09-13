@@ -13,6 +13,18 @@
      </div>
    </div>
 
+   <div class="card mb-4">
+      <div class="card-body">
+         <h4>Search</h4>
+         <form action="/manager/tags/search/" method="GET">
+            <input class="form-control" name="q" value="{{ q }}">
+            <div class="mt-3">
+               <button type="submit" class="btn btn-secondary">Go</button>
+            </div>
+         </form>
+      </div>
+   </div>
+
    {% for tag in tags %}
    <div class="card mb-4">
      <div class="card-body">
@@ -24,4 +36,5 @@
    </div>
    {% endfor %}
 </div>
+{% include 'widgets/pagination.html' %}
 {% endblock %}

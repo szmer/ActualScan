@@ -8,8 +8,7 @@ from crispy_forms.bootstrap import InlineCheckboxes, InlineRadios
 from scan.models import Site, Tag
 
 class SiteForm(ModelForm):
-    tags = forms.ModelMultipleChoiceField(Tag.objects.all(),
-            label='Site tags')
+    tags = forms.ModelMultipleChoiceField(Tag.objects.all(), label='Site tags')
 
     class Meta:
         model = Site
@@ -46,3 +45,38 @@ class TagForm(ModelForm):
     class Meta:
         model = Tag
         fields = ['name', 'description']
+
+class EditRequestSiteForm(ModelForm):
+    """
+    This form is rendered 'manually' in the site details template, this class is used for validation,
+    """
+    # Make this optional to hide the field for Reddit sites.
+    search_pointer = forms.CharField(max_length=Site._meta.get_field('search_pointer').max_length,
+            required=False)
+    tags = forms.ModelMultipleChoiceField(Tag.objects.all(), label='')
+    record_type = forms.CharField()
+    target = forms.CharField()
+
+    class Meta:
+        model = Site
+        fields = ['site_type', 'source_type', 'homepage_url']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+                Div(InlineCheckboxes('tags', css_class='list',
+                    template='widgets/form_searchable_multiplechoicefield.html'))
+                )
+
+class EditRequestTagForm(ModelForm):
+    """
+    This form is rendered 'manually' in the site details template, this class is used for validation,
+    """
+    record_type = forms.CharField()
+    target = forms.CharField()
+
+    class Meta:
+        model = Tag
+        fields = ['description']

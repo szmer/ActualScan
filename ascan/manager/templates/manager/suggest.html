@@ -1,0 +1,15 @@
+{% extends 'scan/base.html' %}
+{% load bootstrap4 %}
+
+{% block page_title %}Index change suggestion{% endblock %}
+
+{% block container %}
+{% if record_type == 'site' %}
+<a class="btn btn-primary" href="/manager/site/{{ target_id }}/">Go back to {{ target }}</a>
+{% elif record_type == 'tag' %}
+<a class="btn btn-primary" href="/manager/tag/{{ target_id }}/">Go back to {{ target }}</a>
+{% else %}
+<noscript><a class="btn btn-primary href="/">Go back</a></noscript>
+<script>document.write('<a class="btn btn-primary" href="javascript:history.go(-1)">Go back</a>')</script>
+{% endif %}
+{% endblock %}

@@ -1,7 +1,7 @@
 {% extends 'scan/base.html' %}
 {% load bootstrap4 %}
 
-{% block page_title %}{% if tag %}{{ tag }} - {% endif %}Sites{% endblock %}
+{% block page_title %}Sites{% endblock %}
 
 {% block container %}
 <h2>Sites{% if tag %} tagged <a href="/manager/tag/{{ tag_id }}/">{{ tag }}</a>{% endif %}</h2>
@@ -12,8 +12,21 @@
       </div>
    </div>
 
+   <div class="card mb-4">
+      <div class="card-body">
+         <h4>Search</h4>
+         <form action="/manager/sites/search/" method="GET">
+            <input class="form-control" name="q" value="{{ q }}">
+            <div class="mt-3">
+               <button type="submit" class="btn btn-secondary">Go</button>
+            </div>
+         </form>
+      </div>
+   </div>
+
    {% for site in sites %}
    {% include 'widgets/site_snippet.html' with site=site %}
    {% endfor %}
 </div>
+{% include 'widgets/pagination.html' %}
 {% endblock %}
