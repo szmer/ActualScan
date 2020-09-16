@@ -1,39 +1,44 @@
 (in-package :omnivore)
 (declaim (optimize (space 3)))
 
-(defun typical (tv-sentences n &key (strip-scores t))
+(defun typical (tv-sentences n)
     (when *debug-scoring*
       (format t "Looking for typical sentences.~%"))
-  (mapcar (if strip-scores #'first #'identity)
-          (cond ((< (length tv-sentences) (* 5 n))
-                 ;; If there are few sentences, don't discriminate.
-                 (ranked-low
-                   (scored-with-average-tfidf tv-sentences)
-                   :n n))
-                ((< (length tv-sentences) (* 10 n))
-                 (ranked-low
-                   ;; The intermediate case: take half.
-                   (lowest-chunk 0.5
-                                 (scored-with-average-tfidf tv-sentences)
-                                 (scored-with-length-deviation tv-sentences))
-                   :n n))
-                (t
-                 ;; When there's a lot, take ten times we need.
-                 (ranked-low
-                   (lowest-chunk (/ (* 10 n) (length tv-sentences))
-                                 (scored-with-average-tfidf tv-sentences)
-                                 (scored-with-length-deviation tv-sentences))
-                   :n n)))))
+    (cond ((< (length tv-sentences) (* 5 n))
+           ;; If there are few sentences, don't discriminate.
+           (ranked-low
+             "average_tf_idf"
+             (scored-with-average-tfidf! tv-sentences)
+             :n n))
+          ((< (length tv-sentences) (* 10 n))
+           (ranked-low
+             "average_tf_idf"
+             ;; The intermediate case: take half.
+             (lowest-chunk 0.5
+                           "length_deviation"
+                           (scored-with-length-deviation!
+                             (scored-with-average-tfidf! tv-sentences)))
+             :n n))
+          (t
+           ;; When there's a lot, take ten times we need.
+           (ranked-low
+             "average_tf_idf"
+             (lowest-chunk (/ (* 10 n) (length tv-sentences))
+                           "length_deviation"
+                           (scored-with-length-deviation!
+                             (scored-with-average-tfidf! tv-sentences)))
+             :n n))))
 
 ;;; TODO we want to ignore special characters in these calculations.
-(defun atypical (tv-sentences n &key (strip-scores t))
-    (when *debug-scoring*
-      (format t "Looking for atypical sentences.~%"))
-  (mapcar (if strip-scores #'first #'identity)
-          (ranked-high (corrected-with #'/
-                                       (scored-with-average-tfidf tv-sentences)
-                                       (scored-with-length-deviation tv-sentences))
-                       :n n)))
+(defun atypical (tv-sentences n)
+  (when *debug-scoring*
+    (format t "Looking for atypical sentences.~%"))
+  (ranked-high "corrected_average_tf_idf"
+               (add-corrected-attribute "corrected_average_tf_idf" #'/
+                                        (scored-with-length-deviation!
+                                          (scored-with-average-tfidf! tv-sentences))
+                                        "average_tf_idf" "length_deviation")
+               :n n))
 
 (defun phrases-info (tv-sentences freq num-examples &key (sents-to-text t) (give-atypical nil)
                                   (give-oldest nil))
@@ -59,14 +64,14 @@
                   (when give-oldest
                     (list :oldest
                           (mapcar (if sents-to-text #'raw-text #'identity)
-                                  (mapcar #'car
-                                          (remove-if (lambda (entry) ; remove undated sentences
-                                               (not (read-attribute (first entry)
+                                  (ranked-low "age"
+                                              (scored-with-age!
+                                                (remove-if (lambda (sentence) ; remove undated sentences
+                                                             (not (read-attribute
+                                                                    sentence
                                                                     "publication-date")))
-                                             (ranked-low (scored-with-age containing-sents)
-                                                         :n give-oldest))
-                                          )
-                                  ))))))
+                                                           containing-sents))
+                                              :n give-oldest)))))))
             ;; Sort - give the most frequent ones first.
             (sort (append (alexandria:hash-table-alist bigrams)
                          ;;- (alexandria:hash-table-alist trigrams)

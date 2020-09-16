@@ -1,7 +1,11 @@
 (in-package :omnivore)
 
-(defun tf-idfs-for-sentences (sentences)
-  (let ((term-doc-freqs (make-hash-table :test #'equalp))) ; in how many docs/sents the term appears
+(defun sentences-with-tf-idfs! (sentences &key (overwrite nil))
+  "Add a tf-idf score hash table for tokens to each sentence. Unless the overwrite flag is set, the\
+   old information will be left as is if found."
+  (when (or (and (first sentences) (not (read-attribute (first sentences) "tf_idf_table")))
+            overwrite)
+    (let ((term-doc-freqs (make-hash-table :test #'equalp))) ; in how many docs/sents the term appears
     ;; Collect the doc frequency table info in term-doc-freqs.
     (dolist (sentence sentences)
       (dolist (token (remove-duplicates (division-divisions sentence) :key #'division-raw-text
@@ -10,19 +14,18 @@
             (incf (gethash (division-raw-text token) term-doc-freqs))
             (setf (gethash (division-raw-text token) term-doc-freqs) 1))))
     ;; Compute its score for each sentence.
-    (mapcar (lambda (sentence)
-              (let ((sent-tf-idf-table (make-hash-table :test #'equalp)))
-                (dolist (token (division-divisions sentence))
-                  (if (gethash token sent-tf-idf-table)
-                      (incf (gethash token sent-tf-idf-table)
-                            ;; add the idf to the score, multiplied by 1 (as the known df)
-                            (/ (length sentences)
-                               (gethash (division-raw-text token) term-doc-freqs)))
-                      (setf (gethash token sent-tf-idf-table)
-                            (/ (length sentences)
-                               (gethash (division-raw-text token) term-doc-freqs)))))
-                sent-tf-idf-table))
-            sentences)))
+    (timed-execution
+      (dolist (sentence sentences)
+      (let ((sent-tf-idf-table (make-hash-table :test #'equalp)))
+        (dolist (token (division-divisions sentence))
+          (if (gethash token sent-tf-idf-table)
+              ;; We add tf (1) / df (known) to the score
+              (incf (gethash token sent-tf-idf-table)
+                    (/ 1 (gethash (division-raw-text token) term-doc-freqs)))
+              (setf (gethash token sent-tf-idf-table)
+                    (/ 1 (gethash (division-raw-text token) term-doc-freqs)))))
+        (setf (gethash "tf_idf_table" (record-meta sentence)) sent-tf-idf-table))))))
+  sentences)
 
 (defun tf-idfs-for-sections (sections)
   (let ((term-doc-freqs (make-hash-table :test #'equalp))) ; in how many docs the term appears

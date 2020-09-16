@@ -62,9 +62,9 @@ class PublicScanForm(forms.Form):
                     Column('end_date')),
                 Row(Column('allow_undated'),
                     Column('minimal_level')),
-                HTML('<button type="submit" class="btn btn-primary btn-lg">Search the index</button>'
+                HTML('<button id="search-button" type="submit" class="btn btn-primary btn-lg">Search the index</button>'
                     '{% if can_scan %} '
-                    '<button name="is_scan" value="true" type="submit" class="btn btn-primary btn-lg">Scan the Web</button>'
+                    '<button id="scan-button" name="is_scan" value="true" type="submit" class="btn btn-primary btn-lg">Scan the Web</button>'
                     '{% endif %}'))
 
 # NOTE it's important to make both forms compatible, to transfer the one from the main page into
@@ -117,7 +117,7 @@ class EditableScanForm(forms.Form):
                     Column('end_date'),
                     Column('allow_undated'),
                     Column('minimal_level')),
-                HTML('<button type="submit" class="btn btn-primary btn-lg">Search the index</button>'
+                HTML('<button type="submit" id="search-button" class="btn btn-primary btn-lg">Search the index</button>'
                     '{% if can_scan %} '
-                    '<button name="is_scan" value="true" type="submit" class="btn btn-primary btn-lg">Scan the Web</button>'
+                    '<button name="is_scan" id="scan-button" value="true" type="submit" class="btn btn-primary btn-lg">Scan the Web</button>'
                     '{% endif %}'))

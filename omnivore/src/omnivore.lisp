@@ -21,3 +21,5 @@
 (defparameter *solr-group-row-limit* 500);150)
 ;; a higher value can theoretically encourage longer texts (articles etc.)
 (defparameter *solr-snippets-per-doc* 7)
+;; size of highlighted passages from Solr
+(defparameter *solr-hl-fragsize* 400)

@@ -46,7 +46,7 @@
                                             ;; Enable highliting in text.
                                             "&hl=true&hl.fl=text"
                                             ;; Limit the size and number of highlights per doc.
-                                            "&hl.fragsize=500&hl.snippets=~A"
+                                            "&hl.fragsize=~A&hl.snippets=~A"
                                             ;; Disable marking the highlight.
                                             "&hl.simple.pre=&hl.simple.post="
                                             ;; Sort oldest first (this is important for sentence
@@ -67,8 +67,8 @@
                                             ;; Give us a single docs field, instead of separating
                                             ;; the groups
                                             "&group.main=true")
-                               address port core solr-query *solr-snippets-per-doc* *solr-total-row-limit*
-                               *solr-group-row-limit*))
+                               address port core solr-query *solr-hl-fragsize* *solr-snippets-per-doc*
+                               *solr-total-row-limit* *solr-group-row-limit*))
          (response (timed-execution
                        (babel:octets-to-string
                          (drakma:http-request http-query
