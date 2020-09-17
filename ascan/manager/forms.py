@@ -1,11 +1,27 @@
 from django import forms
-from django.forms import ModelForm
+from django.forms import Form, ModelForm, CharField, URLField, ValidationError
 from django.utils.translation import gettext_lazy as _
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div
 from crispy_forms.bootstrap import InlineCheckboxes, InlineRadios
 
+from better_profanity import profanity
+
 from scan.models import Site, Tag
+from .models import BlockedSite
+
+profanity.load_censor_words(
+        # Allow some cussing that may appear in common language
+        whitelist_words=['bitch', 'bullshit', 'crap', 'damn', 'dick', 'dildo', 'shit'])
+
+class CleanCharField(CharField):
+    def validate(self, value):
+        super().validate(value)
+        censored = profanity.censor(value, '✨')
+        if '✨' in censored:
+            raise ValidationError(
+                    'Sorry! Our abuse filter did not like some of the language you\'ve used. '
+                    'Please change it or contact the admins to add the content.')
 
 class SiteForm(ModelForm):
     tags = forms.ModelMultipleChoiceField(Tag.objects.all(), label='Site tags')
@@ -45,6 +61,11 @@ class TagForm(ModelForm):
     class Meta:
         model = Tag
         fields = ['name', 'description']
+        # Apply the profanity filtering.
+        field_classes = {
+                'name': CleanCharField,
+                'description': CleanCharField
+                }
 
 class EditRequestSiteForm(ModelForm):
     """
@@ -80,3 +101,7 @@ class EditRequestTagForm(ModelForm):
     class Meta:
         model = Tag
         fields = ['description']
+
+class BlocklistForm(Form):
+    blocklist_url = URLField()
+    kind_of_material = CharField(max_length=BlockedSite._meta.get_field('kind').max_length)

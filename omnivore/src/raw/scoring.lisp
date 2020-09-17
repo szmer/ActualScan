@@ -91,6 +91,8 @@
 (defun add-corrected-attribute (new-factor-name update-fun scored-sentences factor-name
                                                 correcting-factor-name
                                                 &key (magnitude 1.0) (overwrite nil))
+  "Add a new attribute obtained by applying the update-fun to factor-name and corrected-factor-name\
+   multiplied by magnitude."
   (when (or (and (first scored-sentences) (not (read-attribute (first scored-sentences)
                                                                new-factor-name)))
             overwrite)

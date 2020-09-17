@@ -19,4 +19,5 @@ urlpatterns = [
     path('maketag/', views.maketag, name='maketag'),
     path('scans/', views.scanlist, name='scans'),
     path('suggestions/', views.suggestionlist, name='suggestions'),
+    path('loadblocklist/', views.loadblocklist, name='loadblocklist'),
 ]

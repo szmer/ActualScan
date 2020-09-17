@@ -288,3 +288,24 @@ class OmnivoreTimeout(IntegerPreference):
     name = 'omnivore_timeout'
     default = 60
     required = True
+
+#
+# User permissions.
+#
+user_permissions = Section('user_permissions', 'User permissions')
+
+@global_preferences_registry.register
+class MaxTagsPerDay(IntegerPreference):
+    help_text = """How many tags daily at most a user can add."""
+    section = user_permissions
+    name = 'max_tags_per_day'
+    default = 15
+    required = True
+
+@global_preferences_registry.register
+class MaxSitesPerDay(IntegerPreference):
+    help_text = """How many sites daily at most a user can add."""
+    section = user_permissions
+    name = 'max_sites_per_day'
+    default = 100
+    required = True

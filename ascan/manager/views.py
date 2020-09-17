@@ -1,18 +1,22 @@
+from datetime import datetime, timedelta, timezone
 from logging import info, warning
 import re
 from urllib.parse import urlparse
+import urllib.request
 
 from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.db import Error, IntegrityError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import ListView
 from django.views.generic.detail import DetailView
+from dynamic_preferences.registries import global_preferences_registry
 
-from manager.forms import SiteForm, TagForm, EditRequestSiteForm, EditRequestTagForm
-from manager.models import EditSuggestion
+from manager.forms import SiteForm, TagForm, EditRequestSiteForm, EditRequestTagForm, BlocklistForm
+from manager.models import EditSuggestion, BlockedSite
 from scan.models import Site, Tag, TagSiteLink, ScanJob, ScrapeRequest
 from scan.templatetags.scan_extras import format_trust_level
 
@@ -100,7 +104,15 @@ def tagsites(request, tag_name):
 @login_required
 def makesite(request):
     submitted = False
-    if request.method == 'POST':
+    global_preferences = global_preferences_registry.manager()
+    day_threshold = datetime.now(timezone.utc) - timedelta(days=1)
+    last_sites_count = Site.objects.filter(creator=request.user,
+            time_created__gte=day_threshold).count()
+    if last_sites_count >= global_preferences['user_permissions__max_sites_per_day']:
+        messages.add_message(request, messages.ERROR,
+                'Our abuse filter blocked adding more sites today. Please try again tomorrow.')
+        site_form = SiteForm()
+    elif request.method == 'POST':
         submitted = True
         site_form = SiteForm(request.POST)
         if site_form.is_valid():
@@ -136,15 +148,14 @@ def makesite(request):
                     # Test that the search pointer is a valid URL.
                     try:
                         validator(site_form.instance.search_pointer)
-                        parsed_url = urlparse(site_form.instance.search_pointer)
+                        parsed_search_url = urlparse(site_form.instance.search_pointer)
                     except ValidationError as e:
                         raise SearchURLParsingError(site_form.instance.search_pointer, *e.args)
                     except ValueError as e:
                         raise SearchURLParsingError(site_form.instance.search_pointer, *e.args)
-                    url_later_part = (parsed_url.path+parsed_url.params+parsed_url.query
-                            +parsed_url.fragment)
+                    url_later_part = (parsed_search_url.path+parsed_search_url.params
+                            +parsed_search_url.query+parsed_search_url.fragment)
                     if not (Site.MOCK_STR1 in url_later_part and Site.MOCK_STR2 in url_later_part):
-                        info(Site.MOCK_STR1+' '+parsed_url.path+parsed_url.params+parsed_url.query)
                         raise SearchURLParsingError('no mock strs', site_form.instance.search_pointer)
                     # Test and parse the homepage URL.
                     try:
@@ -155,6 +166,19 @@ def makesite(request):
                     except ValueError as e:
                         raise HomeURLParsingError(site_form.instance.homepage_url, *e.args)
                     site_name = re.sub('^www\\.', '', parsed_url.netloc)
+                    # Check for search pointer-homepage mismatches and blocked sites.
+                    if not site_name in parsed_search_url.netloc:
+                        messages.add_message(request, messages.ERROR,
+                                'The homepage and search URLs seem to be mismatched.')
+                        raise ValueError('mismatched {} and search {}'.format(
+                            site_name, parsed_search_url.netloc))
+                    block_entries = BlockedSite.objects.filter(address__contains=site_name).all()
+                    if block_entries:
+                        messages.add_message(request, messages.ERROR,
+                                'This site is blocked due to the content type: {}. There is an '
+                                'automatic list, please contact us if this is a mistake.'.format(
+                                    block_entries[0].kind))
+                        raise ValueError('blocked '+site_name)
                     site_form.instance.site_type = 'web'
                     site_form.instance.site_name = site_name
 
@@ -193,7 +217,7 @@ def makesite(request):
             except ValueError as e:
                 info(e)
                 messages.add_message(request, messages.ERROR, 'There was a technical error with the'
-                        'form.')
+                        ' form.')
     else:
         site_form = SiteForm()
     context = { 'form': site_form, 'site_form_submitted': submitted }
@@ -201,7 +225,15 @@ def makesite(request):
 
 @login_required
 def maketag(request):
-    if request.method == 'POST':
+    global_preferences = global_preferences_registry.manager()
+    day_threshold = datetime.now(timezone.utc) - timedelta(days=1)
+    last_tags_count = Tag.objects.filter(creator=request.user,
+            time_created__gte=day_threshold).count()
+    if last_tags_count >= global_preferences['user_permissions__max_tags_per_day']:
+        messages.add_message(request, messages.ERROR,
+                'Our abuse filter blocked adding more tags today. Please try again tomorrow.')
+        tag_form = TagForm()
+    elif request.method == 'POST':
         tag_form = TagForm(request.POST)
         if tag_form.is_valid():
             tag_form.instance.creator = request.user
@@ -279,3 +311,30 @@ def suggestionlist(request):
             obj_ids.append(-1)
     return render(request, 'manager/suggestionlist.html',
             { 'suggestions': zip(suggestions, obj_ids) })
+
+@staff_member_required
+def loadblocklist(request):
+    """
+    Download and load URL lists intended for PiHole and other DNS blockers.
+    """
+    if request.method == 'POST':
+        form = BlocklistForm(request.POST)
+        if form.is_valid():
+            list_data = urllib.request.urlopen(form.cleaned_data['blocklist_url']).read()
+            for line in list_data.decode('utf-8').split('\n'):
+                if not line or line[0] == '#':
+                    continue
+                else:
+                    data_list = line.split()
+                    if len(data_list) == 1: # plain lists of urls
+                        if not BlockedSite.objects.filter(address=data_list[0]).exists():
+                            BlockedSite.objects.create(address=data_list[0],
+                                    kind=form.cleaned_data['kind_of_material'])
+                    else: # 0.0.0.0 + the url
+                        if not BlockedSite.objects.filter(address=data_list[1]).exists():
+                            BlockedSite.objects.create(address=data_list[1],
+                                    kind=form.cleaned_data['kind_of_material'])
+            messages.add_message(request, messages.SUCCESS, 'The list has been loaded.')
+    else:
+        form = BlocklistForm()
+    return render(request, 'manager/loadblocklist.html', { 'form': form })

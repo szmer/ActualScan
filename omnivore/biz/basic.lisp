@@ -1,6 +1,34 @@
 (in-package :omnivore)
 (declaim (optimize (space 3)))
 
+(defun sents-from-oldest-docs (docs &key (n 10))
+  (do ((collected-sents)
+       (doc-n 0 (1+ doc-n)))
+      ((or (= (length collected-sents) n)
+           (= doc-n (length docs)))
+       (reverse collected-sents))
+      (block adding-sents
+             (when (read-attribute (elt docs doc-n) "publication-date")
+               (dolist (section (division-divisions (elt docs doc-n)))
+                 (dolist (sentence (division-divisions section))
+                   (if (< (length collected-sents) n)
+                       (push sentence collected-sents)
+                       (return-from adding-sents))))))))
+
+(defun sents-from-newest-docs (docs &key (n 10))
+  (do ((collected-sents)
+       (doc-n (1- (length docs)) (1- doc-n)))
+      ((or (= (length collected-sents) n)
+           (= doc-n -1))
+       (reverse collected-sents))
+      (block adding-sents
+             (when (read-attribute (elt docs doc-n) "publication-date")
+               (dolist (section (division-divisions (elt docs doc-n)))
+                 (dolist (sentence (division-divisions section))
+                   (if (< (length collected-sents) n)
+                       (push sentence collected-sents)
+                       (return-from adding-sents))))))))
+
 (defun typical (tv-sentences n)
     (when *debug-scoring*
       (format t "Looking for typical sentences.~%"))

@@ -33,3 +33,17 @@ class EditSuggestion(models.Model):
         return 'suggestion for {} from {} ({})'.format(
                 self.suggestion['target'] if 'target' in self.suggestion else '?', self.creator,
                 self.id)
+
+class BlockedSite(models.Model):
+    """
+    A site to be blocked for adding to the index.
+    """
+    address = models.CharField(max_length=8192)
+    kind = models.CharField(max_length=32)
+    time_added = models.DateTimeField(auto_now_add=True)
+
+    def __repr__(self):
+        return 'blocked: {} ({})'.format(self.address, self.kind)
+
+    def __str__(self):
+        return 'blocked: {} ({})'.format(self.address, self.kind)

@@ -1,10 +1,20 @@
 (in-package :omnivore)
-(declaim (optimize (space 3)))
+(declaim (optimize (debug 3)))
 
-(defun result-for-tokens (tv-tokens solr-stats)
+(defun result-for-docs (tv-docs solr-stats)
   "Get a readable, but sexp-structured result for tv-view containing tokens as divisions, with\
    the documents loaded."
-  (let ((tv-sentences (timed-execution (tokens-sents-with-windows 2 tv-tokens :deduplicate t))))
+  (let* ((tv-sentences (timed-execution
+                         (collapse-lists
+                           (mapcar (lambda (doc)
+                                     (collapse-lists
+                                       ;; Join the lists of sentences which are divisions of sections
+                                       (mapcar #'division-divisions
+                                               (division-divisions doc))))
+                                   tv-docs))))
+         (tv-tokens (timed-execution
+                      (collapse-lists
+                        (mapcar #'division-divisions tv-sentences)))))
     (when *debug-scoring*
       (format t "Working on ~A sentences~%" (length tv-sentences)))
     (when tv-sentences
@@ -23,6 +33,8 @@
                                     *phrase-example-count*
                                     :sents-to-text nil
                                     :give-oldest 1))
+            :newest (sents-from-newest-docs tv-docs)
+            :oldest (sents-from-oldest-docs tv-docs)
             :years (getf solr-stats :years)
             :year-counts (getf solr-stats :year-counts)))))
 
@@ -33,12 +45,12 @@
 ;;-    (result-for-tokens (view-divisions tv-view))))
 
 (defun query-result-from-solr (query &key (start-date nil) (end-date nil) (undated nil) (sites nil))
-  (multiple-value-bind (tv-tokens solr-stats)
-    (solr-tokens *solr-address* *solr-port* *solr-collection*
+  (multiple-value-bind (tv-docs solr-stats)
+    (solr-docs *solr-address* *solr-port* *solr-collection*
                  ;; enclose in url-encoded quotation marks
                  (format nil "text:%22~A%22" (drakma:url-encode query :utf-8))
                  :start-date start-date :end-date end-date :undated undated :sites sites)
-    (result-for-tokens tv-tokens solr-stats)))
+    (result-for-docs tv-docs solr-stats)))
 
 (defun sent-alist-representation (sent)
   "Format information from a sentence object as an alist."
@@ -80,6 +92,10 @@
                                   (mapcar #'sent-alist-representation
                                           (getf phrase-entry :oldest)))))
                         (getf query-result :phrases)))
+          (cons :newest (mapcar #'sent-alist-representation
+                                (getf query-result :newest)))
+          (cons :oldest (mapcar #'sent-alist-representation
+                                (getf query-result :oldest)))
           (cons :sites-stats
                 (mapcar (lambda (site-entry) (list (cons :site (car site-entry))
                                                    (cons :frequency (cdr site-entry))))

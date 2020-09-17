@@ -27,3 +27,23 @@
 .premium-info strong {
    font-size: 105%
 }
+
+.chartist-tooltip {
+  background: #f8f8f8;
+  color: #111;
+  font-weight: normal;
+  min-width: 3em;
+  padding: .3em;
+
+}
+.chartist-tooltip:before {
+  border-top-color: #f8f8f8;
+  border-width: 5px;
+}
+.ct-slice-pie:hover {
+  fill: #dfcfdf;
+}
+.ct-point:hover {
+  stroke-width: 15px;
+  stroke: #dfcfdf;
+}

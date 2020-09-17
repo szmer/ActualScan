@@ -30,6 +30,7 @@ class Tag(models.Model):
     name = models.CharField(max_length=256, unique=True) # TODO disallow commas
     description = models.CharField(max_length=1024)
     creator = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='tags', null=True)
+    time_created = models.DateTimeField(auto_now_add=True)
 
     def __repr__(self):
         return '#{}'.format(self.name)
@@ -52,6 +53,7 @@ class Site(models.Model):
     # Possibly save raw copies of everything requested from the site to disk. For debugging and
     # crafting the extraction functions.
     save_copies = models.BooleanField(default=False)
+    time_created = models.DateTimeField(auto_now_add=True)
 
     # NOTE we should take urlencoding schemes into account
     MOCK_STR1 = 'twenty'

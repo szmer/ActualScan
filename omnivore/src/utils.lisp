@@ -2,6 +2,9 @@
 
 ;; TODO iterate multi-array? (collocations)
 
+(defun collapse-lists (lists)
+  (apply #'concatenate (cons 'list lists)))
+
 (defun truep (arg) (not (not arg)))
 
 (defun last-element (sequence)

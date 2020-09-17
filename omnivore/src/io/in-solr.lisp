@@ -1,12 +1,12 @@
 (in-package :omnivore)
 
-(defun solr-tokens (address port core solr-query &key (start-date nil) (end-date nil) (undated nil)
+(defun solr-docs (address port core solr-query &key (start-date nil) (end-date nil) (undated nil)
                             (sites nil))
   "Sites should be provided space-separated as one string. Start, end date as Solr date strings.\
    Values: loose tokens with sentence references, plist of additional stats (years, document counts\
-   for the year."
+   for the year. The second value contains statistics got directly from Solr. The result docs are\
+   sorted by post_date ascending."
   ;;; One of general KLUDGE s is that there is no corpus object here.
-  "The second value contains statistics got directly from Solr."
   (assert (not (and end-date (not start-date))))
   (let* ((http-query (format nil
                                (concatenate 'string
@@ -49,9 +49,6 @@
                                             "&hl.fragsize=~A&hl.snippets=~A"
                                             ;; Disable marking the highlight.
                                             "&hl.simple.pre=&hl.simple.post="
-                                            ;; Sort oldest first (this is important for sentence
-                                            ;; deduplication).
-                                            "&sort=date_post%20asc"
                                             ;; Set how many rows we want to get.
                                             "&rows=~A"
                                             ;; Faceting - get time information.
@@ -82,7 +79,7 @@
                                                        response)))))
          (hilites (or (gethash "highlighting" response-json)
                       (error (format nil "No highlighting field in ~A~%" response))))
-         (result-tokens)
+         (result-docs)
          (sentence-strings-table (make-hash-table :test #'equalp)))
     (when *debug-solr-connection* (format t "~A~%" http-query))
     (when *debug-scoring*
@@ -110,6 +107,7 @@
                                                        ;; doesn't work
                                                        (format nil "~%~%")))
                                    (gethash "text" (gethash (gethash "url" json-doc) hilites))))))
+          (push document result-docs)
           (dolist (section-string section-strings)
             (let* ((whitespace-tokenization ; sentence strings; KLUDGE by whitespace
                      (cl-strings:split section-string (format nil "~%")))
@@ -118,7 +116,8 @@
               (dolist (sentence-string whitespace-tokenization)
                 ;;
                 ;; Avoid sentences with duplicate strings.
-                ;; This should be mostly safe as long as the docs are in chronological order.
+                ;; This should be mostly safe as long as the docs are in chronological order. BUT
+                ;; Solr sorting in unreliable across groups and currently switched off.
                 (unless (gethash (cl-strings:clean sentence-string)
                                  sentence-strings-table)
                   (setf (gethash (cl-strings:clean sentence-string)
@@ -129,15 +128,14 @@
                     (push sentence (division-divisions section))
                     (dolist (token-string sentence-as-list)
                       (let ((token (make-division :token sentence "noid" token-string)))
-                        (push token (division-divisions sentence))
-                        (push token result-tokens)))
+                        (push token (division-divisions sentence))))
                     (setf (division-divisions sentence) (reverse (division-divisions sentence))))))
               (setf (division-divisions section) (reverse (division-divisions section)))))
           (setf (division-divisions document) (reverse (division-divisions document)))))
       ;; for timed-execution
       :description "conversion")
     (values
-      result-tokens
+      (sort result-docs #'string< :key (lambda (doc) (or (read-attribute doc "publication-date") "")))
       (let ((result-list (list :years nil :year-counts nil))
             (year-label-p t))
         (dolist (item (gethash "counts"
@@ -153,4 +151,4 @@
               (progn (push item (getf result-list :year-counts))
                      (setf year-label-p t))))
         (mapcar (lambda (item) (if (listp item) (reverse item) item))
-                result-list))))) 
+                result-list)))))

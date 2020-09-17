@@ -1,0 +1,15 @@
+{% extends 'scan/base.html' %}
+{% load bootstrap4 %}
+
+{% block page_title %}Load a site blocklist{% endblock %}
+
+{% block container %}
+<h1>Blocklist loader</h1>
+<form method="POST">
+   <dl>
+   {% csrf_token %}
+   {% bootstrap_form form %}
+   <button type="submit" class="btn btn-primary">Load the blocklist</button>
+   </dl>
+</form>
+{% endblock %}

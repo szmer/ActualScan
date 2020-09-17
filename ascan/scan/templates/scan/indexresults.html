@@ -8,10 +8,12 @@
 {% block scripts %}
 <script type="application/javascript" src="{% static 'scan/js/scanform.js' %}"></script>
 <script type="application/javascript" src="{% static 'scan/js/chartist.min.js' %}"></script>
+<script type="application/javascript" src="{% static 'scan/js/chartist-plugin-tooltip.min.js' %}"></script>
 <script type="application/javascript" src="{% static 'scan/js/datepicker.min.js' %}"></script>
 <script type="application/javascript" src="{% static 'scan/js/list.min.js' %}"></script>
 <script type="application/javascript" src="{% static 'scan/js/typeahead.min.js' %}"></script>
 <link rel="stylesheet" href="{% static 'scan/css/chartist.min.css' %}">
+<link rel="stylesheet" href="{% static 'scan/css/chartist-plugin-tooltip.css' %}">
 <link rel="stylesheet" href="{% static 'scan/css/datepicker.min.css' %}">
 <link rel="stylesheet" href="{% static 'scan/css/typeaheadjs.css' %}"></script>
 {% endblock %}
@@ -76,15 +78,6 @@
 </div>
 {% endif %}
 
-{% if result.sitesStats %}
-<div class="card">
-  <div class="card-header">
-    Sites
-  </div>
-  <div id="ct-chart-sites" class="ct-chart ct-golden-section"></div>
-</div>
-{% endif %}
-
 {% if result.typical %}
 <div class="card">
   <div class="card-header">
@@ -96,6 +89,24 @@
        <p class="card-text"><small class="text-muted">
           by {{ sent.author }}{% if sent.date %} ({{ sent.date }}){% endif %}
           at {{ sent.domain }}</small>
+       <small><br><a href="{{ sent.url }}">{{ sent.url }}</a></small>
+       {% include "widgets/feedback_prompt.html" with site_name=sent.domain %}
+       </p>
+       </div>
+       {% endfor %}
+</div>
+{% endif %}
+
+{% if result.oldest %}
+<div class="card">
+  <div class="card-header">
+    Oldest
+  </div>
+       {% for sent in result.oldest %}
+       <div class="card-body p-2">
+       <p class="card-text">{{ sent.text }}</p>
+       <p class="card-text"><small class="text-muted">by {{ sent.author }}
+          {% if sent.date %} ({{ sent.date }}){% endif %} at {{ sent.domain }} </small>
        <small><br><a href="{{ sent.url }}">{{ sent.url }}</a></small>
        {% include "widgets/feedback_prompt.html" with site_name=sent.domain %}
        </p>
@@ -146,6 +157,15 @@
 </div>
 {% endif %}
 
+{% if result.sitesStats %}
+<div class="card">
+  <div class="card-header">
+    Sites
+  </div>
+  <div id="ct-chart-sites" class="ct-chart ct-golden-section"></div>
+</div>
+{% endif %}
+
 {% if result.topTerms %}
 <div class="card">
   <div class="card-header">
@@ -160,6 +180,24 @@
        <a href="/scan/search/?scan_query={{ scan_phrase }}%20{{ term }}{% include 'widgets/form_link.html' with repl_field='scan_query' %}">(+)</a></small>
        {% endfor %}
        </div>
+</div>
+{% endif %}
+
+{% if result.newest %}
+<div class="card">
+  <div class="card-header">
+    Newest
+  </div>
+       {% for sent in result.newest %}
+       <div class="card-body p-2">
+       <p class="card-text">{{ sent.text }}</p>
+       <p class="card-text"><small class="text-muted">by {{ sent.author }}
+          {% if sent.date %} ({{ sent.date }}){% endif %} at {{ sent.domain }} </small>
+       <small><br><a href="{{ sent.url }}">{{ sent.url }}</a></small>
+       {% include "widgets/feedback_prompt.html" with site_name=sent.domain %}
+       </p>
+       </div>
+       {% endfor %}
 </div>
 {% endif %}
 
@@ -183,10 +221,28 @@
 </div>
 
 <script defer>
-var chartOptions = {
+var timeChartOptions = {
   labelInterpolationFnc: function(value) {
     return value[0]
-  }
+  },
+  axisX: {
+    scaleMinSpace: 40,
+    showGrid: false
+  },
+  axisY: {
+    scaleMinSpace: 40
+  },
+  plugins: [
+    Chartist.plugins.tooltip()
+  ],
+};
+var sitesChartOptions = {
+  labelInterpolationFnc: function(value) {
+    return value[0]
+  },
+  plugins: [
+    Chartist.plugins.tooltip()
+  ]
 };
 var chartResponsiveOptions = [
   ['screen and (min-width: 640px)', {
@@ -206,15 +262,25 @@ var chartResponsiveOptions = [
 {% if result.sitesStats %}
 var sitesData = {
    labels: [{% for site in result.sitesStats %}'{{ site.site }}',{% endfor %}],
-   series: [{% for site in result.sitesStats %}{{ site.frequency }},{% endfor %}]
+   series: [{% for site in result.sitesStats %}{value: {{ site.frequency }}},{% endfor %}]
 };
-new Chartist.Pie('#ct-chart-sites', sitesData, chartOptions, chartResponsiveOptions);
+new Chartist.Pie('#ct-chart-sites', sitesData, sitesChartOptions, chartResponsiveOptions);
 {% endif %}
 
 {% if result.years %}
 var years = [{% for y in result.years %}'{{ y }}',{% endfor %}];
-var yearCounts = [{% for c in result.yearCounts %}{{ c }},{% endfor %}];
-new Chartist.Line('#ct-chart-trend', {labels: years, series: [yearCounts]}, chartOptions);
+var yearCounts = [{% for c in result.yearCounts %}{ meta: '{{ c }}', value: {{ c }}},{% endfor %}];
+if (years.length > 18) {
+   for (var i = 0; i < years.length; i++) {
+      if (years[i].substring(5, 7) != '01') {
+         years[i] = ''
+      }
+      else {
+         years[i] = years[i].substring(0, 4)
+      }
+   }
+}
+new Chartist.Line('#ct-chart-trend', {labels: years, series: [yearCounts]}, timeChartOptions);
 {% endif %}
 </script>
 {% endblock %}
