@@ -5,33 +5,23 @@ from scan.models import Site, Tag, ScanJob, ScrapeRequest, ScanPermission, Feedb
 
 from dynamic_preferences.registries import global_preferences_registry
 
-def verify_scan_permission(user, ip, specific_id=False):
+def verify_scan_permission(user, ip):
+    """
+    Given a User object and an IP, verify if the user has a permission for scanning. If they don't
+    have one, this will try to issue one for them.
+    """
     debug('Is user authd in scan verification: {} (IP {})'.format(
         user.is_authenticated, ip))
     # A logged in user.
     if user.is_authenticated:
         # TODO KLUDGE currently unlimited permission issuance for registered
-        if not specific_id:
-            return True
-        else:
-            job = ScanJob.objects.get(id=specific_id)
-            if job is None:
-                return False
-            else:
-                return job.user_id == user.id
-    # A non-logged in user. Check if they have a scan permission issued.
-    if not specific_id: # try to use a permission
-        scan_permission = ScanPermission.objects.filter(user_ip=ip, is_used=False)
-        if len(scan_permission) > 0:
-            for perm in scan_permission: # expire the used permissions
-                perm.is_used = True
-            return True
-    else: # try to find the matching job
-        job = ScanJob.objects.get(id=specific_id)
-        if job is None:
-            return False
-        else:
-            return job.user_ip == ip
+        return True
+    # A non-logged in user. Check if they have a scan permission issued. Try to use a permission
+    scan_permission = ScanPermission.objects.filter(user_ip=ip, is_used=False)
+    if len(scan_permission) > 0:
+        for perm in scan_permission: # expire the used permissions
+            perm.is_used = True
+        return True
     return False
 
 def spare_scan_capacity():
@@ -56,6 +46,11 @@ def maybe_issue_guest_scan_permission(ip_address):
     return False
 
 def maybe_issue_feedback_permission(user_iden, possible_subject_links, is_ip=False):
+    """
+    Try to issue a feedback permission for some site-tag link for the user identified as an object
+    or an IP string (the instance configuration decides if the permission will be allowed). Return
+    the TagSiteLink or False.
+    """
     global_preferences = global_preferences_registry.manager()
     affected_sites = [link.site for link in possible_subject_links]
     if is_ip:

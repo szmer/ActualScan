@@ -1,5 +1,7 @@
+;;;;; This is intended for use from command line as a script.
+
 ;;; Load our code.
-(load "/root/quicklisp/setup.lisp")
+(load "/opt/quicklisp/setup.lisp")
 (push "/lisp/" ql:*local-project-directories*)
 (ql:quickload :omnivore :silent t)
 (ql:quickload :command-line-arguments :silent t)

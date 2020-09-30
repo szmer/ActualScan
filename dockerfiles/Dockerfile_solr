@@ -1,7 +1,6 @@
 FROM solr:8.6.1
 
 COPY solr-configset server/solr/configsets/ascan
-COPY solr-backups server/solr/solr-backups
 
 # The -q(uiet) option will display only warnings.
 CMD precreate-core ascan server/solr/configsets/ascan; exec solr -f -q

@@ -1,40 +1,10 @@
-from datetime import datetime, timezone
 import http.client
 import json
 from logging import debug, warning
 import os
 import socket
 import urllib
-from urllib.parse import urlparse
 
-def date_fmt(time_obj):
-    return time_obj.strftime('%Y-%m-%dT%H:%M:%SZ')
-
-def timestamp_now():
-    return date_fmt(datetime.now(tz=timezone.utc))
-
-def full_url(part, site_url):
-    """
-    If the url lacks the domain or scheme part, fill it in using the site url.
-    """
-    part_parsed = urlparse(part)
-    if part_parsed.netloc and part_parsed.scheme:
-        return part
-    site_url_parsed = urlparse(site_url)
-    part_parsed = part_parsed._replace(netloc=site_url_parsed.netloc)
-    part_parsed = part_parsed._replace(scheme=site_url_parsed.scheme)
-    return part_parsed.geturl()
-
-#
-# Page filing.
-#
-def write_to_file(path, content):
-    with open(path, 'w+') as out_file:
-        print(content, file=out_file)
-
-#
-# API communications. 
-#
 def stractor_reading(text, source_type):
     """
     Get the text of JSON response of Speechtractor for text and source_type, or HTTP status error
@@ -98,8 +68,3 @@ def solr_check_urls(date_post_check, date_retr_check, urls):
     for doc in response_json['response']['docs']:
         urls_to_skip.add(doc['url'])
     return urls_to_skip 
-
-def update_request_status(request, new_status, failure_comment=None):
-    if failure_comment is not None:
-        request.failure_comment = failure_comment
-    request.change_status(new_status) # this should also save()

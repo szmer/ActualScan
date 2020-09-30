@@ -12,18 +12,11 @@ django-ipware==2.1.0
 django-dynamic-preferences==1.9
 better-profanity==0.6.1
 
-# Celery.
-celery==4.4.2
+# Testing.
+pytest-django==3.10.0
+
+# Redis.
 redis==3.4.1
-
-# Communicating with Omnivore.
-pexpect==4.8.0
-
-# Scrapy.
-Scrapy==2.2.1
-simpleflock==0.0.3
-# (for Selenium and limiting access to it):
-Selenium==3.141.0
 python-redis-lock==3.6.0
 
 # Reddit scraper.

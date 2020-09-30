@@ -50,7 +50,7 @@ def omnivore_call(query_phrase, args='', low_priority=False):
             else:
                 continue
         # May signal a pexpect.TIMEOUT.
-        run_str = 'sbcl --script /lisp/startup/lisp-startup-omnivore.lisp {} \'{}\''.format(
+        run_str = 'sbcl --script /ascan/lisp-startup-omnivore.lisp {} \'{}\''.format(
                     args, query_phrase.replace('\'', '\\\''))
         info('Running omnivore with: {}'.format(run_str))
         (output, status) = pexpect.run(run_str, timeout=timeout, withexitstatus=1)

@@ -4,51 +4,34 @@ services:
   website:
      build:
         context: .
-        dockerfile: Dockerfile_website
+        dockerfile: dockerfiles/Dockerfile_website
      ports:
         - '8000:8000'
      # Use -v2 for more reporting
      command: daphne -b 0.0.0.0 -p 8000 -v2 ascan.asgi:application
-     working_dir: /ascan
      env_file:
         - '.env'
      depends_on:
         - postgres
         - speechtractor
-     volumes:
-        - ./ascan:/ascan
-        # Persist quicklisp in a named volume. NOTE thanks to dependency on stractor, this should
-        # populate itself but we should think of something else if decoupling
-        - quicklisp:/root/quicklisp:Z
-        - ./lisp-startup:/lisp/startup
-        - ./textviews:/lisp/textviews
-        - ./omnivore:/lisp/omnivore
 
   maintenance:
      build:
         context: .
-        dockerfile: Dockerfile_website
+        dockerfile: dockerfiles/Dockerfile_website
      command: python3 maintenance.py -L WARNING
-     working_dir: /ascan
      env_file:
         - '.env'
-     volumes:
-        - ./ascan:/ascan
-        - quicklisp:/root/quicklisp:Z
-        - ./lisp-startup:/lisp/startup
-        - ./textviews:/lisp/textviews
-        - ./omnivore:/lisp/omnivore
      # This should restart on crashes.
      restart: unless-stopped
      depends_on:
-        - website # to get DB initialization
+        - website # to get the DB initialization
 
   scrapy:
      build:
         context: .
-        dockerfile: Dockerfile_website
+        dockerfile: dockerfiles/Dockerfile_scrapy
      command: scrapy crawl general -L WARNING
-     working_dir: /scrapies/genscrap
      env_file:
         - '.env'
      depends_on:
@@ -58,38 +41,27 @@ services:
         - selenium
         - website
      volumes:
-        - ./ascan:/ascan
         - ./pagecopies:/scrapies/pagecopies
 
-  reddit:
+  redditscrape:
      build:
         context: .
-        dockerfile: Dockerfile_website
+        dockerfile: dockerfiles/Dockerfile_redditscrape
      command: python reddit_scraper.py -L INFO
-     working_dir: /scrapies
      env_file:
         - '.env'
      depends_on:
         - postgres
         - solr
         - website
-     volumes:
-        - ./ascan:/ascan
 
   speechtractor:
      build:
         context: .
-        dockerfile: Dockerfile_stractor
-     volumes:
-        # Persist quicklisp in a named volume.
-        - quicklisp:/root/quicklisp:Z
-        - ./lisp-startup:/lisp/startup
-        - ./speechtractor:/lisp/speechtractor
+        dockerfile: dockerfiles/Dockerfile_stractor
      ports:
         - '3757:3756'
-        # Expose Swank.
-        - '4007:4005'
-     command: 'sbcl --load /lisp/startup/lisp-startup-stractor.lisp'
+     command: "sbcl --eval '(ql:quickload :speechtractor)'"
      # Make sbcl not exit immediately.
      tty: true
 
@@ -125,7 +97,7 @@ services:
   solr:
      build:
         context: .
-        dockerfile: Dockerfile_solr
+        dockerfile: dockerfiles/Dockerfile_solr
      ports:
         # Map the original 8983 to 8984.
         - '8984:8983'
@@ -140,6 +112,5 @@ services:
 # Named volumes.
 volumes:
    pgdata:
-   quicklisp:
    redisdata:
    solrdata:

@@ -8,7 +8,7 @@
 {% block container %}
 <h2>{{ scan_job.query_phrase }}{% if scan_job.id %} (job id: {{ scan_job.id }}){% endif %}</h2>
 
-<script type="text/javascript">window.SCAN_ID = {{  scan_job.id }}</script>
+<script type="text/javascript">window.SCAN_ID = {{ scan_job.id }}</script>
 <script type="application/javascript" src="{% static 'scan/js/scanprogress.js' %}"></script>
 
 <table class="table">

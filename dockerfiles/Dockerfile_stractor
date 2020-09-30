@@ -1,0 +1,7 @@
+FROM lokedhs/sbcl-quicklisp
+
+RUN apt-get update && apt-get install -y libssl-dev
+
+COPY lisp/speechtractor /root/quicklisp/local-projects/
+# Loading the package should download the dependencies, try to keep this in Docker build cache
+RUN sbcl --eval '(ql:quickload :speechtractor)' --eval '(sb-ext:quit)'

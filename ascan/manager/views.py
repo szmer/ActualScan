@@ -84,6 +84,7 @@ def tagname(request, tag_name):
     tag = get_object_or_404(Tag, name=tag_name)
     return render(request, 'scan/tag_detail.html', { 'tag': tag })
 
+@login_required
 def scanlist(request):
     jobs = ScanJob.objects.filter(user=request.user).order_by('-status_changed').all()
     page_counts = []
@@ -249,6 +250,9 @@ def maketag(request):
 
 @login_required
 def suggest(request):
+    """
+    The view expects record_type (site, tag) and target (i.e. the name of the object) GET args.
+    """
     context = { 'record_type': request.GET['record_type'], 'target': request.GET['target'] }
     suggestion_dict = {} # we'll fill it only with the values that are changed
     form_ok = False

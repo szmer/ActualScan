@@ -33,9 +33,9 @@ from bs4 import BeautifulSoup
 from scan.models import ScrapeRequest
 from dynamic_preferences.registries import global_preferences_registry
 
-# We need to get one module deeper comparing to the general spider, because we're outside of the
-# Scrapy project.
-from genscrap.genscrap.lib import date_fmt, solr_update, update_request_status, solr_check_urls
+from py_common.apis import solr_check_urls, solr_update
+from py_common.time import date_fmt
+from py_common.utils import update_request_status
 #
 # Read command line args.
 #

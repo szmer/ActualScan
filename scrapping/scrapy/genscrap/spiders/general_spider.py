@@ -22,10 +22,9 @@ from scan.models import Site, ScanJob, ScrapeRequest
 from asgiref.sync import sync_to_async
 from dynamic_preferences.registries import global_preferences_registry
 
-from genscrap.lib import (
-        write_to_file, stractor_reading, timestamp_now, full_url, solr_update, solr_check_urls,
-        update_request_status
-        )
+from py_common.apis import solr_check_urls, solr_update, stractor_reading
+from py_common.time import timestamp_now
+from py_common.utils import full_url, update_request_status, write_to_file
 
 FILEDB_PATH = '/scrapies/pagecopies/'
 # Note it's the original port, not the one mapped by docker-compose.
