@@ -3,7 +3,9 @@
 
 ;;; Whether to run the server.
 (defparameter *server-running-p* t)
-(defparameter *http-port* 3756)
+(defparameter *http-port* (if (sb-ext:posix-getenv "SPEECHTRACTOR_PORT")
+                              (cl-strings:parse-number (sb-ext:posix-getenv "SPEECHTRACTOR_PORT"))
+                              3757))
 ;; Silence hunchentoot reporting.
 (defparameter *server-silentp* t)
 ;; Should the hunchentoot REPL enter the interpreter debugger on error.

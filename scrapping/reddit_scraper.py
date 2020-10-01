@@ -56,6 +56,10 @@ logger.info('Starting the Reddit scraper.')
 MARKDOWN_EXTENSIONS = ['fenced_code', 'tables', StrikethroughExtension(), LinkifyExtension()]
 SEARCH_LIMIT = 100
 
+SOLR_HOST = os.environ['SOLR_HOST']
+SOLR_PORT = os.environ['SOLR_PORT']
+SOLR_CORE = os.environ['SOLR_CORE']
+
 #
 # Utility functions.
 #
@@ -151,8 +155,8 @@ def process_submission(submission, submission_scrape_request):
                     submission_obj['adult_b'] = True
             # Send to Solr.
             solr_json_text = json.dumps([submission_obj])
-            solr_update(solr_json_text, req_id=submission_scrape_request.id,
-                    req_class=ScrapeRequest)
+            solr_update(SOLR_HOST, SOLR_PORT, SOLR_CORE, solr_json_text,
+                    req_id=submission_scrape_request.id, req_class=ScrapeRequest)
 
         # Make the comment objects (Solr documents).
         logger.info('Going through the comments...')
@@ -206,11 +210,11 @@ def process_comment(comment, comment_scrape_request):
                 comment_obj['adult_b'] = True
         # Send to Solr (this needs a manual commit).
         solr_json_text = json.dumps([comment_obj])
-        solr_update(solr_json_text, req_id=comment_scrape_request.id,
-                req_class=ScrapeRequest)
+        solr_update(SOLR_HOST, SOLR_PORT, SOLR_CORE, solr_json_text,
+                req_id=comment_scrape_request.id, req_class=ScrapeRequest)
         # Do the manual commit.
-        solr_update('{"commit": {}}', req_id=comment_scrape_request.id,
-                req_class=ScrapeRequest)
+        solr_update(SOLR_HOST, SOLR_PORT, SOLR_CORE, '{"commit": {}}',
+                req_id=comment_scrape_request.id, req_class=ScrapeRequest)
         update_request_status(comment_scrape_request, 'committed')
     except (PRAWException, NotFound, ServerError) as e:
         update_request_status(comment_scrape_request, 'failed',
@@ -239,8 +243,8 @@ leftover_scrape_requests= ScrapeRequest.objects.filter(
 for scrape_request in leftover_scrape_requests:
     # Deduplicate with Solr.
     permalink = 'https://reddit.com'+scrape_request.target
-    is_url_skippable = solr_check_urls(DEDUP_DATE_POST_CHECK, DEDUP_DATE_RETR_CHECK,
-            [permalink])
+    is_url_skippable = solr_check_urls(SOLR_HOST, SOLR_PORT, SOLR_CORE, DEDUP_DATE_POST_CHECK,
+            DEDUP_DATE_RETR_CHECK, [permalink])
     if permalink in is_url_skippable:
         update_request_status(scrape_request, 'cancelled', failure_comment='dupe')
         continue
@@ -287,7 +291,8 @@ while True:
             for submission in submissions: # is seems that here bad subreddit names may fail
                 if not ok(submission, 'permalink'):
                     continue
-                is_url_skippable = solr_check_urls(DEDUP_DATE_POST_CHECK, DEDUP_DATE_RETR_CHECK,
+                is_url_skippable = solr_check_urls(SOLR_HOST, SOLR_PORT, SOLR_CORE,
+                        DEDUP_DATE_POST_CHECK, DEDUP_DATE_RETR_CHECK,
                         [submission.permalink])
                 if submission.permalink in is_url_skippable:
                     continue
@@ -318,7 +323,8 @@ while True:
             continue
         # Do deduplication with Solr.
         permalink = 'https://reddit.com'+scrape_request.target
-        is_url_skippable = solr_check_urls(DEDUP_DATE_POST_CHECK, DEDUP_DATE_RETR_CHECK,
+        is_url_skippable = solr_check_urls(SOLR_HOST, SOLR_PORT, SOLR_CORE,
+                DEDUP_DATE_POST_CHECK, DEDUP_DATE_RETR_CHECK,
                 [permalink])
         if permalink in is_url_skippable:
             update_request_status(scrape_request, 'cancelled', failure_comment='dupe')

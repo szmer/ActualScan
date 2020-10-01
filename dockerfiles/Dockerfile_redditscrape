@@ -6,13 +6,14 @@ RUN apt-get update && apt-get install -qq -y \
 WORKDIR /
 
 COPY requirements.redditscrape.txt requirements.txt
-COPY setup.py setup.py
 RUN pip install -r requirements.txt
 
-COPY pytest.ini pytest.ini
 COPY ascan /ascan
-COPY py_common /py_common
+COPY py_common /ascan/py_common
+WORKDIR /ascan
+COPY setup.py setup.py
 RUN pip install --editable .
 
 WORKDIR /redditscrape
 COPY scrapping/reddit_scraper.py .
+COPY pytest.ini pytest.ini

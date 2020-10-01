@@ -27,9 +27,12 @@ from py_common.time import timestamp_now
 from py_common.utils import full_url, update_request_status, write_to_file
 
 FILEDB_PATH = '/scrapies/pagecopies/'
-# Note it's the original port, not the one mapped by docker-compose.
-SOLR_NETLOC = 'solr:8983'
-SOLR_PING_URL = 'http://solr:8983/solr/{}/admin/ping'.format(os.environ['SOLR_CORE'])
+SOLR_HOST = os.environ['SOLR_HOST']
+SOLR_PORT = os.environ['SOLR_PORT']
+SOLR_CORE = os.environ['SOLR_CORE']
+SOLR_PING_URL = 'http://{}:{}/solr/{}/admin/ping'.format(SOLR_HOST, SOLR_PORT, SOLR_CORE)
+SPEECHTRACTOR_HOST = os.environ['SPEECHTRACTOR_HOST']
+SPEECHTRACTOR_PORT = os.environ['SPEECHTRACTOR_PORT']
 REQUEST_META = ['id', 'is_search', 'job_id', 'save_copies', 'site_name', 'site_url',
         'site_id', 'source_type']
 
@@ -49,6 +52,9 @@ redis = Redis(host='redis', port=6379, db=0, password=os.environ['REDIS_PASS'])
 redis_lock.reset_all(redis)
 
 def extract_overlay_info(click_intercepted_msg):
+    """
+    Extract a class and/or id info of the element obscuring what we wanted to click inside Selenium.
+    """
     info = dict()
     class_match = re.search('would receive the click: <.* class="(?P<class>[^"]*)".*>',
             click_intercepted_msg)
@@ -281,7 +287,8 @@ class GeneralSpider(scrapy.Spider):
         Interpret the html_text on source_type with Speechtractor. Indicate failure in request_id.
         Return the object loaded from response JSON.
         """
-        stractor_output = stractor_reading(html_text, source_type)
+        stractor_output = stractor_reading(SPEECHTRACTOR_HOST, SPEECHTRACTOR_PORT,
+                html_text, source_type)
         # Speechtractor failures.
         if isinstance(stractor_output, int):
             await self.fail_with_comment(
@@ -293,8 +300,8 @@ class GeneralSpider(scrapy.Spider):
     async def requests_from_search(self, response, stractor_response_json, lead_count=0):
         # We should skip the requests before trying to download them for that to make sense.
         urls_to_request = [doc['url'] for doc in stractor_response_json if 'url' in doc]
-        urls_to_skip = solr_check_urls(self.dedup_date_post_check, self.dedup_date_retr_check,
-                urls_to_request)
+        urls_to_skip = solr_check_urls(SOLR_HOST, SOLR_PORT, SOLR_CORE, self.dedup_date_post_check,
+                self.dedup_date_retr_check, urls_to_request)
         for found_page in stractor_response_json:
             if 'url' in found_page and not found_page['url'] in urls_to_skip:
                 is_page_search = (True
@@ -335,7 +342,6 @@ class GeneralSpider(scrapy.Spider):
         Scrapy will limit requesrs for the dummy Solr domain.
         """
         logger.debug('A monitoring pagse')
-        # NOTE this is also verbatim in normal parse(), see the explanation there
         lock = redis_lock.Lock(redis, 'scrapy-monitoring-parse')
         if lock.acquire():
             scrape_requests_waiting = await sync_to_async(list)(ScrapeRequest.objects.filter(
@@ -374,26 +380,6 @@ class GeneralSpider(scrapy.Spider):
             return
         else:
             await sync_to_async(update_request_status)(db_request, 'ran')
-
-        # NOTE this is copied from the monitoring_parse. We need to set "monitoring parses" to
-        # lesser priority to let the normal parses through, but then we still need to monitor the DB.
-###-        lock = redis_lock.Lock(redis, 'scrapy-monitoring-parse')
-###-        if lock.acquire():
-###-            scrape_requests_waiting = await sync_to_async(list)(ScrapeRequest.objects.filter(
-###-                # NOTE we take less request to queue than monitor parses
-###-                status='waiting', site_type='web').order_by('-is_search')[:10])
-###-            logger.debug('{} waiting requests to be made'.format(len(scrape_requests_waiting)))
-###-            for scrape_request in scrape_requests_waiting:
-###-                await sync_to_async(update_request_status)(scrape_request, 'scheduled')
-###-                meta = {attr: getattr(scrape_request, attr)
-###-                            for attr
-###-                            in REQUEST_META}
-###-                url = full_url(scrape_request.target, scrape_request.site_url)
-###-                # Make sure that even the ordinary requests have higher priority than monitoring.
-###-                yield scrapy.Request(url=url, callback=self.parse, meta=meta, errback=self.fail,
-###-                        priority=5 if 'is_search' in meta and meta['is_search'] else 1)
-###-            # NOTE on some failure above the lock won't be released and the spider wil finish
-###-            lock.release()
 
         # Cancel requests exceeding the maximum search depth.
         if (response.meta['is_search']
@@ -503,7 +489,7 @@ class GeneralSpider(scrapy.Spider):
                 site_obj = await sync_to_async(list)(Site.objects.filter(
                     id=response.meta['site_id']).all())
                 site_obj = site_obj[0]
-                for doc in stractor_response_json: # fill the missing fields
+                for doc in stractor_response_json: # fill the missing fields before sending to Solr
                     doc['date_retr'] = timestamp_now()
                     doc['site_name'] = response.meta['site_name']
                     doc['source_type'] = response.meta['source_type']
@@ -518,12 +504,12 @@ class GeneralSpider(scrapy.Spider):
                 # afterwards.
                 solr_json_text = json.dumps(stractor_response_json)
                 # We have to convert it to async to allow it to update the request on failure.
-                await sync_to_async(solr_update)(solr_json_text, req_id=response.meta['id'],
-                        req_class=ScrapeRequest)
+                await sync_to_async(solr_update)(SOLR_HOST, SOLR_PORT, SOLR_CORE, solr_json_text,
+                        req_id=response.meta['id'], req_class=ScrapeRequest)
                 # Do the manual commit.
                 # TODO commit one doc in one go with {add: {doc:}} json structure
-                solr_update('{"commit": {}}', req_id=response.meta['id'],
-                        req_class=ScrapeRequest)
+                solr_update(SOLR_HOST, SOLR_PORT, SOLR_CORE,
+                        '{"commit": {}}', req_id=response.meta['id'], req_class=ScrapeRequest)
                 await sync_to_async(update_request_status)(db_request, 'committed')
             else:
                 logger.info('Got empty/none Speechractor response: {}'

@@ -1,11 +1,10 @@
 import http.client
 import json
 from logging import debug, warning
-import os
 import socket
 import urllib
 
-def stractor_reading(text, source_type):
+def stractor_reading(stractor_host, stractor_port, text, source_type):
     """
     Get the text of JSON response of Speechtractor for text and source_type, or HTTP status error
     code as int, or -1 on local timeout.
@@ -15,7 +14,7 @@ def stractor_reading(text, source_type):
         quote_via=urllib.parse.quote)
     headers = {"Content-type": "application/x-www-form-urlencoded",
             "Accept": "text/json"}
-    stractor_conn = http.client.HTTPConnection('speechtractor', port=3756, timeout=15)
+    stractor_conn = http.client.HTTPConnection(stractor_host, port=stractor_port, timeout=15)
     stractor_conn.request('POST', '/api/v01/interpret', params, headers)
     try:
         stractor_response = stractor_conn.getresponse()
@@ -27,14 +26,14 @@ def stractor_reading(text, source_type):
         return stractor_response.status
     return stractor_response.read().decode('utf-8')
 
-def solr_update(req_body, req_id=None, req_class=False):
+def solr_update(solr_host, solr_port, solr_core, req_body, req_id=None, req_class=False):
     """
     Send req_body as payload to Solr, optionally updating the req_id ScrapeRequest (or other given
     req_class) on failure. Return a boolean indicating success or failure.
     """
     # Recreate the connection each time to avoid getting stuck in bad states.
-    solr_conn = http.client.HTTPConnection('solr', port=8983, timeout=15)
-    solr_conn.request('GET', '/solr/{}/update'.format(os.environ['SOLR_CORE']), body=req_body,
+    solr_conn = http.client.HTTPConnection(solr_host, port=solr_port, timeout=15)
+    solr_conn.request('GET', '/solr/{}/update'.format(solr_core), body=req_body,
         headers={'Content-type': 'application/json'})
     debug('Sent to Solr: {}'.format(req_body))
     timeouted = False
@@ -53,14 +52,14 @@ def solr_update(req_body, req_id=None, req_class=False):
         debug('Solr response: {}'.format(solr_response.status))
     return True
 
-def solr_check_urls(date_post_check, date_retr_check, urls):
+def solr_check_urls(solr_host, solr_port, solr_core, date_post_check, date_retr_check, urls):
     urls_to_skip = set()
     debug('Asking Solr about urls: {} or more'.format(urls[:20]))
     query_str = ('/solr/{}/select?fl=url&q=date_post:{}%20date_retr:{}&q=url:({})'.format(
-        os.environ['SOLR_CORE'],
+        solr_core,
         urllib.parse.quote(date_post_check), urllib.parse.quote(date_retr_check),
         urllib.parse.quote(' '.join(urls), safe='')))
-    conn = http.client.HTTPConnection('solr', port=8983)
+    conn = http.client.HTTPConnection(solr_host, port=solr_port)
     conn.request('GET', query_str, headers={'Content-type': 'application/json'})
     response = conn.getresponse()
     response_text = response.read().decode('utf-8')

@@ -7,13 +7,17 @@ RUN apt-get update && apt-get install -qq -y \
 WORKDIR /
 
 COPY requirements.scrapy.txt requirements.txt
-COPY setup.py setup.py
 RUN pip install -r requirements.txt
 
-COPY pytest.ini pytest.ini
 COPY ascan /ascan
-COPY py_common /py_common
+COPY py_common /ascan/py_common
+WORKDIR /ascan
+COPY setup.py setup.py
 RUN pip install --editable .
 
-COPY scrapping/scrapy scrapy
-WORKDIR /scrapy
+# Rename the dir to avoid name collisions
+COPY scrapping/scrapy /scrapping
+WORKDIR /scrapping
+RUN pip install --editable .
+COPY testing/scrapping/scrapy/* ./
+COPY pytest.ini pytest.ini

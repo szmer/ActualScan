@@ -9,9 +9,8 @@ COPY requirements.website.txt requirements.txt
 COPY setup.py setup.py
 RUN pip install -r requirements.txt
 
-COPY pytest.ini pytest.ini
 COPY ascan /ascan
-COPY py_common /py_common
+COPY py_common /ascan/py_common
 RUN pip install --editable .
 
 # Install and populate quicklisp.
@@ -25,4 +24,5 @@ RUN sbcl --eval '(ql:quickload :omnivore)' --eval '(sb-ext:quit)'
 
 WORKDIR /ascan
 COPY lisp/lisp-startup-omnivore.lisp .
-COPY testing/ascan/test tests
+COPY testing/ascan/* ./
+COPY pytest.ini pytest.ini
