@@ -9,7 +9,7 @@ from ipware import get_client_ip
 import pexpect
 
 from scan.control import (maybe_issue_guest_scan_permission, request_scan, scan_progress_info,
-        terminate_scan, verify_scan_permission, maybe_issue_feedback_permission)
+        terminate_scan, verify_scan_permission, maybe_give_feedback_tag_site_link)
 from scan.forms import PublicScanForm, EditableScanForm
 from scan.utils import (
         date_fmt, trust_level_to_numeric, omnivore_call, OmnivoreError, OmnivoreBlocked,
@@ -23,7 +23,11 @@ def scaninfo(request):
         context = { 'status_data': { 'phase': 'Unknown job.' }, 'result': False }
         return render(request, 'scan/scaninfo.html', context=context, status=400)
     job_id = request.GET['job_id']
-    job = ScanJob.objects.get(id=job_id)
+    try:
+        job = ScanJob.objects.get(id=job_id)
+    except ScanJob.DoesNotExist:
+        job = None
+    print(request.user.is_staff, request.user)
     if job is None or not (request.user.is_staff or request.user == job.user):
         messages.add_message(request, messages.ERROR, 'Bad scan job specified.')
         context = { 'status_data': { 'phase': 'Bad job.' }, 'result': False }
@@ -124,7 +128,7 @@ def search(request):
         gradable_links = TagSiteLink.objects.filter(tag__name__in=query_tags,
                 site__site_name__in=site_names, level__gte=minimal_level).all()
         debug('{} gradable tag-site links.'.format(len(gradable_links)))
-        gradable_link = maybe_issue_feedback_permission(
+        gradable_link = maybe_give_feedback_tag_site_link(
                 (request.user if request.user.is_authenticated
                     else get_client_ip(request)),
                 gradable_links,

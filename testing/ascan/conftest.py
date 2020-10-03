@@ -7,8 +7,7 @@ from scan.models import Site, Tag, TagSiteLink
 @pytest.fixture
 def user(db):
     example_user = User.objects.create_user(username='test_username',
-            email='someone@example.com')
-    example_user.set_password('password')
+            email='someone@example.com', password='password')
     return example_user
 
 @pytest.fixture

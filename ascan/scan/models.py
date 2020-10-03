@@ -125,8 +125,8 @@ class ScanJob(models.Model):
     # requests.
     save_copies = models.BooleanField(default=False)
     # These aren't currently used in scans, but are needed for going to the index results.
-    start_date = models.CharField(max_length=16, default='01/2010') # the value from the form
-    end_date = models.CharField(max_length=16, default='01/2030')
+    start_date = models.CharField(max_length=32, default='01/2010') # the value from the form
+    end_date = models.CharField(max_length=32, default='01/2030')
     allow_undated = models.BooleanField(default=True)
 
     def change_status(self, status):

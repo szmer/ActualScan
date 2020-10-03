@@ -206,11 +206,11 @@ def do_scan_management():
     return {'spare_capacity': spare_capacity}
 
 autocomplete_thread = SuggestionUpdatingThread()
-autocomplete_thread.run()
+autocomplete_thread.start()
 while True:
     do_scan_management()
     if not autocomplete_thread.is_alive():
         autocomplete_thread = SuggestionUpdatingThread()
-        autocomplete_thread.run()
+        autocomplete_thread.start()
     # Don't overwhelm the sockets and databases.
     time.sleep(2.0)

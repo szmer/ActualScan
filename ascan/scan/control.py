@@ -40,12 +40,16 @@ def maybe_issue_guest_scan_permission(ip_address):
     """
     global_preferences = global_preferences_registry.manager()
     spare_capacity = spare_scan_capacity()
-    if spare_capacity >= global_preferences['scanning__guest_scan_permissions_threshold']:
-        ScanPermission.objects.create(user_ip=ip_address)
+    try:
+        ScanPermission.objects.get(user_ip=ip_address)
         return True
+    except ScanPermission.DoesNotExist:
+        if spare_capacity >= global_preferences['scanning__guest_scan_permissions_threshold']:
+            ScanPermission.objects.create(user_ip=ip_address)
+            return True
     return False
 
-def maybe_issue_feedback_permission(user_iden, possible_subject_links, is_ip=False):
+def maybe_give_feedback_tag_site_link(user_iden, possible_subject_links, is_ip=False):
     """
     Try to issue a feedback permission for some site-tag link for the user identified as an object
     or an IP string (the instance configuration decides if the permission will be allowed). Return
@@ -87,8 +91,9 @@ def request_scan(user_iden, query_phrase : str, start_date, end_date,
         query_tags=[], query_site_names=[], allow_undated=True, minimal_level=0,
         force_new=False, is_ip=False, is_privileged=False):
     """
-    Put an awaiting scan job in the database. query_tags should be a list of strings. If force_new
-    is set and the job already exists, a ValueError is raised. Return the ScanJob object.
+    Put an awaiting scan job in the database. query_tags should be a list of strings. Start and end
+    dates should give months (such as 02/2020). If force_new is set and the job already exists, a
+    ValueError is raised. Return the ScanJob object.
 
     Note that is_ip flag sets how to treat user_iden parameter (as user obj in the DB, or as an IP
     string).

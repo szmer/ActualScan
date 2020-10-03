@@ -9,10 +9,6 @@ COPY requirements.website.txt requirements.txt
 COPY setup.py setup.py
 RUN pip install -r requirements.txt
 
-COPY ascan /ascan
-COPY py_common /ascan/py_common
-RUN pip install --editable .
-
 # Install and populate quicklisp.
 WORKDIR /tmp
 RUN curl -O https://beta.quicklisp.org/quicklisp.lisp
@@ -21,6 +17,11 @@ COPY lisp/textviews /opt/quicklisp/local-projects/
 COPY lisp/omnivore /opt/quicklisp/local-projects/
 # Loading the package should download the dependencies, try to keep this in Docker build cache
 RUN sbcl --eval '(ql:quickload :omnivore)' --eval '(sb-ext:quit)'
+
+WORKDIR /
+COPY ascan /ascan
+COPY py_common /ascan/py_common
+RUN pip install --editable .
 
 WORKDIR /ascan
 COPY lisp/lisp-startup-omnivore.lisp .

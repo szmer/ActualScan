@@ -6,11 +6,16 @@
 #
 # TODO use junit-xml or a similar format to collect all these tests to one source of truth.
 #
+echo '==========================='
 echo '====== Website tests ======'
+echo '==========================='
 docker-compose exec website pytest
 echo '====== Scrapy tests ======'
+echo '==========================='
 docker-compose exec scrapy pytest
+echo '================================='
 echo '====== Speechtractor tests ======'
+echo '================================='
 # We change the port to something else before running the test speechtractor server.
 docker-compose exec speechtractor bash -c "export SPEECHTRACTOR_PORT=3758 && sbcl --eval '(ql:quickload :speechtractor)' \
    --eval '(setf speechtractor::*server-enter-debug-p* nil speechtractor::*server-silentp* t speechtractor::*log-requests-p* nil)' \

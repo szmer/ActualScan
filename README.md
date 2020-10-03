@@ -25,8 +25,8 @@ docker-compose run website python manage.py migrate
 # Testing
 
 ```bash
-docker-compose build website
-docker-compose run website python manage.py test scan
+bash run-tests-docker-compose.sh # run everything
+docker-compose exec website pytest -x --pdb # run one container
 ```
 
 # Debugging

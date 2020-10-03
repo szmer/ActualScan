@@ -202,7 +202,7 @@ def makesite(request):
                         format(site_form.instance.site_name))
 
                 # Return to the list of sites.
-                return redirect('manager:sites')
+                return redirect('sites')
             except HomeURLParsingError as e:
                 info(e)
                 messages.add_message(request, messages.ERROR, 'We couldn\'t enter the address that'
@@ -242,7 +242,7 @@ def maketag(request):
             messages.add_message(request, messages.SUCCESS, 'The tag {} has been added.'.
                     format(tag_form.instance.name))
             # Return to the list of tags.
-            return redirect('manager:tags')
+            return redirect('tags')
     else:
         tag_form = TagForm()
     context = { 'form': tag_form }
@@ -259,6 +259,7 @@ def suggest(request):
     # Process possible suggestion types.
     if request.GET['record_type'] == 'site':
         form = EditRequestSiteForm(data=request.GET)
+        context['form'] = form
         if form.is_valid():
             form_ok = True
             site = Site.objects.get(site_name=form.cleaned_data['target'])
@@ -272,6 +273,7 @@ def suggest(request):
                 suggestion_dict['tags'] = ' '.join([tag.name for tag in form.cleaned_data['tags']])
     elif request.GET['record_type'] == 'tag':
         form = EditRequestTagForm(data=request.GET)
+        context['form'] = form
         if form.is_valid():
             form_ok = True
             tag = Tag.objects.get(name=form.cleaned_data['target'])

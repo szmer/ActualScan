@@ -2,8 +2,6 @@ from django.urls import path
 
 from . import views
 
-app_name = 'manager'
-
 urlpatterns = [
     path('sites/search/', views.SiteSearchList.as_view(), name='sites_search'),
     path('tags/search/', views.TagSearchList.as_view(), name='tags_search'),
