@@ -1,0 +1,67 @@
+- hosts: postgres
+  tags: postgres
+  remote_user: "{{ ascan_hosts_user_name }}"
+  vars_files:
+     - ../vars/main.yml
+  handlers:
+     - import_tasks: ../handlers/main.yml
+  become: yes
+  tasks:
+     - name: install postgresql and pip/python3
+       dnf:
+          name:
+             - "@postgresql:12"
+             - python3
+          state: present
+     - name: install psycopg2
+       pip:
+          name: psycopg2-binary
+     - name: initialize the database
+       become: yes
+       become_user: postgres
+       command:
+          cmd: "postgresql-setup --initdb"
+          creates: "/var/lib/pgsql/initdb_postgresql.log"
+     - name: start and enable the postgresql service
+       systemd:
+          name: postgresql
+          state: started
+          enabled: yes
+     - name: enable the postgresql service in firewalld
+       notify: "Restart firewalld"
+       firewalld:
+          service: postgresql
+          state: enabled
+          permanent: yes
+     - name: create the database for ascan
+       become: yes
+       become_user: postgres
+       community.general.postgresql_db:
+          name: "{{ ascan_postgres_db }}"
+     - name: create the user for the ascan database
+       become: yes
+       become_user: postgres
+       community.general.postgresql_user:
+          db: "{{ ascan_postgres_db }}"
+          name: "{{ ascan_postgres_user }}"
+          password: "{{ ascan_postgres_password }}"
+          encrypted: yes
+          priv: "ALL"
+     - name: enable postgres listening for remote connections (host)
+       notify: "Restart postgresql"
+       lineinfile:
+          line: "listen_addresses = '0.0.0.0'		# what IP address(es) to listen on;"
+          regexp: "^#listen_adresses ="
+          path: /var/lib/pgsql/data/postgresql.conf
+     - name: enable postgres listening for remote connections (port)
+       notify: "Restart postgresql"
+       lineinfile:
+          line: "port = 5432"
+          regexp: "^#port ="
+          path: /var/lib/pgsql/data/postgresql.conf
+     - name: enable remote access for the ascan user
+       notify: "Restart postgresql"
+       lineinfile:
+          insertafter: "TYPE\\s+DATABASE\\s+USER\\s+ADDRESS\\s+METHOD$"
+          line: "host {{ ascan_postgres_db }} {{ ascan_postgres_user }} all md5"
+          path: /var/lib/pgsql/data/pg_hba.conf

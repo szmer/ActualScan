@@ -1,0 +1,139 @@
+---
+- name: Include OS family specific variables
+  include_vars: "{{ ansible_os_family }}.yml"
+
+- name: Include OS specific tasks
+  include_tasks: "{{ ansible_os_family }}.yml"
+
+- name: Install common packages
+  package:
+    name: "{{ item }}"
+  with_items: "{{ solr_packages }}"
+  retries: 5
+  delay: 5
+
+- debug:
+   var: "solr_java_package"
+
+- debug:
+   var: "solr_java_version"
+
+- name: Install Java packages
+  package:
+    name: "{{ item }}"
+  with_items: "{{ solr_java_package['11'] }}"
+  when: solr_java_install
+  retries: 5
+  delay: 5
+
+- name: Create the solr group
+  group:
+    name: "{{ solr_service_group }}"
+    state: present
+    system: true
+
+- name: Create the solr user
+  user:
+    name: "{{ solr_service_username }}"
+    groups: "{{ solr_service_group }}"
+    append: true
+
+- name: Check if the version of Solr already exists
+  stat:
+    path: "/opt/solr-{{ solr_version }}"
+  register: solr_path
+
+- name: Download Solr
+  get_url:
+    url: "{{ solr_download_url }}"
+    dest: "/tmp/solr-{{ solr_version }}.tgz"
+  when: not solr_path.stat.exists
+  retries: 5
+  delay: 5
+
+- name: Create the Solr extract directory
+  file:
+    path: "/opt/solr-{{ solr_version }}"
+    state: directory
+    owner: "{{ solr_service_username }}"
+    group: "{{ solr_service_group }}"
+    mode: '0755'
+  when: not solr_path.stat.exists
+
+- name: Extract Solr
+  unarchive:
+    src: "/tmp/solr-{{ solr_version }}.tgz"
+    dest: "/opt/solr-{{ solr_version }}"
+    copy: false
+    owner: "{{ solr_service_username }}"
+    group: "{{ solr_service_group }}"
+    extra_opts:
+      - --strip-components=1
+  when: not solr_path.stat.exists
+
+- name: Create a symlink for /opt/solr
+  file:
+    src: "/opt/solr-{{ solr_version }}"
+    dest: /opt/solr
+    owner: "{{ solr_service_username }}"
+    group: "{{ solr_service_group }}"
+    state: link
+  when: not solr_path.stat.exists
+
+- name: Create the Solr home dir
+  file:
+    path: "{{ solr_home }}"
+    state: directory
+    owner: "{{ solr_service_username }}"
+    group: "{{ solr_service_group }}"
+    mode: 0755
+
+- name: Copy the solr config to the solr home directory
+  copy:
+    src: "{{ role_path }}/files/solr.xml"
+    dest: "{{ solr_home }}/solr.xml"
+    owner: "{{ solr_service_username }}"
+    group: "{{ solr_service_group }}"
+    mode: 0400
+
+- name: Copy the zookeeper config to the solr home directory
+  copy:
+    src: "{{ role_path }}/files/zoo.cfg"
+    dest: "{{ solr_home }}/zoo.cfg"
+    owner: "{{ solr_service_username }}"
+    group: "{{ solr_service_group }}"
+    mode: 0400
+
+- name: Check if chroot exists for clustered deployments
+  shell: "/opt/solr/bin/solr zk ls / -z {{ solr_zookeeper_connect_string }}"
+  register: zookeeper_chroot
+  changed_when: false
+  when:
+    - (solr_master | default(False))
+    - solr_cluster
+
+- name: Add the chroot for clustered deployments is it doesn't exits
+  shell: "/opt/solr/bin/solr zk mkroot /solr -z {{ solr_zookeeper_connect_string }}"
+  when:
+    - (solr_master | default(False))
+    - solr_cluster
+    - '"solr" not in zookeeper_chroot.stdout'
+  notify:
+    - restart solr
+
+- name: Create the Solr systemd service file
+  template:
+    src: solr.service.j2
+    dest: /etc/systemd/system/solr.service
+    owner: "{{ solr_service_username }}"
+    group: "{{ solr_service_group }}"
+    mode: 0644
+  notify:
+    - reload systemd
+    - restart solr
+
+- name: Ensure Solr is started and enabled on boot
+  systemd:
+    name: solr
+    state: started
+    enabled: true

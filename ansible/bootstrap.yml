@@ -1,0 +1,83 @@
+#
+# This is the main bootstrapping playbook for CentOS hardening the host somewhat and creating a deploy user
+#
+- hosts: preboot
+  vars_files:
+     - vars/main.yml
+  handlers:
+     - import_tasks: handlers/main.yml
+  remote_user: root
+  tasks:
+     - name: we have the packages we need for basic server administration
+       dnf:
+          name:
+             - firewalld
+             - sudo
+          state: present
+     - name: make sure unsecure packages are removed
+       dnf:
+          name:
+             - ypserv
+             - rsh-server
+             - vsftpd
+             - telnet-server
+             - tftp-server
+          state: absent
+     - name: start and enable firewalld
+       systemd:
+          name: firewalld
+          state: started
+          enabled: yes
+     - name: Configure SSH server
+       template:
+          src: sshd_config.j2
+          dest: /etc/ssh/sshd_config
+          owner: root
+          group: root
+          mode: 0644
+       notify: "Restart sshd"
+     - name: Setup selinux for the alternate SSH port
+       seport:
+          ports: "{{ ascan_hosts_ssh_port }}"
+          proto: "tcp"
+          setype: "ssh_port_t"
+          state: "present"
+     - name: allow ssh on our custom port with firewalld
+       firewalld:
+          port: "{{ ascan_hosts_ssh_port }}/tcp"
+          state: enabled
+          permanent: yes
+       notify: "Restart firewalld"
+     - name: remove the vanilla ssh service from firewalld
+       firewalld:
+          service: ssh
+          state: disabled
+          permanent: yes
+     - name: remove the cockpit service from firewalld
+       firewalld:
+          service: cockpit
+          state: disabled
+          permanent: yes
+       notify: "Restart firewalld"
+     - name: create the user used for deployment
+       user:
+          name: "{{ ascan_hosts_user_name }}"
+          password: "{{ ascan_hosts_user_password | password_hash('sha512') }}"
+          group: wheel # make it a sudoer
+          append: true # don't remove from other groups
+     - name: Make sure we have a wheel group
+       group:
+          name: wheel
+          state: present
+     - name: Allow the wheel group to have passwordless sudo
+       lineinfile:
+          dest: /etc/sudoers
+          state: present
+          regexp: '^%wheel'
+          line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+          validate: visudo -cf %s
+     - name: add SSH key for the created deployment user
+       authorized_key:
+          user: "{{ ascan_hosts_user_name }}"
+          state: present
+          key: "{{ ascan_hosts_user_key }}"

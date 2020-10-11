@@ -1,0 +1,21 @@
+- hosts: scrapy
+  tags: scrapy
+  remote_user: "{{ ascan_hosts_user_name }}"
+  vars_files:
+     - ../vars/main.yml
+  handlers:
+     - import_tasks: ../handlers/main.yml
+  become: yes
+  tasks:
+     - include_role:
+        name: geerlingguy.repo-epel
+     - name: install python3
+       dnf:
+          name:
+             - python3
+          state: present
+     - name: create the scrapy service unit file
+       template:
+          src: "../templates/scrapy.service.j2"
+          dest: "/etc/systemd/system/scrapy.service"
+          owner: root

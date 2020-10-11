@@ -1,0 +1,39 @@
+#
+# Hosts setup.
+#
+# set to something different than 22 above 1024, will be used to communicate with hosts after bootstrap:
+- ascan_hosts_ssh_port: 2222
+- ascan_hosts_user_name: username
+# change to your own SSH key that will be installed for authenticating Ansible at the hosts
+- ascan_hosts_user_key: "{{ lookup('file', 'path to your public key') }}"
+# you won't be able to use this password to ssh, but can using direct access to the system
+- ascan_hosts_user_password: password
+#
+# Applications setup.
+#
+# Django, NGINX.
+- ascan_sbcl_version: "2.0.9"
+- ascan_django_secret_key: "" # pick a secret key
+- ascan_nginx_processes: 4
+- ascan_gunicorn_workers: 5
+- ascan_host_names: # your domain name(s)/IP(s) where the website should be reachable
+# PostgreSQL
+- ascan_postgres_db: database name #
+- ascan_postgres_user:  user name #
+- ascan_postgres_password: password #
+# Redditscrape.
+- ascan_reddit_ua: "My user agent 0.1" #
+- ascan_reddit_client: # your reddit API credentials go here
+- ascan_reddit_secret: secret #
+# Redis.
+- ascan_redis_password: # pick a password
+- ascan_redis_bind_interface: 127.0.0.1
+- ascan_redis_port: 6379
+# Solr.
+- ascan_solr_port: 8983
+- ascan_solr_memory: "512M"
+- ascan_solr_zookeeper_connect_string: "" # leave blank if you don't use a separate ZooKeeper
+# Setup authentication for solr (not implemented as for now)
+- ascan_solr_user: user name #
+- ascan_solr_password: password # 
+- ascan_solr_salt: "" # up to 16 chars

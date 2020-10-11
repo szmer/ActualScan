@@ -1,0 +1,16 @@
+- name: "Restart firewalld"
+  service:
+     name: firewalld
+     state: restarted
+- name: "Restart nginx"
+  service:
+     name: nginx
+     state: restarted
+- name: "Restart postgresql"
+  service:
+     name: postgresql
+     state: restarted
+- name: "Restart sshd"
+  service:
+     name: sshd
+     state: restarted

@@ -1,0 +1,17 @@
+- hosts: redditscrape
+  tags: redditscrape
+  remote_user: "{{ ascan_hosts_user_name }}"
+  vars_files:
+     - ../vars/main.yml
+  handlers:
+     - import_tasks: ../handlers/main.yml
+  become: yes
+  tasks:
+     - name: install python3
+       dnf:
+          name: python3
+     - name: create the redditscrape service unit file
+       template:
+          src: "../templates/redditscrape.service.j2"
+          dest: "/etc/systemd/system/redditscrape.service"
+          owner: root

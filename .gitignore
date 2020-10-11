@@ -22,24 +22,19 @@ tags
 ## Docker
 .env
 
-## Flask instance
-flask_instance/settings.py
-scrapies/genscrap/genscrap/flask_instance
-
 # Actual settings for Reddis, Celery (leave examples)
 celeryconfig.py
 redis.conf
-
-## Webpack
-webpack/node_modules
-webpack/yarn-error.log
-webpack/package-lock.json
 
 ## Pycache
 *__pycache__*
 
 ## Django
-ascan/scan/migrations/
-ascan/manager/migrations/
-ascan/bg/migrations/
-ascan/staticfiles/admin/
+python_modules/ascan/scan/migrations/
+python_modules/ascan/manager/migrations/
+python_modules/ascan/bg/migrations/
+python_modules/ascan/staticfiles/admin/
+
+# Ansible
+ansible/vars/main.yml
+ansible/hosts.yml

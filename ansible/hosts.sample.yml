@@ -1,0 +1,41 @@
+all:
+   children:
+      # Preboot hosts - here put all the IPs of the unique hosts that you have for the AScan
+      # installation. Leave the SSH port 22 as is. These host entries are used by the bootstrap
+      # playbook.
+      preboot:
+         hosts:
+            preboot_host_1:
+               ansible_host: 0.0.0.0
+               ansible_port: 22
+            preboot_host_1:
+               ansible_host: 0.0.0.0
+               ansible_port: 22
+      # Map your IPs to AScan services below. Set ansible_port to the value of ascan_hosts_ssh_port
+      # variable in your vars/main.yml file.
+      running:
+         hosts:
+            postgres:
+               ansible_host: 0.0.0.0
+               ansible_port: 2222
+            redis:
+               ansible_host: 0.0.0.0
+               ansible_port: 2222
+            redditscrape:
+               ansible_host: 0.0.0.0
+               ansible_port: 2222
+            scrapy:
+               ansible_host: 0.0.0.0
+               ansible_port: 2222
+            selenium:
+               ansible_host: 0.0.0.0
+               ansible_port: 2222
+            solr:
+               ansible_host: 0.0.0.0
+               ansible_port: 2222
+            stractor:
+               ansible_host: 0.0.0.0
+               ansible_port: 2222
+            website:
+               ansible_host: 0.0.0.0
+               ansible_port: 2222

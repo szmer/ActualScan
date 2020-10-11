@@ -1,0 +1,18 @@
+# daphne.service
+
+[Unit] 
+Description=Daphne for ascan
+
+[Service] 
+Type=simple 
+ExecStart=daphne -u /run/daphne.sock -v2 ascan.asgi:application
+WorkingDirectory=/root/ascan_website/current/python_modules/ascan
+Environment="DJANGO_SECRET_KEY={{ ascan_django_secret_key }}"
+Environment="POSTGRES_DB={{ ascan_postgres_db }}"
+Environment="POSTGRES_USER={{ ascan_postgres_user }}"
+Environment="POSTGRES_PASSWORD={{ ascan_postgres_password }}"
+Environment="REDIS_PASS={{ ascan_redis_password }}"
+Environment="SOLR_CORE=ascan"
+Environment="SOLR_PORT={{ ascan_solr_port }}"
+Environment="ASCAN_HOST_NAMES={{ ascan_host_names }}"
+Environment="DEBUG=0"

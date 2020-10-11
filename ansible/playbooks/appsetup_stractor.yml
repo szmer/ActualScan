@@ -1,0 +1,60 @@
+- hosts: stractor
+  tags: stractor
+  remote_user: "{{ ascan_hosts_user_name }}"
+  vars_files:
+     - ../vars/main.yml
+  handlers:
+     - import_tasks: ../handlers/main.yml
+  become: yes
+  environment:
+     # make sure we can find installed sbcl
+    PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
+  tasks:
+     - name: make sure bzip2 and devtools are installed
+       dnf:
+          name:
+             - bzip2
+             - "@Development tools"
+          state: present
+     - name: download sbcl release
+       get_url:
+          url: "http://prdownloads.sourceforge.net/sbcl/sbcl-{{ ascan_sbcl_version }}-x86-64-linux-binary.tar.bz2"
+          dest: "/root/sbcl-binary.tar.bz2"
+     - name: unpack the sbcl installer
+       unarchive:
+          remote_src: yes
+          src: "/root/sbcl-binary.tar.bz2"
+          dest: "/root/"
+          owner: "{{ ascan_hosts_user_name }}"
+          mode: "700"
+     - name: run the sbcl installer
+       shell:
+          cmd: "./install.sh"
+          chdir: "/root/sbcl-{{ ascan_sbcl_version }}-x86-64-linux/"
+     - name: download the quicklisp installer
+       get_url:
+          url: "https://beta.quicklisp.org/quicklisp.lisp"
+          dest: "/root/quicklisp.lisp"
+     - name: install quicklisp
+       shell:
+          cmd: >-
+             sbcl --disable-debugger --eval '(load "quicklisp.lisp")'
+             --eval '(quicklisp-quickstart:install :path "/opt/quicklisp")'
+             --eval '(ql::without-prompting (ql:add-to-init-file))'
+             --eval '(sb-ext:quit)'
+          creates: "/opt/quicklisp/setup.lisp"
+          chdir: "/root/"
+     - name: create the speechtractor service unit file
+       copy:
+          src: "../templates/speechtractor.service.j2"
+          dest: "/etc/systemd/system/speechtractor.service"
+          owner: root
+     - name: make dir /usr/services
+       file:
+          path: "/usr/services"
+          state: directory
+     - name: create the speechtractor service script file
+       copy:
+          src: "../templates/speechtractor_service.sh.j2"
+          dest: "/usr/services/speechtractor_service.sh"
+          owner: root

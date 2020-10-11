@@ -1,0 +1,7 @@
+---
+- name: Prepare
+  hosts: all
+  become: true
+
+  roles:
+    - role: kevincoakley.facter

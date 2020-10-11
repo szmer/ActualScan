@@ -1,0 +1,28 @@
+- hosts: running
+  tags:
+     - hosts
+     - running
+  remote_user: "{{ ascan_hosts_user_name }}"
+  vars_files:
+     - ../vars/main.yml
+  handlers:
+     - import_tasks: ../handlers/main.yml
+  become: yes
+  tasks:
+     - name: /etc/hosts exists
+       file:
+          path: /etc/hosts
+          state: file
+     - name: create /etc/hosts mapping for the application hosts
+       lineinfile:
+          dest: /etc/hosts
+          regexp: " {{ item }} ?"
+          line: >-
+             {% if hostvars[item].ansible_host != ansible_host %}
+             {{ hostvars[item].ansible_host }}
+             {% else %}
+             127.0.0.1
+             {% endif %}
+             {{item}}
+          state: present
+       with_items: "{{ groups.running }}"

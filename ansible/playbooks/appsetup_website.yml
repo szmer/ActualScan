@@ -1,0 +1,61 @@
+- hosts: website
+  tags: website
+  remote_user: "{{ ascan_hosts_user_name }}"
+  vars_files:
+     - ../vars/main.yml
+  handlers:
+     - import_tasks: ../handlers/main.yml
+  become: yes
+  tasks:
+     - include_role:
+        name: geerlingguy.repo-epel
+     - name: install python3 and nginx
+       dnf:
+          name:
+             - python3
+             - nginx
+          state: present
+     - name: Add base NGINX configuration file
+       notify: "Restart nginx"
+       template:
+          src: "../templates/nginx.conf.j2"
+          dest: "/etc/nginx/nginx.conf"
+          owner: root
+          group: root
+          mode: 0644
+     - name: copy the server block for the website
+       notify: "Restart nginx"
+       template: 
+          src: "../templates/site.conf.j2"
+          dest: "/etc/nginx/conf.d/site.conf"
+          owner: "{{ ansible_user }}"
+          mode: 0644
+     - name: start and enable nginx
+       systemd:
+          name: nginx
+          state: started
+          enabled: yes
+     - name: enable the http service (provided by nginx) in firewalld
+       notify: "Restart firewalld"
+       firewalld:
+          service: http
+          state: enabled
+          zone: public
+          permanent: yes
+     - name: enable the https service (provided by nginx) in firewalld
+       notify: "Restart firewalld"
+       firewalld:
+          service: https
+          state: enabled
+          zone: public
+          permanent: yes
+     - name: create the gunicorn service unit file
+       template:
+          src: "../templates/gunicorn.service.j2"
+          dest: "/etc/systemd/system/gunicorn.service"
+          owner: root
+     - name: create the daphne service unit file
+       template:
+          src: "../templates/daphne.service.j2"
+          dest: "/etc/systemd/system/daphne.service"
+          owner: root

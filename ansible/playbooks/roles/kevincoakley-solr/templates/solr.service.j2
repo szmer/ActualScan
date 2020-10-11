@@ -1,0 +1,14 @@
+[Unit]
+Description=Solr
+After=network.target
+
+[Service]
+Type=forking
+#PIDFile=/opt/solr/bin/solr-8983.pid
+User=solr
+Group=solr
+ExecStart=/opt/solr/bin/solr start -c {% if not((solr_zookeeper_connect_string is undefined) or (solr_zookeeper_connect_string is none) or (solr_zookeeper_connect_string|trim == '')) %} -z {{ solr_zookeeper_connect_string }}{{ solr_zookeeper_chroot }} {% endif %} -s {{ solr_home }} -p {{ solr_port }} -m {{ solr_memory }}
+ExecStop=/opt/solr/bin/solr stop -all
+
+[Install]
+WantedBy=multi-user.target

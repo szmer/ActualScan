@@ -1,0 +1,7 @@
+- src: ansistrano.rollback
+- src: ansistrano.deploy
+- src: arknoll.selenium
+- src: geerlingguy.repo-epel
+- src: geerlingguy.java
+- src: geerlingguy.redis
+#- src: kevincoakley.solr

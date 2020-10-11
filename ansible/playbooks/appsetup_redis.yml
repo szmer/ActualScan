@@ -1,0 +1,17 @@
+- hosts: redis
+  tags: redis
+  remote_user: "{{ ascan_hosts_user_name }}"
+  vars_files:
+     - ../vars/main.yml
+  vars:
+     - redis_bind_interface: "{{ ascan_redis_bind_interface }}"
+     - redis_port: "{{ ascan_redis_port }}"
+     - redis_requirepass: "{{ ascan_redis_password }}"
+  handlers:
+     - import_tasks: ../handlers/main.yml
+  become: yes
+  tasks:
+     - include_role:
+        name: geerlingguy.repo-epel
+     - include_role:
+        name: geerlingguy.redis

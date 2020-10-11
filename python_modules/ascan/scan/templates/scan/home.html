@@ -1,0 +1,50 @@
+{% extends 'scan/base.html' %}
+{% load bootstrap4 %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block page_title %}Search{% endblock %}
+
+{% block scripts %}
+<script type="application/javascript" src="{% static 'js/datepicker.min.js' %}"></script>
+<script type="application/javascript" src="{% static 'js/list.min.js' %}"></script>
+<script type="application/javascript" src="{% static 'js/typeahead.min.js' %}"></script>
+<script type="application/javascript" src="{% static 'js/scanform.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/datepicker.min.css' %}">
+<link rel="stylesheet" href="{% static 'css/typeaheadjs.css' %}"></script>
+{% endblock %}
+
+{% block container %}
+<div class="text-center">
+<img src="{% static 'logo1.png' %}" alt="ActualScan" style="width: 65%; margin: 40px">
+</div>
+
+<form action="/scan/search/">
+   <dl>
+   {% crispy form %}
+   </dl>
+</form>
+
+<script defer type="application/javascript">
+   var options = {
+      valueNames: [ 'possible-choice' ]
+   };
+
+   var siteList = new List('query_sites-searchable', options)
+   var tagList = new List('query_tags-searchable', options)
+
+var suggestionsGetter = new Bloodhound({
+  datumTokenizer: Bloodhound.tokenizers.obj.whitespace('value'),
+  queryTokenizer: Bloodhound.tokenizers.whitespace,
+  remote: {
+    url: '/bg/sug/?q=%QUERY',
+    wildcard: '%QUERY'
+  }
+})
+$('#id_scan_query').typeahead(null,
+   {
+      name: 'query_phrase',
+      source: suggestionsGetter
+   })
+</script>
+{% endblock %}

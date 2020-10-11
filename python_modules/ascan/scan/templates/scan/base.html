@@ -1,0 +1,110 @@
+{% load bootstrap4 %}
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+<title>{% block title %}{% block page_title %}{% endblock %} - ActualScan{% endblock %}</title>
+
+{% block metas %}{% endblock %}
+
+{# Load CSS and JavaScript #}
+{% bootstrap_css %}
+{% bootstrap_javascript jquery='full' %}
+{% block scripts %}{% endblock %}
+<link rel="stylesheet" href="{% static 'css/scan.css' %}">
+</head>
+
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <a class="navbar-brand" href="/">ActualScan</a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+     aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+     <span class="navbar-toggler-icon"></span>
+  </button>
+
+  <div class="collapse navbar-collapse" id="navbarSupportedContent">
+     <ul class="navbar-nav mr-auto">
+
+        <div class="border-right mx-1"></div>
+        {% if request.user.is_authenticated %}
+        <li class="nav-item active">
+           <a class="nav-link" href="/accounts/logout/">Log out</a>
+        </li>
+
+        <li class="nav-item active">
+           <a class="nav-link" href="/manager/scans/">My scans</a>
+        </li>
+
+        <li class="nav-item active">
+           <a class="nav-link" href="/manager/searches/">My searches</a>
+        </li>
+
+        <li class="nav-item active">
+           <a class="nav-link" href="/manager/suggestions/">My suggestions</a>
+        </li>
+
+        <li class="nav-item active">
+           <a class="nav-link" href="/accounts/info/">My account</a>
+        </li>
+        {% else %}
+        <li class="nav-item active">
+           <a class="nav-link" href="/accounts/login/">Log in</a>
+        </li>
+        {% endif %}
+
+        <div class="border-right mx-1"></div>
+
+        <li class="nav-item active">
+           <a class="nav-link" href="/manager/sites/">Sites</a>
+        </li>
+
+        <li class="nav-item active">
+           <a class="nav-link" href="/manager/tags/">Tags</a>
+        </li>
+
+        <div class="border-right mx-1"></div>
+
+        <li class="nav-item active">
+           <a class="nav-link" href="/scan/help/">Help</a>
+        </li>
+
+        <li class="nav-item active">
+           <a class="nav-link" href="/scan/premium/">Premium &amp; Services</a>
+        </li>
+
+        {% if request.user.is_staff %}
+        <div class="border-right mx-1"></div>
+
+        <li class="nav-item active">
+           <a class="nav-link" href="/admin/">Admin</a>
+        </li>
+        {% endif %}
+     </ul>
+  </div>
+</nav>
+
+
+{% block content %}
+<div class="justify-content-center">
+<main class="container-fluid">
+{% block big_container %}
+   <div class="col-lg-6 offset-lg-3 p-3">
+   {% bootstrap_messages %}
+
+   {% block container %}{% endblock %}
+   </div>
+{% endblock %}
+ </main>
+</div>
+
+ <footer class="footer text-center">
+   <div class="container">
+     <ul class="list-inline">
+       <li class="text-muted">Szymon Rutkowski &copy; 2020
+       {% block footer %}{% endblock %}
+     </ul>
+   </div>
+ </footer>
+{% endblock %}
+</body>
+</html>

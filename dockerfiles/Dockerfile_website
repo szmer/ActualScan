@@ -3,10 +3,9 @@ FROM python:3.7.5-slim-buster
 RUN apt-get update && apt-get install -qq -y \
   build-essential curl libpq-dev libssl-dev sbcl --no-install-recommends
 
-WORKDIR /
+WORKDIR /opt/ascan
 
-COPY requirements.website.txt requirements.txt
-COPY setup.py setup.py
+COPY python_modules/requirements.website.txt requirements.txt
 RUN pip install -r requirements.txt
 
 # Install and populate quicklisp.
@@ -18,12 +17,8 @@ COPY lisp/omnivore /opt/quicklisp/local-projects/
 # Loading the package should download the dependencies, try to keep this in Docker build cache
 RUN sbcl --eval '(ql:quickload :omnivore)' --eval '(sb-ext:quit)'
 
-WORKDIR /
-COPY ascan /ascan
-COPY py_common /ascan/py_common
-RUN pip install --editable .
+WORKDIR /opt/ascan
+COPY python_modules/ascan ascan
 
-WORKDIR /ascan
+WORKDIR /opt/ascan/ascan
 COPY lisp/lisp-startup-omnivore.lisp .
-COPY testing/ascan/* ./
-COPY pytest.ini pytest.ini

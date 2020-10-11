@@ -1,0 +1,91 @@
+- hosts: website
+  tags: website
+  remote_user: "{{ ascan_hosts_user_name }}"
+  vars_files:
+     - ../vars/main.yml
+  vars:
+     ansistrano_deploy_from: ../python_modules
+     ansistrano_deploy_to: /root/ascan_website
+     ansistrano_version_dir: "releases" # Releases folder name
+     ansistrano_current_dir: "current" # Softlink name.
+     ansistrano_current_via: "symlink"
+     ansistrano_keep_releases: 2
+     ansistrano_deploy_via: "rsync"
+     ansistrano_allow_anonymous_stats: no
+  handlers:
+     - import_tasks: ../handlers/main.yml
+  become: yes
+  environment:
+     - DJANGO_SECRET_KEY: "{{ ascan_django_secret_key }}"
+     - POSTGRES_DB: "{{ ascan_postgres_db }}"
+     - POSTGRES_USER: "{{ ascan_postgres_user }}"
+     - POSTGRES_PASSWORD: "{{ ascan_postgres_password }}"
+     - REDIS_PASS: "{{ ascan_redis_password }}"
+     - SOLR_CORE: ascan
+     - ASCAN_HOST_NAMES: "{{ ascan_host_names }}"
+     - DEBUG: 0
+  tasks:
+     - name: make sure required system packages are installed
+       dnf:
+          name:
+             - openssl
+             - openssl-devel
+             - rsync # for ansistrano
+          state: present
+     - include_role:
+        name: ansistrano.deploy
+     - name: allow nginx to read the static content directory
+       community.general.sefcontext:
+          target: "/var/www/html(/.*)?"
+          setype: httpd_sys_content_t
+          state: present
+     - name: create the static content directory
+       file:
+          path: "/var/www/html/static/"
+          owner: nginx
+          state: directory
+          recurse: yes
+     - name: copy over the static content to serve
+       synchronize:
+          src: "../../python_modules/ascan/static/"
+          dest: "/var/www/html/static/"
+          owner: no
+     - name: install required PIP packages
+       pip:
+          requirements: "/root/ascan_website/current/python_modules/requirements.website.txt"
+     - name: make Django migrations
+       command: 
+          cmd: python3 manage.py makemigrations
+          chdir: "/root/ascan_website/current/python_modules/ascan"
+     - name: apply Django migrations
+       command: 
+          cmd: python3 manage.py migrate
+          chdir: "/root/ascan_website/current/python_modules/ascan"
+     - name: (re)start the gunicorn service
+       systemd:
+          name: gunicorn
+          state: restarted
+          enabled: yes
+          daemon-reload: yes
+     - name: allow nginx access to the gunicorn socket in SELinux
+       community.general.sefcontext:
+          target: "/var/run/gunicorn.sock"
+          setype: httpd_var_run_t
+          state: present
+     - name: restore SELinux context for the gunicorn socket
+       command:
+          cmd: "restorecon /var/run/gunicorn.sock"
+     - name: (re)start the daphne service
+       systemd:
+          name: daphne
+          state: restarted
+          enabled: yes
+          daemon-reload: yes
+     - name: allow nginx access to the daphne socket in SELinux
+       community.general.sefcontext:
+          target: "/var/run/daphne.sock"
+          setype: httpd_var_run_t
+          state: present
+     - name: restore SELinux context for the daphne socket
+       command:
+          cmd: "restorecon /var/run/daphne.sock"

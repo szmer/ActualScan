@@ -1,0 +1,38 @@
+server {
+   listen 80;
+   listen [::]:80;
+
+   client_max_body_size 4G;
+   keepalive_timeout 5;
+
+   server_name {{ ascan_host_names }};
+
+    location /static/ {
+       alias /var/www/html/static/;
+    }
+
+    # serve /ws/ with daphne
+    location /ws/ {
+         proxy_pass http://unix:/run/daphne.sock;
+         proxy_http_version 1.1;
+
+         proxy_read_timeout 86400;
+         proxy_redirect     off;
+
+         proxy_set_header Upgrade $http_upgrade;
+         proxy_set_header Connection "upgrade";
+         proxy_set_header Host $host;
+         proxy_set_header X-Real-IP $remote_addr;
+         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+         proxy_set_header X-Forwarded-Host $server_name;
+    }
+
+   # serve normal dynamic pages with gunicorn
+    location / {
+         proxy_pass http://unix:/run/gunicorn.sock;
+         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+         proxy_set_header Host $http_host;
+         proxy_set_header X-Real-IP $remote_addr;
+         proxy_redirect off;
+    }
+}

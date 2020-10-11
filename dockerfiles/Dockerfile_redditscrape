@@ -3,17 +3,14 @@ FROM python:3.7.5-slim-buster
 RUN apt-get update && apt-get install -qq -y \
   build-essential libpq-dev libssl-dev --no-install-recommends
 
-WORKDIR /
+WORKDIR /opt/ascan
 
-COPY requirements.redditscrape.txt requirements.txt
+COPY python_modules/requirements.redditscrape.txt requirements.txt
 RUN pip install -r requirements.txt
 
-COPY ascan /ascan
-COPY py_common /ascan/py_common
-WORKDIR /ascan
-COPY setup.py setup.py
+COPY python_modules/ascan ascan
+WORKDIR /opt/ascan/ascan
 RUN pip install --editable .
 
-WORKDIR /redditscrape
-COPY scrapping/reddit_scraper.py .
-COPY pytest.ini pytest.ini
+WORKDIR /opt/ascan
+COPY python_modules/reddit_scraper.py .

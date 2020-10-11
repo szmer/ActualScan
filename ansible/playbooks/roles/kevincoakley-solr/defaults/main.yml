@@ -1,0 +1,19 @@
+---
+solr_version: 8.5.1
+solr_cluster: false
+solr_download_url: http://archive.apache.org/dist/lucene/solr/{{ solr_version }}/solr-{{ solr_version }}.tgz
+solr_zookeeper_connect_string:
+solr_zookeeper_chroot: /solr
+solr_home: /mnt/solr/solr
+solr_port: 8983
+solr_memory: 512m
+solr_service_group: solr
+solr_service_username: solr
+
+# Supported Java Versions:
+# CentOS 7: latest, 11, 8, or 7
+# CentOS 8: latest, 11, 8
+# Ubuntu 18.04: 11 or 8
+# Ubuntu 20.04: 14, 13, 11, or 8
+solr_java_version: 11
+solr_java_install: true

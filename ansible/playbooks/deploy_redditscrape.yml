@@ -1,0 +1,46 @@
+- hosts: redditscrape
+  tags: redditscrape
+  remote_user: "{{ ascan_hosts_user_name }}"
+  vars_files:
+     - ../vars/main.yml
+  vars:
+     ansistrano_deploy_from: ../python_modules
+     ansistrano_deploy_to: /root/ascan_redditscrape
+     ansistrano_version_dir: "releases" # Releases folder name
+     ansistrano_current_dir: "current" # Softlink name.
+     ansistrano_current_via: "symlink"
+     ansistrano_keep_releases: 2
+     ansistrano_deploy_via: "rsync"
+     ansistrano_allow_anonymous_stats: no
+  handlers:
+     - import_tasks: ../handlers/main.yml
+  become: yes
+  tasks:
+     - name: make sure required system packages are installed
+       dnf:
+          name:
+             - rsync # for ansistrano
+          state: present
+     - include_role:
+        name: ansistrano.deploy
+     - name: prepare the directory for running reddit scrape
+       file:
+          path: "/root/ascan_redditscrape_script"
+          state: directory
+     - name: copy the python requirements
+       copy:
+          src: ../../python_modules/requirements.redditscrape.txt
+          dest: /root/ascan_redditscrape_script/
+     - name: install required PIP packages
+       pip:
+          requirements: "/root/ascan_redditscrape/requirements.redditscrape.txt"
+     - name: copy the scraper script
+       copy:
+          src: ../../python_modules/reddit_scraper.py
+          dest: /root/ascan_redditscrape_script/
+     - name: (re)start the redditscrape service
+       systemd:
+          name: redditscrape
+          state: restarted
+          enabled: yes
+          daemon-reload: yes

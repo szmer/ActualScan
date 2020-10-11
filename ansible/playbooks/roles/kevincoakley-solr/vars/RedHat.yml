@@ -1,0 +1,9 @@
+---
+solr_packages:
+  - lsof
+  - unzip
+solr_java_package:
+  latest: java-latest-openjdk-headless
+  "11": java-11-openjdk-headless
+  "8": java-1.8.0-openjdk-headless
+  "7": java-1.7.0-openjdk-headless

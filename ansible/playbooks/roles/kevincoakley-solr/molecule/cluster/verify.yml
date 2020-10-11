@@ -1,0 +1,10 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Verify that Solr is running on port 8983
+      uri:
+        url: http://127.0.0.1:8983/solr/
+        status_code: 200

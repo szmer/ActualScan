@@ -1,0 +1,16 @@
+- hosts: selenium
+  tags: selenium
+  remote_user: "{{ ascan_hosts_user_name }}"
+  vars_files:
+     - ../vars/main.yml
+  vars:
+     selenium_install_chrome: yes
+     selenium_install_firefox: no
+  handlers:
+     - import_tasks: ../handlers/main.yml
+  become: yes
+  tasks:
+     - include_role:
+        name: geerlingguy.java
+     - include_role:
+        name: arknoll.selenium

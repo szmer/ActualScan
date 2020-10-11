@@ -1,0 +1,13 @@
+- hosts: website
+  tags: website
+  remote_user: "{{ ascan_hosts_user_name }}"
+  vars_files:
+     - vars/main.yml
+  handlers:
+     - import_tasks: handlers/main.yml
+  become: yes
+  tasks:
+     - name: print stuff
+       debug:
+          var: "ansible_host"
+          #var: "hostvars['postgres']['ansible_host']"

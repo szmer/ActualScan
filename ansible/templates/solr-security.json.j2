@@ -1,0 +1,13 @@
+\{
+"authentication":\{ 
+   "blockUnknown": true, 
+   "class":"solr.BasicAuthPlugin",
+   "credentials":\{"{{ ascan_solr_user }}":"{{ ascan_solr_password | password_hash('sha256', lookup('vars', 'ascan_solr_salt')) }} {{ ascan_solr_salt }}"\}, 
+   "forwardCredentials": false 
+ \},
+"authorization":\{
+   "class":"solr.RuleBasedAuthorizationPlugin",
+   "permissions":[\{"name":"security-edit",
+      "role":"admin"\}], 
+   "user-role":\{"{{ ascan_solr_user }}":"admin"\} 
+ \}\}

@@ -102,12 +102,7 @@ services:
         # Map the original 8983 to 8984.
         - '8984:8983'
      volumes:
-        # Kinda the documentation's suggestion to persist data.
-        # A named volume is kept persistent by Docker behind the scenes.
-        # (Z should facilitate living with SELinux?)
         - solrdata:/var/solr/:Z
-        # Allow posting to Solr documents we've prepared with scripts.
-        - ./processing-scripts:/processing-scripts
 
 # Named volumes.
 volumes:

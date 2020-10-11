@@ -1,0 +1,32 @@
+{% extends 'scan/base.html' %}
+{% load static %}
+{% load bootstrap4 %}
+{% load crispy_forms_tags %}
+
+{% block page_title %}Add a site{% endblock %}
+
+{% block scripts %}
+<script type="application/javascript" src="{% static 'js/list.min.js' %}"></script>
+{% endblock %}
+
+{% block container %}
+{% if site_form_submitted %}
+<script type="application/javascript">window.SITE_FORM_SUBMITTED = true</script>
+{% endif %}
+<script type="application/javascript" src="{% static 'js/makesite.js' %}"></script>
+<form method="POST">
+   <dl>
+   {% csrf_token %}
+   {% crispy form %}
+   <button type="submit" class="btn btn-primary">Add the site</button>
+   </dl>
+</form>
+
+   <script defer type="application/javascript">
+      var options = {
+         valueNames: [ 'possible-choice' ]
+      };
+
+      var tagList = new List('tags-searchable', options)
+   </script>
+{% endblock %}

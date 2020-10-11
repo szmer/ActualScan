@@ -1,0 +1,34 @@
+- hosts: scrapy
+  tags: scrapy
+  remote_user: "{{ ascan_hosts_user_name }}"
+  vars_files:
+     - ../vars/main.yml
+  vars:
+     ansistrano_deploy_from: ../python_modules
+     ansistrano_deploy_to: /root/ascan_scrapy
+     ansistrano_version_dir: "releases" # Releases folder name
+     ansistrano_current_dir: "current" # Softlink name.
+     ansistrano_current_via: "symlink"
+     ansistrano_keep_releases: 2
+     ansistrano_deploy_via: "rsync"
+     ansistrano_allow_anonymous_stats: no
+  handlers:
+     - import_tasks: ../handlers/main.yml
+  become: yes
+  tasks:
+     - name: make sure required system packages are installed
+       dnf:
+          name:
+             - rsync # for ansistrano
+          state: present
+     - include_role:
+        name: ansistrano.deploy
+     - name: install required PIP packages
+       pip:
+          requirements: "/root/ascan_scrapy/current/python_modules/requirements.scrapy.txt"
+     - name: (re)start the scrapy service
+       systemd:
+          name: scrapy
+          state: restarted
+          enabled: yes
+          daemon-reload: yes

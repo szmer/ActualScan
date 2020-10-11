@@ -1,0 +1,4 @@
+- import_playbook: "playbooks/deploy_stractor.yml"
+- import_playbook: "playbooks/deploy_website.yml"
+- import_playbook: "playbooks/deploy_redditscrape.yml"
+- import_playbook: "playbooks/deploy_scrapy.yml"

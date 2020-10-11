@@ -1,0 +1,54 @@
+- hosts: solr
+  tags: solr
+  remote_user: "{{ ascan_hosts_user_name }}"
+  vars_files:
+     - ../vars/main.yml
+  vars:
+###-     - solr_create_user: false
+     - solr_version: "8.6.0"
+     - solr_memory: "{{ ascan_solr_memory }}"
+     - solr_port: "{{ ascan_solr_port }}"
+     - solr_zookeeper_connect_string: "{{ ascan_solr_zookeeper_connect_string }}"
+     - solr_cores: []
+  handlers:
+     - import_tasks: ../handlers/main.yml
+  become: yes
+  tasks:
+     - include_role:
+        name: geerlingguy.java
+     - name: open the port for solr in firewalld
+       ansible.posix.firewalld:
+          port: "{{ ascan_solr_port }}/tcp"
+          permanent: yes
+          state: enabled
+     - name: open the zookeeper port in firewalld
+       ansible.posix.firewalld:
+          port: "2181/tcp"
+          permanent: yes
+          state: enabled
+     - name: "Restart firewalld"
+       service:
+          name: firewalld
+          state: restarted
+     - include_role:
+        name: solr
+     - name: prepare the directory for ascan core configuration
+       file:
+          path: /opt/solr/server/solr/configsets/ascan/
+          state: directory
+     - name: copy the configuration for ascan Solr core
+       synchronize:
+          src: ../../solr-configset/conf
+          dest: /opt/solr/server/solr/configsets/ascan
+###-     - name: setup security.json for solr NOTE needs TLS, we limit solr to local connections instead
+###-       template:
+###-          src: "../templates/solr-security.json.j2"
+###-          dest: "/opt/solr/security.json"
+###-          owner: solr
+     - name: create the ascan core
+       become: yes
+       become_user: solr
+       command:
+          cmd: "bin/solr create -c ascan -n ascan -d server/solr/configsets/ascan -p {{ ascan_solr_port }}"
+          creates: "/opt/solr/server/solr/ascan"
+          chdir: "/opt/solr/"

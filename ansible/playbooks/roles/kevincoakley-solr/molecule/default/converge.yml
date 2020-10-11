@@ -1,0 +1,10 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  vars:
+    - solr_java_version: "{{ lookup('env','JAVA_VERSION') | default('11') }}"
+
+  roles:
+    - role: ansible-role-solr

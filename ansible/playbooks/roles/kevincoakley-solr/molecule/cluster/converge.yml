@@ -1,0 +1,16 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  vars:
+    - zookeeper_java_version: "{{ lookup('env','JAVA_VERSION') | default('11') }}"
+    - zookeeper_ansible_host_group: solr
+    - zookeeper_server_variable: facter_ipaddress
+    - solr_java_version: "{{ lookup('env','JAVA_VERSION') | default('11') }}"
+    - solr_cluster: true
+    - solr_zookeeper_connect_string: "{{ facter_ipaddress }}:2181"
+
+  roles:
+    - role: kevincoakley.zookeeper
+    - role: ansible-role-solr
