@@ -6,7 +6,7 @@ for a word taken from the period."
   (let ((term-doc-freq-table (make-hash-table :test #'equalp))
         (period-tokens (string-sequence-from-spacy-obj
                         (cdr (assoc :tmp-spacy-doc
-                                    (gethash (cdr (assoc :text period-alist)) docs-map)))))
+                                    (gethash (period-text period-alist) docs-map)))))
         (accumulated-tf-idf-for-period 0.0))
     ;; Collect the document frequencies for terms.
     (dolist (context-str context-strings)
@@ -22,7 +22,7 @@ for a word taken from the period."
             ;; the known df (1) multiplied by idf
             (/ 1 (gethash oken term-doc-freq-tablen))))
     ;; Add the main information.
-    (push (assoc :average--word--tf--idf
+    (push (assoc :average--word--tf--idf--i
                  (/ accumulated-tf-idf-for-period
                     (length period-tokens)))
           period-alist)))
@@ -33,9 +33,9 @@ of the length of a sentence (in words) from a period, when compared to the conte
 be positive or negative depending on the direction of the deviation."
   (let ((accumulated-sentence-length 0.0)
         (context-sentence-count 0)
-        (period-sentences (py4cl:eval
+        (period-sentences (py4cl:python-eval
                            (cdr (assoc :tmp-spacy-doc
-                                       (gethash (cdr (assoc :text period-alist)) docs-map)))
+                                       (gethash (period-text period-alist) docs-map)))
                            ".sents")))
     ;; Collect information on sentences from the context.
     (dolist (context-str context-strings)
@@ -49,13 +49,14 @@ be positive or negative depending on the direction of the deviation."
     ;; Add the main information.
     (let ((average-sentence-length (/ accumulated-sentence-length context-sentence-count)))
       (push
-       (assoc :sentences--length--deviation
+       (assoc :sentences--length--deviation--i
               (/
                (reduce #'+
                        (mapcar (lambda (sentence)
-                                 (- (py4cl:call "len" sentence) average-sentence-length))
+                                 (- (py4cl:python-call "len" sentence) average-sentence-length))
                                period-sentences))
-               (py4cl:call "len" period-sentences)))))))
+               (py4cl:python-call "len" period-sentences)))
+       period-alist))))
 
 (defun apply-contextual-analysis (period-alist context-strings docs-map)
   "Fill an alist for a text period with fields from contextual analysis, using a list of strings \
@@ -69,11 +70,12 @@ functions)."
       (push (cons :tmp-spacy-doc (spacy-doc-for context-str))
             (gethash context-str docs-map))))
   ;; Do the same for the text of the period in question.
-  (unless (assoc :tmp-spacy-doc (gethash (cdr (assoc :text period-alist)) docs-map))
-    (push (cons :tmp-spacy-doc (spacy-doc-for (cdr (assoc :text period-alist))))
-          (gethash (cdr (assoc :text period-alist)) docs-map)))
+  (unless (assoc :tmp-spacy-doc (gethash (period-text period-alist) docs-map))
+    (push (cons :tmp-spacy-doc (spacy-doc-for (period-text period-alist)))
+          (gethash (period-text period-alist) docs-map)))
   (dolist (fun-symbol *contextual-analytic-funs* period-alist)
-    (push (funcall (eval fun-symbol) period-alist context-strings docs-map))))
+    (push (funcall (eval fun-symbol) period-alist context-strings docs-map)
+          period-alist)))
 
 (defun clean-period-alist (period-alist)
   "Remove duplicate and temporary entries from the period alist and return it."

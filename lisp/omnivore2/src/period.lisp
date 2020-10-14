@@ -1,11 +1,14 @@
 (in-package :omnivore2)
 
 (defun text-sentences (text &optional (spacy-doc nil))
-  "Get the text sentences as a vector of strings. You can supply an existing spacy-doc for the text."
+  "Get the text sentences as a vector of strings. You can supply an existing spacy-doc for the \
+text, A spacy doc is also returned as the second value."
   (let ((spacy-doc (or spacy-doc (spacy-doc-for text))))
-    (string-sequence-from-spacy-obj
-     (py4cl:python-eval spacy-doc ".sents")
-     'vector)))
+    (values
+     (string-sequence-from-spacy-obj
+      (py4cl:python-eval spacy-doc ".sents")
+      :type 'vector)
+     spacy-doc)))
 
 (defun text-char-ngrams (n text)
   "Return all string character n-grams as a sorted list of strings."
@@ -74,3 +77,13 @@
              (push (elt sentences sent-n) periods)
              (push (elt sentence-lengths sent-n) period-lengths)
              (push 1 period-sentence-counts))))))
+
+(defun text-field-name-for-language (language-code-string)
+  (or (cdr (assoc language-code-string
+                  *language-code->text-field-name* :test #'equalp))
+      *other-languages-text-field-name*))
+
+(defun period-text (period-alist)
+  "The text of the textual period, retrieved from the appropriate field for its language."
+  (cdr (assoc (text-field-name-for-language (cdr (assoc :language--code period-alist)))
+              period-alist)))

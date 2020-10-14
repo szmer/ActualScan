@@ -27,6 +27,10 @@
 (defparameter *good-maximal-period-length* 50)
 (defparameter *common-ngrams-count-for-merging* 7)
 
+(defparameter *language-code->text-field-name*
+  (list (cons "en" :text--en)))
+(defparameter *other-languages-text-field-name* :text--xx)
+
 (defparameter *stationary-analytic-funs* '(#'add-average-word-length-for-period))
 (defparameter *contextual-analytic-funs* '(#'add-average-tf-idf-for-period
                                            #'add-sentences-length-deviation-for-period))

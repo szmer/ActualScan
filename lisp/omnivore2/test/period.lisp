@@ -32,3 +32,11 @@
     (is (< (length (second test-periods)) 250))
     (is (> (length (third test-periods)) 150))
     (is (< (length (third test-periods)) 250))))
+
+(deftest period-text ()
+  (let ((*language-code->text-field-name* (list (cons "en" :text--en)))
+        (*other-languages-text-field-name* :text--xx)
+        (test-period-alist1 (list (cons :text--en "Hej sokoły") (cons :language--code "en")))
+        (test-period-alist2 (list (cons :text--xx "благодарю") (cons :language--code "ru"))))
+    (is (equalp (omnivore2::period-text test-period-alist1) "Hej sokoły"))
+    (is (equalp (omnivore2::period-text test-period-alist2) "благодарю"))))

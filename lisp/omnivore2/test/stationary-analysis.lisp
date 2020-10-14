@@ -9,21 +9,26 @@
                                 (cons :date--post "1922-12-02T13:14:00Z")))
          (test-period-alists (omnivore2::period-entries-from-alist test-text-alist)))
     (is (= 3 (length test-period-alists)))
-    (is (assoc :text (first test-period-alists)))
+    (is (not (assoc :text (first test-period-alists))))
+    (is (assoc :text--en (first test-period-alists)))
+    (is (equalp "en" (cdr (assoc :language--code (first test-period-alists)))))
+    ;; The identifier must be added.
+    (is (equalp (format nil "http://example.com/hgwells/shorthistory/carbon200.html~A1" #\Tab)
+                (cdr (assoc :doc--location (first test-period-alists)))))
     ;; Make sure that period text doesn't simply link to the original.
-    (is (not (equalp (cdr (assoc :text (first test-period-alists)))
+    (is (not (equalp (cdr (assoc :text--en (first test-period-alists)))
                      (cdr (assoc :text test-text-alist)))))
     ;; Preserve the original features.
     (is (assoc :url (first test-period-alists)))
     (is (assoc :date--post (first test-period-alists)))
     ;; See if the additional features are present.
-    (is (assoc :word--length (first test-period-alists)))
-    (is (assoc :sent--length (first test-period-alists)))
-    (is (assoc :parent--document--length (first test-period-alists)))
-    (is (assoc :period--number (first test-period-alists)))
+    (is (assoc :word--length--i (first test-period-alists)))
+    (is (assoc :sent--length--i (first test-period-alists)))
+    (is (assoc :parent--document--length--i (first test-period-alists)))
+    (is (assoc :period--number--i (first test-period-alists)))
     ;; We want one-based period numbers.
     (is (= 1
-           (cdr (assoc :period--number (first test-period-alists)))))))
+           (cdr (assoc :period--number--i (first test-period-alists)))))))
 
 (deftest test-stationary-analysis ()
   (let* ((omnivore2::*good-minimal-period-length* 30)
@@ -34,9 +39,9 @@
                           (cons :url "http://example.com/hgwells/shorthistory/carbon200.html")
                           (cons :date--post "1922-12-02T13:14:00Z")))
          (test-period-alists (omnivore2::stationary-analysis-applied test-text-alist)))
-    (is (assoc :text (first test-period-alists)))
+    (is (assoc :text--en (first test-period-alists)))
     (is (assoc :date--post (first test-period-alists)))
-    (is (assoc :word--length (first test-period-alists)))
-    (is (assoc :average--word--length (first test-period-alists)))
+    (is (assoc :word--length--i (first test-period-alists)))
+    (is (assoc :average--word--length--i (first test-period-alists)))
     ;; This ensures that JSON keys are encoded as they should (producing the underscores from double hyphens)
     (is (search "period_number" (cl-json:encode-json-to-string test-period-alists)))))
