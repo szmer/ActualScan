@@ -1,16 +1,11 @@
 import argparse
 from datetime import datetime, timedelta, timezone
-import http.client
 import json
 import logging
-from logging import getLogger, debug, info, warning
+from logging import getLogger, debug, info
 import os
-import random
-import socket
-from threading import Thread
 import time
 
-import pexpect
 
 #
 # Read command line args.
@@ -34,7 +29,6 @@ import django
 django.setup()
 from channels.routing import get_default_application
 application = get_default_application()
-from django.conf import settings
 
 from asgiref.sync import async_to_sync
 import channels.layers
@@ -42,91 +36,6 @@ from dynamic_preferences.registries import global_preferences_registry
 
 from scan.models import ScanJob, ScrapeRequest, ScanPermission, FeedbackPermission
 from scan.control import start_scan, spare_scan_capacity, scan_progress_info
-from scan.utils import omnivore_call, OmnivoreError, OmnivoreBlocked
-from bg.models import AutocompleteTerm
-
-TOP_TERMS = []
-TOP_TERMS_N = -1
-
-class SuggestionUpdatingThread(Thread):
-    def run(self):
-        global TOP_TERMS
-        global TOP_TERMS_N
-        if TOP_TERMS_N < 0 or not TOP_TERMS or TOP_TERMS_N >= len(TOP_TERMS):
-            TOP_TERMS = []
-            TOP_TERMS_N = 0
-            global_preferences = global_preferences_registry.manager()
-            query_str = ('/solr/{}/terms?terms.fl=text&terms.limit={}'.format(
-                settings.SOLR_CORE,
-                global_preferences['index_searching__top_terms_with_autocomplete_phrases']))
-            term_conn = http.client.HTTPConnection('solr', port=8983)
-            try:
-                term_conn.request('GET', query_str, headers={'Content-type': 'application/json'})
-                term_response = term_conn.getresponse()
-            except ConnectionRefusedError:
-                warning('Solr unreachable when getting terms for autocomplete')
-                return
-            except socket.timeout:
-                warning('Solr timed out when getting terms for autocomplete')
-                return
-            term_response_text = term_response.read().decode('utf-8')
-            try:
-                term_response_json = json.loads(term_response_text)
-            except json.JSONDecodeError:
-                warning('Bad JSON in Solr response to /terms request')
-                return
-            if not 'terms' in term_response_json or not 'text' in term_response_json['terms']:
-                warning('Got unusable JSON from Solr response to /terms request: {}'.format(
-                    term_response))
-                return
-            TOP_TERMS = []
-            is_odd = True
-            for value in term_response_json['terms']['text']:
-                if is_odd:
-                    TOP_TERMS.append(value)
-                    is_odd = False
-                else: # skip the frequencies
-                    is_odd = True
-            if not TOP_TERMS:
-                debug('Got empty set of terms from Solr for autocomplete')
-                return
-        debug('Autocompletion term number {}'.format(TOP_TERMS_N))
-        debug('Autocompletion terms {}'.format(TOP_TERMS))
-        term = TOP_TERMS[TOP_TERMS_N]
-        debug('Trying to get autocompletion phrases for {}'.format(term))
-        TOP_TERMS_N += 1
-        try:
-            omnivore_results = omnivore_call(term,
-                    # most often give way to the user requests
-                    low_priority=random.randint(0, 2) != 0)
-        except pexpect.TIMEOUT:
-            warning('Omnivore timed out for autocomplete term {}'.format(term))
-            return
-        except OmnivoreError:
-            warning('Omnivore crashed for autocomplete term {}'.format(term))
-            return
-        except OmnivoreBlocked:
-            info('Omnivore blocked for autocomplete term {}'.format(term))
-            return
-        if not 'phrases' in omnivore_results or omnivore_results['phrases'] is None:
-            debug('No phrases in omnivore results')
-            return
-        term_info = {'phrases': [phr['text'] for phr in omnivore_results['phrases'] if
-            'text' in phr]}
-        if not len(term_info['phrases']) and len(omnivore_results['phrases']):
-            debug('Could not read the phrases info from JSON: {}'.format(omnivore_results['phrases']))
-            return
-        elif not len(term_info['phrases']):
-            debug('No autocompletion phrases for {}'.format(term))
-            return
-        try:
-            term_obj = AutocompleteTerm.objects.get(term=term)
-            term_obj.suggest_data = term_info
-            term_obj.save()
-        except AutocompleteTerm.DoesNotExist:
-            term_obj = AutocompleteTerm.objects.create(term=term, suggest_data=term_info)
-        debug('Added autocompletion phrases for {}'.format(term))
-        return
 
 def do_scan_management():
     """
@@ -205,12 +114,7 @@ def do_scan_management():
     old_reqs_finished.delete()
     return {'spare_capacity': spare_capacity}
 
-autocomplete_thread = SuggestionUpdatingThread()
-autocomplete_thread.start()
 while True:
     do_scan_management()
-    if not autocomplete_thread.is_alive():
-        autocomplete_thread = SuggestionUpdatingThread()
-        autocomplete_thread.start()
     # Don't overwhelm the sockets and databases.
     time.sleep(2.0)

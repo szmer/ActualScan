@@ -1,0 +1,13 @@
+FROM python:3.7.5-slim-buster
+
+RUN apt-get update && apt-get install -qq -y \
+  build-essential libpq-dev libssl-dev --no-install-recommends
+
+WORKDIR /opt/
+
+COPY python_modules/omnivore2 omnivore2
+
+WORKDIR /opt/omnivore2
+COPY python_modules/requirements.omnivore2.txt requirements.txt
+RUN pip install -r requirements.txt
+RUN python -m spacy download en_core_web_sm

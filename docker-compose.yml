@@ -6,7 +6,7 @@ services:
         context: .
         dockerfile: dockerfiles/Dockerfile_website
      ports:
-        - '8000:8000'
+        - '127.0.0.1:8000:8000'
      # Use -v2 for more reporting
      command: daphne -b 0.0.0.0 -p 8000 -v2 ascan.asgi:application
      env_file:
@@ -60,10 +60,24 @@ services:
         context: .
         dockerfile: dockerfiles/Dockerfile_stractor
      ports:
-        - '3757:3756'
+        - '127.0.0.1:3757:3756'
      command: "sbcl --eval '(ql:quickload :speechtractor)'"
      # Make sbcl not exit immediately.
      tty: true
+     depends_on:
+        - solr
+
+  omnivore2:
+     build:
+        context: .
+        dockerfile: dockerfiles/Dockerfile_omnivore2
+     ports:
+        - '127.0.0.1:6824:6823'
+     command: "gunicorn -b 0.0.0.0:6823 wsgi:app"
+     env_file:
+        - '.env'
+     depends_on:
+        - solr
 
   postgres:
      image: 'postgres:12.2'
@@ -71,7 +85,7 @@ services:
         - pgdata:/var/lib/postgresql/data:Z
      ports:
         # Map the original 5432 to 5433.
-        - '5433:5432'
+        - '127.0.0.1:5433:5432'
      env_file:
         - '.env'
 
@@ -80,7 +94,7 @@ services:
      volumes:
         - /dev/shm:/dev/shm
      ports:
-        - '4444:4444'
+        - '127.0.0.1:4444:4444'
      env_file:
         - '.env'
 
@@ -92,7 +106,7 @@ services:
       - redisdata:/var/lib/redis/data
       - ./redis.conf:/usr/local/etc/redis/redis.conf
     ports:
-      - '6380:6379'
+      - '127.0.0.1:6380:6379'
 
   solr:
      build:
@@ -100,7 +114,7 @@ services:
         dockerfile: dockerfiles/Dockerfile_solr
      ports:
         # Map the original 8983 to 8984.
-        - '8984:8983'
+        - '127.0.0.1:8984:8983'
      volumes:
         - solrdata:/var/solr/:Z
 
