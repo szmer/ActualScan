@@ -6,7 +6,8 @@ from django.db.models import F
 from channels.consumer import SyncConsumer
 
 from scan.control import verify_scan_permission
-from scan.models import TagSiteLink, FeedbackPermission
+from scan.get_results import rules_results
+from scan.models import Site, TagSiteLink, FeedbackPermission
 
 class RelevanceFeedbackConsumer(SyncConsumer):
 
@@ -41,6 +42,28 @@ class RelevanceFeedbackConsumer(SyncConsumer):
             if not level_updated:
                 info('Refused to update the level for transmission {}, not found the tag-site link'
                         ' or the permission'.format(event['text']))
+        else:
+            warning('Received a WebSocket transmission with an unknown subject: {}'.format(
+                received_obj))
+
+class RulesUpdateConsumer(SyncConsumer):
+
+    def websocket_connect(self, event):
+        self.send({ 'type': 'websocket.accept' })
+
+    def websocket_disconnect(self, event):
+        self.send({ 'type': 'websocket.disconnected' })
+
+    def websocket_receive(self, event):
+        received_obj = json.loads(event['text'])
+        if received_obj['subject'] == 'rules_results':
+            site_names = received_obj['sites']
+            site_names += [site.site_name # add the site names from tags
+                for site in Site.objects.filter(
+                    tag_links__tag__in=received_obj['tags']).all()]
+            search_context = rules_results(received_obj['query_phrase'], received_obj['rules'],
+                    query_site_names=site_names)
+            self.send({ 'type': 'websocket.send', 'text': json.dumps(search_context['result']) })
         else:
             warning('Received a WebSocket transmission with an unknown subject: {}'.format(
                 received_obj))

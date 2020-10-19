@@ -23,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = (os.environ['DEBUG'] == '1')
+DEBUG = (str(os.environ['DEBUG']) == '1')
 
 ALLOWED_HOSTS = os.environ['ASCAN_HOST_NAMES'].split()
 
@@ -174,4 +174,15 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
 # Our custom settings.
+SOLR_HOST = os.environ['SOLR_HOST']
+SOLR_PORT = os.environ['SOLR_PORT']
 SOLR_CORE = os.environ['SOLR_CORE']
+
+SOLR_FEATURE_CODES = {
+        'd': 'date_post',
+        'wl': 'word_length_i',
+        'sl': 'sent_length_i',
+        'pdl': 'parent_document_length_i',
+        'pn': 'period_number_i',
+        'awl': 'average_word_length_f'
+        }

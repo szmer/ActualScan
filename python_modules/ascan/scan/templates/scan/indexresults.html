@@ -6,12 +6,13 @@
 {% block page_title %}{% if scan_phrase %}{{ scan_phrase }}{% else %}Searching{% endif %}{% endblock %}
 
 {% block scripts %}
-<script type="application/javascript" src="{% static 'js/scanform.js' %}"></script>
 <script type="application/javascript" src="{% static 'js/chartist.min.js' %}"></script>
 <script type="application/javascript" src="{% static 'js/chartist-plugin-tooltip.min.js' %}"></script>
 <script type="application/javascript" src="{% static 'js/datepicker.min.js' %}"></script>
 <script type="application/javascript" src="{% static 'js/list.min.js' %}"></script>
 <script type="application/javascript" src="{% static 'js/typeahead.min.js' %}"></script>
+<script type="application/javascript" src="{% static 'js/scanform.js' %}"></script>
+<script type="application/javascript" src="{% static 'js/scoringrules.js' %}"></script>
 <link rel="stylesheet" href="{% static 'css/chartist.min.css' %}">
 <link rel="stylesheet" href="{% static 'css/chartist-plugin-tooltip.css' %}">
 <link rel="stylesheet" href="{% static 'css/datepicker.min.css' %}">
@@ -51,13 +52,6 @@
 </form>
 </div>
 
-{% if result.sentCount == 0 %}
-<div class="alert alert-info" role="alert">Sorry, we have no sufficient information for the specified parameters in the index.
-<noscript><a class="btn btn-primary mx-4" href="/">Try something different</a></noscript>
-<script>document.write('<a class="btn btn-primary align-middle mx-4" href="javascript:history.go(-1)">Try something different</a>')</script>
-</div>
-{% endif %}
-
 {% if possible_feedback %}
    <script type="text/javascript">
       window.FEEDBACK_SITE = '{{ possible_feedback.site }}'
@@ -78,82 +72,61 @@
 </div>
 {% endif %}
 
-{% if result.typical %}
+{% if main.result %}
 <div class="card">
   <div class="card-header">
-    Typical samples
+    Results
   </div>
-       {% for sent in result.typical %}
-       <div class="card-body p-2">
-       <p class="card-text">{{ sent.text }}</p>
-       <p class="card-text"><small class="text-muted">
-          by {{ sent.author }}{% if sent.date %} ({{ sent.date }}){% endif %}
-          at {{ sent.domain }}</small>
-       <small><br><a href="{{ sent.url }}">{{ sent.url }}</a></small>
-       {% include "widgets/feedback_prompt.html" with site_name=sent.domain %}
-       </p>
-       </div>
-       {% endfor %}
-</div>
-{% endif %}
-
-{% if result.oldest %}
-<div class="card">
-  <div class="card-header">
-    Oldest
-  </div>
-       {% for sent in result.oldest %}
-       <div class="card-body p-2">
-       <p class="card-text">{{ sent.text }}</p>
-       <p class="card-text"><small class="text-muted">by {{ sent.author }}
-          {% if sent.date %} ({{ sent.date }}){% endif %} at {{ sent.domain }} </small>
-       <small><br><a href="{{ sent.url }}">{{ sent.url }}</a></small>
-       {% include "widgets/feedback_prompt.html" with site_name=sent.domain %}
-       </p>
-       </div>
-       {% endfor %}
-</div>
-{% endif %}
-
-{% if result.phrases %}
-<div class="card">
-  <div class="card-header">
-    Frequent phrases
-  </div>
-       {% for phrase in result.phrases %}
-       <div class="card-body p-2">
-          <big class="card-title">{{ phrase.text }}</big>
-          <small>
-          <a href="/scan/search/?scan_query={{ phrase.text }}{% include 'widgets/form_link.html' with repl_field='scan_query' %}">search this</a>
-          | <a href="/scan/search/?scan_query={{ scan_phrase }}%20{{ phrase.text }}{% include 'widgets/form_link.html' with repl_field='scan_query' %}">search both</a>
+       <div id="main-results" class="list-group list-group-flush">
+       {% for item in main.result %}
+       <div class="list-group-item">
+       <a href="{{ item.url }}" class="result-url">{{ item.url }}</a><br>
+       <div class="card-text">
+          <span class="result-text">
+          {{ item.text_en }}{{ item.text_xx }}
+          </span>
+          <small class="text-muted">
+             by <span class="result-author">{{ item.author }}</span>
+             <span class="result-date">{% if item.date_post %}({{ item.date_post }}){% endif %}</span>
+             at <span class="result-site">{{ item.site_name }}</span>
           </small>
-          <ul>
-             {% for sent in phrase.typical %}
-             <li>
-                <span class="card-text">{{ sent.text }}</span>
-                <small class="text-muted">by {{ sent.author }}
-                   {% if sent.date %} ({{ sent.date }}){% endif %}
-                   at {{ sent.domain }}
-                   <br><a href="{{ sent.url }}">{{ sent.url }}</a></small>
-                {% include "widgets/feedback_prompt.html" with site_name=sent.domain %}
-             </li>
-             {% endfor %}
-          </ul>
-          {% if phrase.oldest %}
-          <div class="px-3">
-          <span class="text-muted">Oldest:</span>
-          {% for sent in phrase.oldest %}
-          <span class="card-text"><strong>({{ sent.date }})</strong>
-             {{ sent.text }}</span>
-          <small class="text-muted">by {{ sent.author }}
-             at {{ sent.domain }}
-             <br><a href="{{ sent.url }}">{{ sent.url }}</a></small>
-          {% include "widgets/feedback_prompt.html" with site_name=sent.domain %}
-          {% endfor %}
-          </div>
-          {% endif %}
+       {% include "widgets/feedback_prompt.html" with site_name=item.domain %}
+       </div>
        </div>
        {% endfor %}
+       </div>
+</div>
+{% endif %}
+
+{% if main.field_stats %}
+<div class="card">
+   <div class="list-group list-group-flush">
+      <div id="results-status"></div>
+      {% for field_name, stats in main.field_stats.items %}
+      <div class="list-item d-flex justify-content-between">
+         <div class="col-sm-6"><h4>{{ stats.full_name }}</h3></div>
+         <div>
+         {% if stats.kind == 'date' %}
+            min
+            <input name='{{ field_name }}_min' id='{{ field_name }}_min' type='text' oninput="updateScoringRules('{{ field_name }}')" value={% if rules.field_name %}'{{ rules.field_name.min}}'{% else %}'{{ stats.min }}'{% endif %} class="form-control"><br>
+         max
+         <input name='{{ field_name }}_max' id='{{ field_name }}_max' type='text' oninput="updateScoringRules('{{ field_name }}')" value={% if rules.field_name %}'{{ rules.field_name.max }}'{% else %}'{{ stats.max }}'{% endif %} class="form-control">
+         {% else %}
+            min
+            <input id='{{ field_name }}_min' type='range' step='0.01' min='{{ stats.min }}' max='{{ stats.max }}' oninput="updateScoringRules('{{ field_name }}')" value={% if rules.field_name %}'{{ rules.field_name.min}}'{% else %}'{{ stats.min }}'{% endif %}>
+         <value id='{{ field_name }}_min_val'>{% if rules.field_name %}{{ rules.field_name.min}}{% else %}{{ stats.min }}{% endif %}</value><br>
+         max
+         <input id='{{ field_name }}_max' type='range' step='0.01' min='{{ stats.min }}' max='{{ stats.max }}' oninput="updateScoringRules('{{ field_name }}')" value={% if rules.field_name %}'{{ rules.field_name.max }}'{% else %}'{{ stats.max }}'{% endif %}>
+         <value id='{{ field_name }}_max_val'>{% if rules.field_name %}{{ rules.field_name.max }}{% else %}{{ stats.max }}{% endif %}</value><br>
+         {% endif %}
+         weight
+         <input id='{{ field_name }}_weight' type='range' step='0.01' min='0' max='10' oninput="updateScoringRules('{{ field_name }}')" value={% if rules.field_name %}'{{ rules.field_name.weight }}'{% else %}'0'{% endif %}>
+         <value id='{{ field_name }}_weight_val'>{% if rules.field_name %}{{ rules.field_name.weight }}{% else %}0{% endif %}</value>
+         </div>
+      </div>
+      {% endfor %}
+   </div>
+   <div>Code: <input id="rules_code" value={{ rules_string }}></div>
 </div>
 {% endif %}
 
@@ -166,60 +139,31 @@
 </div>
 {% endif %}
 
-{% if result.topTerms %}
-<div class="card">
-  <div class="card-header">
-    Top terms
-  </div>
-       <div class="card-body p-2">
-       {% for term, freq in result.topTerms.items %}
-       {% if freq > 50 %}
-       <big><a href="/scan/search/?scan_query={{ term }}{% include 'widgets/form_link.html' with repl_field='scan_query' %}">{{ term }}</a></big>{% elif freq < 30 %}
-       <small><a href="/scan/search/?scan_query={{ term }}{% include 'widgets/form_link.html' with repl_field='scan_query' %}">{{ term }}</a></small>{% else %}
-       <a href="/scan/search/?scan_query={{ term }}{% include 'widgets/form_link.html' with repl_field='scan_query' %}">{{ term }}</a>{% endif %}<small><sub>{{ freq }}</sub>
-       <a href="/scan/search/?scan_query={{ scan_phrase }}%20{{ term }}{% include 'widgets/form_link.html' with repl_field='scan_query' %}">(+)</a></small>
-       {% endfor %}
-       </div>
-</div>
-{% endif %}
-
-{% if result.newest %}
-<div class="card">
-  <div class="card-header">
-    Newest
-  </div>
-       {% for sent in result.newest %}
-       <div class="card-body p-2">
-       <p class="card-text">{{ sent.text }}</p>
-       <p class="card-text"><small class="text-muted">by {{ sent.author }}
-          {% if sent.date %} ({{ sent.date }}){% endif %} at {{ sent.domain }} </small>
-       <small><br><a href="{{ sent.url }}">{{ sent.url }}</a></small>
-       {% include "widgets/feedback_prompt.html" with site_name=sent.domain %}
-       </p>
-       </div>
-       {% endfor %}
-</div>
-{% endif %}
-
-{% if result.atypical %}
-<div class="card">
-  <div class="card-header">
-    Other opinions
-  </div>
-       {% for sent in result.atypical %}
-       <div class="card-body p-2">
-       <p class="card-text">{{ sent.text }}</p>
-       <p class="card-text"><small class="text-muted">by {{ sent.author }}
-          {% if sent.date %} ({{ sent.date }}){% endif %} at {{ sent.domain }} </small>
-       <small><br><a href="{{ sent.url }}">{{ sent.url }}</a></small>
-       {% include "widgets/feedback_prompt.html" with site_name=sent.domain %}
-       </p>
-       </div>
-       {% endfor %}
-</div>
-{% endif %}
-</div>
-
+<script type="text/javascript">
+   window.QUERY_PHRASE = '{{ scan_phrase }}'
+   window.SITES = {{ sites }}
+   window.TAGS = {{ tags }}
+   window.RULES_STRING = '{{ main.rules_string }}'
+   window.FEATURE_CODES = {
+      {% for field_name, stats in main.field_stats.items %}'{{ field_name }}': '{{ stats.code }}',{% endfor %}
+   }
+   {% for field_name, stats in main.field_stats.items %}
+   {% if stats.kind == 'date' %}
+   $(function () {
+      $("input[name='{{ field_name }}_min']").datepicker({
+         format:'mm/dd/yyyy',
+      });
+   });
+   $(function () {
+      $("input[name='{{ field_name }}_max']").datepicker({
+         format:'mm/dd/yyyy',
+      });
+   });
+   {% endif %}
+   {% endfor %}
+   window.lastRulesMessage = new Date()
+   window.rulesMessageDelay = 1000
+</script>
 <script defer>
 var timeChartOptions = {
   labelInterpolationFnc: function(value) {

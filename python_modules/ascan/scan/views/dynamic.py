@@ -1,19 +1,19 @@
 from logging import debug, info
 import random
+import socket
 
 from django.contrib import messages
 from django.shortcuts import redirect, render
 from dynamic_preferences.registries import global_preferences_registry
 from django.views.decorators.csrf import csrf_exempt
 from ipware import get_client_ip
-import pexpect
 
 from scan.control import (maybe_issue_guest_scan_permission, request_scan, scan_progress_info,
         terminate_scan, verify_scan_permission, maybe_give_feedback_tag_site_link)
 from scan.forms import PublicScanForm, EditableScanForm
+from scan.get_results import rules_results
 from scan.utils import (
-        date_fmt, trust_level_to_numeric, omnivore_call, OmnivoreError, OmnivoreBlocked,
-        numeric_to_trust_level
+        date_fmt, trust_level_to_numeric, numeric_to_trust_level
         )
 from scan.models import ScanJob, Site, TagSiteLink
 
@@ -101,30 +101,28 @@ def search(request):
     query_site_names += [site.site_name
                 for site in Site.objects.filter(
                     tag_links__tag__in=form.cleaned_data['query_tags']).all()]
-    context = { 'scan_phrase': scan_query, 'form': form, 'can_scan': can_scan }
+    context = { 'scan_phrase': scan_query, 'form': form, 'can_scan': can_scan,
+            'sites': query_site_names, 'tags': query_tags }
+
+    # Collect the rules and convert them to Solr query fragments.
+    default_rules = 'd,*,*,3;awl,*,*,5'
+
     try:
-        omnivore_results = omnivore_call(scan_query, args=
-                '--start-date {} --end-date {} {} {}'.format(
-                    start_date, end_date,
-                    '--undated' if allow_undated else '',
-                    '--sites \'{}\''.format(' '.join(query_site_names)) if query_site_names else ''))
-    except OmnivoreBlocked:
+        context['main'] = rules_results(scan_query, default_rules, query_site_names=query_site_names)
+    except socket.timeout:
         messages.add_message(request, messages.ERROR, 'Our server seems to be overloaded now.')
         context['with_errors'] = True
         return render(request, 'scan/indexresults.html', context=context, status=503)
-    except (pexpect.TIMEOUT, OmnivoreError) as e:
-        info('Exception {} blocked getting a result from omnivore: {}'.format(type(e).__name__, e))
+    except Exception as e:
+        info('Exception {} blocked getting a result from Solr: {}'.format(type(e).__name__, e))
         messages.add_message(request, messages.ERROR, 'We experienced an internal error.')
         context['with_errors'] = True
         return render(request, 'scan/indexresults.html', context=context, status=503)
-    info('Omnivore responded for {}: {}'.format(scan_query, omnivore_results))
-    context['result'] = omnivore_results
 
     # Try to issue and add a feedback permission.
-    if (omnivore_results['sitesStats'] is not None
-            and random.random() < global_preferences['trust_levels__feedback_ask_frequency']):
+    if (random.random() < global_preferences['trust_levels__feedback_ask_frequency']):
         debug('Trying to issue a feedback permission...')
-        site_names = [item['site'] for item in omnivore_results['sitesStats']]
+        site_names = list(set(doc['site_name'] for doc in context['main']['result']))
         gradable_links = TagSiteLink.objects.filter(tag__name__in=query_tags,
                 site__site_name__in=site_names, level__gte=minimal_level).all()
         debug('{} gradable tag-site links.'.format(len(gradable_links)))
