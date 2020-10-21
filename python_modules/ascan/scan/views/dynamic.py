@@ -105,7 +105,7 @@ def search(request):
             'sites': query_site_names, 'tags': query_tags }
 
     # Collect the rules and convert them to Solr query fragments.
-    default_rules = 'd,*,*,3;awl,*,*,5'
+    default_rules = ''#'d,*,*,3;awl,*,*,5'
 
     try:
         context['main'] = rules_results(scan_query, default_rules, query_site_names=query_site_names)

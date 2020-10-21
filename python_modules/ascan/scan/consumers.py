@@ -1,5 +1,6 @@
 import json
 from logging import info, warning
+import socket
 
 from asgiref.sync import async_to_sync
 from django.db.models import F
@@ -61,9 +62,15 @@ class RulesUpdateConsumer(SyncConsumer):
             site_names += [site.site_name # add the site names from tags
                 for site in Site.objects.filter(
                     tag_links__tag__in=received_obj['tags']).all()]
-            search_context = rules_results(received_obj['query_phrase'], received_obj['rules'],
-                    query_site_names=site_names)
-            self.send({ 'type': 'websocket.send', 'text': json.dumps(search_context['result']) })
+            try:
+                search_context = rules_results(received_obj['query_phrase'], received_obj['rules'],
+                        query_site_names=site_names)
+                self.send({ 'type': 'websocket.send', 'text': json.dumps(search_context['result']) })
+            except socket.timeout:
+                self.send({ 'type': 'websocket.send', 'text': '' })
+            except Exception as e:
+                info('Exception {} blocked getting a result from Solr: {}'.format(type(e).__name__, e))
+                self.send({ 'type': 'websocket.send', 'text': '' })
         else:
             warning('Received a WebSocket transmission with an unknown subject: {}'.format(
                 received_obj))

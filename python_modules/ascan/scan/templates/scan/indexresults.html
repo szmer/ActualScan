@@ -103,14 +103,14 @@
    <div class="list-group list-group-flush">
       <div id="results-status"></div>
       {% for field_name, stats in main.field_stats.items %}
-      <div class="list-item d-flex justify-content-between">
+      <div class="list-group-item d-flex justify-content-between">
          <div class="col-sm-6"><h4>{{ stats.full_name }}</h3></div>
          <div>
          {% if stats.kind == 'date' %}
             min
-            <input name='{{ field_name }}_min' id='{{ field_name }}_min' type='text' oninput="updateScoringRules('{{ field_name }}')" value={% if rules.field_name %}'{{ rules.field_name.min}}'{% else %}'{{ stats.min }}'{% endif %} class="form-control"><br>
+            <input name='{{ field_name }}_min' id='{{ field_name }}_min' type='text' oninput="updateScoringRules('{{ field_name }}')" min='{{ stats.min }}' value={% if rules.field_name %}'{{ rules.field_name.min}}'{% else %}'{{ stats.min }}'{% endif %} class="form-control"><br>
          max
-         <input name='{{ field_name }}_max' id='{{ field_name }}_max' type='text' oninput="updateScoringRules('{{ field_name }}')" value={% if rules.field_name %}'{{ rules.field_name.max }}'{% else %}'{{ stats.max }}'{% endif %} class="form-control">
+         <input name='{{ field_name }}_max' id='{{ field_name }}_max' type='text' oninput="updateScoringRules('{{ field_name }}')" max='{{ stats.max }}' value={% if rules.field_name %}'{{ rules.field_name.max }}'{% else %}'{{ stats.max }}'{% endif %} class="form-control">
          {% else %}
             min
             <input id='{{ field_name }}_min' type='range' step='0.01' min='{{ stats.min }}' max='{{ stats.max }}' oninput="updateScoringRules('{{ field_name }}')" value={% if rules.field_name %}'{{ rules.field_name.min}}'{% else %}'{{ stats.min }}'{% endif %}>
@@ -120,13 +120,15 @@
          <value id='{{ field_name }}_max_val'>{% if rules.field_name %}{{ rules.field_name.max }}{% else %}{{ stats.max }}{% endif %}</value><br>
          {% endif %}
          weight
-         <input id='{{ field_name }}_weight' type='range' step='0.01' min='0' max='10' oninput="updateScoringRules('{{ field_name }}')" value={% if rules.field_name %}'{{ rules.field_name.weight }}'{% else %}'0'{% endif %}>
+         <input id='{{ field_name }}_weight' type='range' step='0.01' min='0' max='50' oninput="updateScoringRules('{{ field_name }}')" value={% if rules.field_name %}'{{ rules.field_name.weight }}'{% else %}'1'{% endif %}>
          <value id='{{ field_name }}_weight_val'>{% if rules.field_name %}{{ rules.field_name.weight }}{% else %}0{% endif %}</value>
          </div>
       </div>
       {% endfor %}
    </div>
-   <div>Code: <input id="rules_code" value={{ rules_string }}></div>
+   <div class="list-group-item d-flex justify-content-between">
+      Code: <input id="rules_code" value="{{ rules_string }}" oninput="updateScoringRules('ALL')">
+   </div>
 </div>
 {% endif %}
 
