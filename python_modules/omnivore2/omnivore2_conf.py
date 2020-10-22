@@ -13,3 +13,5 @@ LANGUAGES_SUPPORTED = set(['en'])
 
 MINIMUM_CONTEXT_SIZE = 200
 MAXIMUM_CONTEXT_SIZE = 800
+# the time, in hours, after which a text period can get a new contextual analysis
+RECLASSIFICATION_TIME = 72

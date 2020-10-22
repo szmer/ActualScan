@@ -5,9 +5,9 @@ RUN apt-get update && apt-get install -qq -y \
 
 WORKDIR /opt/
 
-COPY python_modules/omnivore2 omnivore2
-
 WORKDIR /opt/omnivore2
 COPY python_modules/requirements.omnivore2.txt requirements.txt
 RUN pip install -r requirements.txt
 RUN python -m spacy download en_core_web_sm
+
+COPY python_modules/omnivore2/* /opt/omnivore2/

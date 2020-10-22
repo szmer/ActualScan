@@ -5,6 +5,7 @@ from flask import Flask, request
 
 from omnivore2_conf import SOLR_HOST, SOLR_PORT, SOLR_CORE
 from stationary_analysis import stationary_analysis_applied
+from workers import start_workers
 
 app = Flask('omnivore2')
 
@@ -16,3 +17,5 @@ def eat():
             body=json.dumps(periods_to_submit),
             headers={'Content-type': 'application/json'})
     return 'ok'
+
+start_workers()

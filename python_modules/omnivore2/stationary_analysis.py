@@ -1,11 +1,32 @@
 from copy import copy
 
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+
 from nlp_setup import nlp
+from omnivore2_conf import LANGUAGES_SUPPORTED
 from period import lang_text_field_code, period_text, periods_from_spacy_sentences
 
-def add_period_average_word_length(period, period_doc):
+vader_analyzer = SentimentIntensityAnalyzer()
+
+def add_average_word_length(period, period_doc):
     # this should be a float
     period['average_word_length_f'] = sum([len(token) for token in period_doc]) / len(period_doc)
+
+def add_pos_proportions(period, period_doc):
+    if period['language_code'] in LANGUAGES_SUPPORTED:
+        pos_entries = [token.pos_ for token in period_doc]
+        period['adjectives_proportion_f'] = pos_entries.count('ADJ') / len(period_doc)
+        period['nouns_proportion_f'] = pos_entries.count('NOUN') / len(period_doc)
+        period['proper_names_proportion_f'] = pos_entries.count('PROPN') / len(period_doc)
+        period['verbs_proportion_f'] = pos_entries.count('VERB') / len(period_doc)
+
+def add_sentiment_info(period, period_doc):
+    if period['language_code'] == 'en':
+        polarity = vader_analyzer.polarity_scores(period_text(period))
+        period['positive_polarity_f'] = polarity['pos']
+        period['neutral_polarity_f'] = polarity['neu']
+        period['negative_polarity_f'] = polarity['neg']
+        period['compound_polarity_f'] = polarity['compound']
 
 def periods_from_solr_document(doc_dict):
     spacy_doc = nlp(doc_dict['text'])
@@ -37,15 +58,28 @@ def periods_from_solr_document(doc_dict):
         period_dict['parent_document_length_i'] = len(all_period_dicts)
     return all_period_dicts 
 
-STATIONARY_ANALYTIC_FUNS = [add_period_average_word_length]
+STATIONARY_ANALYTIC_FUNS = {
+        'average_word_length_f': add_average_word_length,
+
+        'positive_polarity_f': add_sentiment_info,
+        'neutral_polarity_f': add_sentiment_info,
+        'negative_polarity_f': add_sentiment_info,
+        'compound_polarity_f': add_sentiment_info,
+
+        'adjectives_proportion_f': add_pos_proportions,
+        'nouns_proportion_f': add_pos_proportions,
+        'proper_names_proportion_f': add_pos_proportions,
+        'verbs_proportion_f': add_pos_proportions,
+        }
 
 def stationary_analysis_applied(doc_dicts):
     doc_period_dicts = [periods_from_solr_document(doc_dict) for doc_dict in doc_dicts]
     result_dicts = []
     for period_dicts in doc_period_dicts: # process the periods from each document
         for period in period_dicts:
-            period_doc = nlp(period_text(period))
-            for analysis_fun in STATIONARY_ANALYTIC_FUNS:
-                analysis_fun(period, period_doc)
+            spacy_period_doc = nlp(period_text(period))
+            for field_name, analysis_fun in STATIONARY_ANALYTIC_FUNS.items():
+                if not field_name in period:
+                    analysis_fun(period, spacy_period_doc)
             result_dicts.append(period)
     return result_dicts 

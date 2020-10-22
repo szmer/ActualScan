@@ -3,10 +3,14 @@ import http.client
 import json
 from logging import debug, info
 from urllib import parse
+import os
+
+from django.conf import settings
+from redis import Redis
 
 from scan.utils import date_fmt
 
-from django.conf import settings
+redis = Redis(host='redis', port=6379, db=0, password=os.environ['REDIS_PASS'])
 
 def rules_results(scan_query, rules, query_site_names=''):
     context = dict()
@@ -53,6 +57,8 @@ def rules_results(scan_query, rules, query_site_names=''):
     response_json = json.loads(response.read().decode('utf-8'))
     if 'error' in response_json:
         raise ValueError('Solr error in {}'.format(response_json))
+    # Only notify omnivore2 if we succeeded.
+    redis.lpush('queue:index_query', solr_address) # push it for omnivore2 to catch and process
     debug('Solr responded for {}: {}'.format(scan_query, response_json))
     context['result'] = response_json['response']['docs']
 
