@@ -59,6 +59,7 @@ class RulesUpdateConsumer(SyncConsumer):
         received_obj = json.loads(event['text'])
         if received_obj['subject'] == 'rules_results':
             site_names = received_obj['sites']
+            info(received_obj['rules'])
             site_names += [site.site_name # add the site names from tags
                 for site in Site.objects.filter(
                     tag_links__tag__in=received_obj['tags']).all()]

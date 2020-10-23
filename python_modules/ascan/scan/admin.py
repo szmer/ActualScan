@@ -1,7 +1,8 @@
 from django.contrib import admin
 
 from .models import (
-        Site, Tag, TagSiteLink, ScrapeRequest, ScanJob, ScanPermission, FeedbackPermission
+        Site, Tag, TagSiteLink, ScrapeRequest, ScanJob, ScanPermission, FeedbackPermission,
+        ResultRule
         )
 
 class PermissionAdmin(admin.ModelAdmin):
@@ -21,3 +22,4 @@ admin.site.register(FeedbackPermission, PermissionAdmin)
 admin.site.register(ScanPermission, PermissionAdmin)
 admin.site.register(ScrapeRequest, ScrapeRequestAdmin)
 admin.site.register(ScanJob, ScanJobAdmin)
+admin.site.register(ResultRule)

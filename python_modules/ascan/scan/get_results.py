@@ -14,7 +14,6 @@ redis = Redis(host='redis', port=6379, db=0, password=os.environ['REDIS_PASS'])
 
 def rules_results(scan_query, rules, query_site_names=''):
     context = dict()
-    context['rules_string'] = rules
     context['rules'] = {}
     solr_filter_terms = []
     solr_boost_terms = []
@@ -34,7 +33,11 @@ def rules_results(scan_query, rules, query_site_names=''):
                     int(float(max_term)) if max_term != '*' else '*'))
             else:
                 solr_filter_terms.append('{}: [{} TO {}]'.format(field_name, min_term, max_term))
-            solr_boost_terms.append('sum(0.001,mul({}, {}))'.format(field_name,  boost_term))
+            try:
+                if float(boost_term) != 0:
+                    solr_boost_terms.append('sum(0.001,mul({}, {}))'.format(field_name, boost_term))
+            except ValueError:
+                pass
             context['rules'][field_name] = { 'min': min_term, 'max': max_term,
                     'weight': boost_term }
 

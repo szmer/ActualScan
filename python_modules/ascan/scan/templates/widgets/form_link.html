@@ -1,1 +1,1 @@
-{% load scan_extras %}{% for field in form %}{% if field.html_name != repl_field and field.value %}&{{ field | GET_query }}{% endif %}{% endfor %}
+{% load scan_extras %}{% for field in form %}{% if field.html_name != repl_field and field.html_name != repl_field2 and field.value %}&{{ field | GET_query }}{% endif %}{% endfor %}

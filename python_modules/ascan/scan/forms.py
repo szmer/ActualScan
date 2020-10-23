@@ -1,23 +1,10 @@
-from datetime import datetime, timedelta, timezone
-
 from django import forms
 from django.db.models import Count
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Row, Column, HTML, Field
 from crispy_forms.bootstrap import InlineCheckboxes
-from dynamic_preferences.registries import global_preferences_registry
 
 from scan.models import Site, Tag
-from scan.widgets import MonthPickerInput
-
-def get_default_timedelta():
-    global_preferences = global_preferences_registry.manager()
-    return (datetime.now(timezone.utc) -  timedelta(
-            weeks=global_preferences['index_searching__default_scan_timedelta_start'])
-            ).strftime('%m/%Y')
-
-def get_next_month():
-    return (datetime.now(timezone.utc) +  timedelta(weeks=5)).strftime('%m/%Y')
 
 class PublicScanForm(forms.Form):
     scan_query = forms.CharField(label='Search for')
@@ -31,19 +18,8 @@ class PublicScanForm(forms.Form):
             label='Minimal trustworthiness level',
             choices=[(x, x) for x in ['spam', 'community', 'respected', 'base']],
             initial='community')
-    start_date = forms.DateTimeField(
-            label='Go through sites from this time onwards',
-            input_formats=['%m/%Y'],
-            widget=MonthPickerInput,
-            initial=get_default_timedelta
-            )
-    end_date = forms.DateTimeField(
-            label='Go through sites ending on that date',
-            input_formats=['%m/%Y'],
-            widget=MonthPickerInput,
-            initial=get_next_month
-            )
-    allow_undated = forms.BooleanField(initial=True, required=False) # don't require to allow False
+    tab = forms.CharField(required=False) # the rule tab to show
+    rule = forms.CharField(required=False) # the string rule, overrides the tab in terms of rule
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -58,10 +34,7 @@ class PublicScanForm(forms.Form):
                     template='widgets/form_searchable_multiplechoicefield.html')),
                     Column(InlineCheckboxes('query_sites', css_class='list', style='max-height: 200px',
                         template='widgets/form_searchable_multiplechoicefield.html'))),
-                Row(Column('start_date'),
-                    Column('end_date')),
-                Row(Column('allow_undated'),
-                    Column('minimal_level')),
+                Row(Column('minimal_level')),
                 HTML('<button id="search-button" type="submit" class="btn btn-primary btn-lg">Search the index</button>'
                     '{% if can_scan %} '
                     '<button id="scan-button" name="is_scan" value="true" type="submit" class="btn btn-primary btn-lg">Scan the Web</button>'
@@ -74,19 +47,6 @@ class EditableScanForm(forms.Form):
     The form visible with the index result, where the user can refine their query.
     """
     scan_query = forms.CharField(label='Search for')
-    start_date = forms.DateTimeField(
-            label='Start',
-            input_formats=['%m/%Y'],
-            widget=MonthPickerInput,
-            initial=get_default_timedelta
-            )
-    end_date = forms.DateTimeField(
-            label='End',
-            input_formats=['%m/%Y'],
-            widget=MonthPickerInput,
-            initial=get_next_month
-            )
-    allow_undated = forms.BooleanField(initial=True, required=False) # don't require to allow False
     query_tags = forms.ModelMultipleChoiceField(Tag.objects.annotate(Count('site_links')).order_by(
         '-site_links__count').all(),
         label='Tags', to_field_name='name', required=False)
@@ -97,6 +57,8 @@ class EditableScanForm(forms.Form):
             label='Minimal level',
             choices=[(x, x) for x in ['spam', 'community', 'respected', 'base']],
             initial='community')
+    tab = forms.CharField(required=False) # the rule tab to show
+    rule = forms.CharField(required=False) # the string rule, overrides the tab in terms of rule
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -113,10 +75,7 @@ class EditableScanForm(forms.Form):
                     Column(InlineCheckboxes('query_sites', css_class='list',
                         template='widgets/form_searchable_multiplechoicefield.html',
                         style='max-height: 100px'))),
-                Row(Column('start_date'),
-                    Column('end_date'),
-                    Column('allow_undated'),
-                    Column('minimal_level')),
+                Row(Column('minimal_level')),
                 HTML('<button type="submit" id="search-button" class="btn btn-primary btn-lg">Search the index</button>'
                     '{% if can_scan %} '
                     '<button name="is_scan" id="scan-button" value="true" type="submit" class="btn btn-primary btn-lg">Scan the Web</button>'

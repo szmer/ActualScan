@@ -179,10 +179,27 @@ SOLR_PORT = os.environ['SOLR_PORT']
 SOLR_CORE = os.environ['SOLR_CORE']
 
 SOLR_FEATURE_CODES = {
+        'adj': 'adjectives_proportion_f',
+        'awl': 'average_word_length_f',
+        'awtf': 'average_word_tf_idf_f',
+        'cop': 'compound_polarity_f',
         'd': 'date_post',
-        'wl': 'word_length_i',
-        'sl': 'sent_length_i',
+        'neg': 'negative_polarity_f',
+        'neu': 'neutral_polarity_f',
+        'non': 'nouns_proportion_f',
         'pdl': 'parent_document_length_i',
         'pn': 'period_number_i',
-        'awl': 'average_word_length_f'
+        'pos': 'positive_polarity_f',
+        'prpn': 'proper_names_proportion_f',
+        'sl': 'sent_length_i',
+        'sld': 'sentence_length_deviation_f',
+        'wl': 'word_length_i',
+        'veb': 'verbs_proportion_f',
+        }
+
+DEFAULT_RESULT_RULE = {
+        'name': 'Standard',
+        'slug': 'standard',
+        'rule_string': 'sl,*,*,2;wl,9,*,5;awtf,*,0.4,2;neg,*,0.35,0;pos,*,0.45,0',
+        'color': 'fefefe'
         }

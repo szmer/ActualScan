@@ -47,7 +47,7 @@ function updateScoringRules(fieldName) {
    for (var ruleFieldN in strRuleFields) {
       var ruleField = strRuleFields[ruleFieldN]
       var parts = ruleField.split(',')
-      rules[parts[0]] = parts.slice(1)
+      rules[parts[0]] = parts
    }
 
    if (fieldName != 'ALL') {
@@ -62,13 +62,13 @@ function updateScoringRules(fieldName) {
       var maxValue = (document.querySelector('#'+fieldName+'_max').value == document.querySelector('#'+fieldName+'_max').getAttribute('max')
          ? '*' : document.querySelector('#'+fieldName+'_max').value)
       rules[window.FEATURE_CODES[fieldName]] = [
-         minValue, maxValue,
+         window.FEATURE_CODES[fieldName], minValue, maxValue,
          document.querySelector('#'+fieldName+'_weight').value
       ]
       // Convert rules to the code string.
       var rulesStr = ''
-      for (var ruleFieldCode in rules) {
-         rulesStr += ruleFieldCode + ',' + rules[ruleFieldCode].join(',') + ';'
+      for (var fieldCode in rules) {
+         rulesStr += rules[fieldCode].join(',') + ';'
       }
       rulesStr = rulesStr.slice(0, rulesStr.length-1) // strip the final semicolon
       window.RULES_STRING = rulesStr
@@ -78,7 +78,7 @@ function updateScoringRules(fieldName) {
    else {
       for (var fieldName in window.FEATURE_CODES) {
          var fieldCode = window.FEATURE_CODES[fieldName]
-         var localRules = (rules[ruleFieldCode] || [fieldCode, '*', '*', '0'])
+         var localRules = (rules.hasOwnProperty(fieldCode) ? rules[fieldCode] : [fieldCode, '*', '*', '0'])
          document.querySelector('#'+fieldName+'_min').value = localRules[1] == '*' ? document.querySelector('#'+fieldName+'_min').getAttribute('min') : localRules[1]
          document.querySelector('#'+fieldName+'_max').value = localRules[2] == '*' ? document.querySelector('#'+fieldName+'_max').getAttribute('max') : localRules[2]
          if (fieldName.search('date') == -1) {

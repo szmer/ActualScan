@@ -13,7 +13,10 @@ services:
         - '.env'
      depends_on:
         - postgres
-        - speechtractor
+        - solr
+     volumes:
+        # lets us persist migrations and change templates without restarting
+        - ./python_modules/ascan/:/opt/ascan/ascan/
 
   maintenance:
      build:

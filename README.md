@@ -18,10 +18,10 @@ docker kill $(docker ps -q)
 NOTE on docker-compose you need to those manually (to allow you to delay migrations in development),
 ansible script will always migrate for you automatically
 ```bash
-docker-compose run website python manage.py makemigrations
-docker-compose run website python manage.py migrate auth
-docker-compose run website python manage.py migrate scan xxxx
-docker-compose run website python manage.py migrate
+docker-compose exec website python manage.py makemigrations
+docker-compose exec website python manage.py migrate auth
+docker-compose exec website python manage.py migrate scan xxxx
+docker-compose exec website python manage.py migrate
 ```
 
 # Testing

@@ -2,6 +2,7 @@ from logging import debug
 
 from django.contrib.auth.models import User
 from django.db import models
+from django.conf import settings
 from django.utils.timezone import now
 
 TRUST_LEVELS = [(x, x) for x in [
@@ -124,10 +125,6 @@ class ScanJob(models.Model):
     # This controls whether scrapy should also save raw copies of html to disk. Setting spread to
     # requests.
     save_copies = models.BooleanField(default=False)
-    # These aren't currently used in scans, but are needed for going to the index results.
-    start_date = models.CharField(max_length=32, default='01/2010') # the value from the form
-    end_date = models.CharField(max_length=32, default='01/2030')
-    allow_undated = models.BooleanField(default=True)
 
     def change_status(self, status):
         self.status = status
@@ -201,3 +198,27 @@ class FeedbackPermission(models.Model):
     user_ip = models.CharField(max_length=64, null=True, blank=True)
     time_issued = models.DateTimeField(auto_now_add=True)
     is_used = models.BooleanField(default=False)
+
+class ResultRule(models.Model):
+    """
+    A ready-made rule available for users when scoring the index results.
+    """
+    name = models.CharField(max_length=128, unique=True)
+    slug = models.CharField(max_length=128, unique=True)
+    rule_string = models.CharField(max_length=2048)
+    color = models.CharField(max_length=6)
+
+    def __repr__(self):
+        return 'rule {}/{}/{}'.format(self.pk, self.name, self.rule_string)
+
+    def __str__(self):
+        return 'rule {}/{}/{}'.format(self.pk, self.name, self.rule_string)
+
+# Create the default result rule.
+try:
+    ResultRule.objects.get(name=settings.DEFAULT_RESULT_RULE['name'])
+except ResultRule.DoesNotExist:
+    ResultRule.objects.create(name=settings.DEFAULT_RESULT_RULE['name'],
+            slug=settings.DEFAULT_RESULT_RULE['slug'],
+            rule_string=settings.DEFAULT_RESULT_RULE['rule_string'],
+            color=settings.DEFAULT_RESULT_RULE['color'])
