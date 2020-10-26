@@ -76,7 +76,8 @@ class EditRequestSiteForm(ModelForm):
             required=False)
     tags = forms.ModelMultipleChoiceField(Tag.objects.all(), label='')
     record_type = forms.CharField()
-    target = forms.CharField()
+    target_id = forms.IntegerField()
+    comment = forms.CharField(required=False)
 
     class Meta:
         model = Site
@@ -96,7 +97,8 @@ class EditRequestTagForm(ModelForm):
     This form is rendered 'manually' in the site details template, this class is used for validation,
     """
     record_type = forms.CharField()
-    target = forms.CharField()
+    target_id = forms.IntegerField()
+    comment = forms.CharField(required=False)
 
     class Meta:
         model = Tag

@@ -19,7 +19,11 @@ tags
 # Persistent undo
 [._]*.un~
 
-## Docker
+# Python
+__pycache__/
+*.py[cod]
+
+# Docker
 .env
 
 # Actual settings for Reddis, Celery (leave examples)

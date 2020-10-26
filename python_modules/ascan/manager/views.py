@@ -10,15 +10,17 @@ from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.db import Error, IntegrityError
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import ListView
-from django.views.generic.detail import DetailView
 from dynamic_preferences.registries import global_preferences_registry
 
 from manager.forms import SiteForm, TagForm, EditRequestSiteForm, EditRequestTagForm, BlocklistForm
-from manager.models import EditSuggestion, BlockedSite
+from manager.models import EditSuggestion, BlockedSite, EDIT_SUGGESTION_STATUSES
+from manager.utils import relevance_table_from_suggestions
 from scan.models import Site, Tag, TagSiteLink, ScanJob, ScrapeRequest
 from scan.templatetags.scan_extras import format_trust_level
+from scan.utils import trust_level_to_numeric
 
 class HomeURLParsingError(Error):
     pass
@@ -66,15 +68,21 @@ class TagSearchList(ListView):
         context['q'] = self.request.GET['q']
         return context
 
-class TagDetails(DetailView):
-    model = Tag
-    context_object_name = 'tag'
+def tag_details(request, pk):
+    tag = Tag.objects.get(id=pk)
+    form = EditRequestTagForm(instance=tag)
+    suggestions = EditSuggestion.objects.filter(
+            record_type='tag', target=tag.id).order_by('-date_submitted')
+    context = { 'tag': tag, 'form': form, 'suggestions': suggestions }
+    return render(request, 'scan/tag_detail.html', context=context)
 
 def site_details(request, pk):
     site = Site.objects.get(id=pk)
     form = EditRequestSiteForm(instance=site,
             initial={'tags': [link.tag for link in site.tag_links.all()]})
-    context = { 'site': site, 'form': form }
+    suggestions = EditSuggestion.objects.filter(
+            record_type='site', target=site.id).order_by('-date_submitted')
+    context = { 'site': site, 'form': form, 'suggestions': suggestions }
     return render(request, 'scan/site_detail.html', context=context)
 
 def tagname(request, tag_name):
@@ -253,7 +261,7 @@ def suggest(request):
     """
     The view expects record_type (site, tag) and target (i.e. the name of the object) GET args.
     """
-    context = { 'record_type': request.GET['record_type'], 'target': request.GET['target'] }
+    context = { 'record_type': request.GET['record_type'], 'target_id': request.GET['target_id'] }
     suggestion_dict = {} # we'll fill it only with the values that are changed
     form_ok = False
     # Process possible suggestion types.
@@ -261,34 +269,48 @@ def suggest(request):
         form = EditRequestSiteForm(data=request.GET)
         context['form'] = form
         if form.is_valid():
-            form_ok = True
-            site = Site.objects.get(site_name=form.cleaned_data['target'])
-            context['target_id'] = site.id
-            for field in ['site_type', 'source_type', 'homepage_url', 'search_pointer']:
-                if form.cleaned_data[field] != getattr(site, field):
-                    # This field is hidden and non-suggestable for reddit sites.
-                    if not (field == 'search_pointer' and site.site_type == 'reddit'):
-                        suggestion_dict[field] = form.cleaned_data[field]
-            if form.cleaned_data['tags'] != [link.tag for link in site.tag_links.all()]:
-                suggestion_dict['tags'] = ' '.join([tag.name for tag in form.cleaned_data['tags']])
+            try:
+                site = Site.objects.get(id=form.cleaned_data['target_id'])
+                form_ok = True
+                context['target'] = site.site_name
+                for field in ['site_type', 'source_type', 'homepage_url', 'search_pointer']:
+                    if form.cleaned_data[field] != getattr(site, field):
+                        # This field is hidden and non-suggestable for reddit sites.
+                        if not (field == 'search_pointer' and site.site_type == 'reddit'):
+                            suggestion_dict[field] = form.cleaned_data[field]
+                if set(form.cleaned_data['tags']) != set([link.tag for link in site.tag_links.all()]):
+                    suggestion_dict['tags'] = ' '.join([tag.name for tag in form.cleaned_data['tags']])
+            except Site.DoesNotExist:
+                pass
     elif request.GET['record_type'] == 'tag':
         form = EditRequestTagForm(data=request.GET)
         context['form'] = form
         if form.is_valid():
-            form_ok = True
-            tag = Tag.objects.get(name=form.cleaned_data['target'])
-            context['target_id'] = tag.id
-            if form.cleaned_data['description'] != tag.description:
-                suggestion_dict['description'] = form.cleaned_data['description']
+            try:
+                tag = Tag.objects.get(id=form.cleaned_data['target_id'])
+                form_ok = True
+                context['target'] = tag.name
+                if form.cleaned_data['description'] != tag.description:
+                    suggestion_dict['description'] = form.cleaned_data['description']
+            except Tag.DoesNotExist:
+                pass
     else:
         warning('Unknown suggestion record type {}'.format(request.GET['record_type']))
     # Use the assembled information to possibly create the suggestion.
     if form_ok:
         # When a change was actually requested:
         if suggestion_dict:
-            suggestion_dict['target'] = form.cleaned_data['target']
-            suggestion_dict['record_type'] = form.cleaned_data['record_type']
-            EditSuggestion.objects.create(creator=request.user, suggestion=suggestion_dict)
+            if form.cleaned_data['comment']:
+                EditSuggestion.objects.create(creator=request.user, suggestion=suggestion_dict,
+                        record_type=form.cleaned_data['record_type'],
+                        target=form.cleaned_data['target_id'],
+                        target_name=context['target'],
+                        comment=form.cleaned_data['comment'])
+            else:
+                EditSuggestion.objects.create(creator=request.user, suggestion=suggestion_dict,
+                        record_type=form.cleaned_data['record_type'],
+                        target=form.cleaned_data['target_id'],
+                        target_name=context['target'])
             messages.add_message(request, messages.SUCCESS,
                     'We\'ve received your suggestion. Thank you!')
         else:
@@ -304,19 +326,73 @@ def suggest(request):
 def suggestionlist(request):
     suggestions = EditSuggestion.objects.filter(
             creator=request.user).order_by('-date_submitted').all()
-    obj_ids = []
-    for sug in suggestions:
-        if not 'target' in sug.suggestion or not 'record_type' in sug.suggestion:
-            obj_ids.append(-1)
-            continue
-        if sug.suggestion['record_type'] == 'site':
-            obj_ids.append(Site.objects.get(site_name=sug.suggestion['target']).id)
-        elif sug.suggestion['record_type'] == 'tag':
-            obj_ids.append(Tag.objects.get(name=sug.suggestion['target']).id)
-        else:
-            obj_ids.append(-1)
     return render(request, 'manager/suggestionlist.html',
-            { 'suggestions': zip(suggestions, obj_ids) })
+            { 'suggestions': suggestions })
+
+# (staff_member_required set in urls.py)
+class SuggestionDecisions(ListView):
+    model = EditSuggestion
+    context_object_name = 'suggestions'
+    paginate_by = 25
+
+    template_name = 'manager/suggestion_decisions.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['statuses'] = EDIT_SUGGESTION_STATUSES
+        context['relevant'] = relevance_table_from_suggestions(context['suggestions'])
+        return context
+
+@staff_member_required
+def decide_mod_comment(request):
+    suggestion = EditSuggestion.objects.get(id=request.GET['suggestion_id'])
+    suggestion.mod_comment = request.GET['new_comment']
+    if not suggestion.mod_activity:
+        suggestion.mod_activity = { 'mod_comment': request.user.id }
+    else:
+        suggestion.mod_activity['mod_comment'] = request.user.id
+    suggestion.save()
+    return HttpResponse('ok')
+
+@staff_member_required
+def decide_status(request):
+    suggestion = EditSuggestion.objects.get(id=request.GET['suggestion_id'])
+    suggestion.status = request.GET['new_status']
+    if not suggestion.mod_activity:
+        suggestion.mod_activity = { 'status': request.user.id }
+    else:
+        suggestion.mod_activity['status'] = request.user.id
+    suggestion.save()
+    return HttpResponse('ok')
+
+@staff_member_required
+def decide_change(request):
+    suggestion = EditSuggestion.objects.get(id=request.GET['suggestion_id'])
+    if suggestion.record_type == 'tag':
+        tag = Tag.objects.get(id=suggestion.target)
+        setattr(tag, request.GET['field'], suggestion.suggestion[request.GET['field']])
+        tag.save()
+    elif suggestion.record_type == 'site':
+        site = Site.objects.get(id=suggestion.target)
+        if request.GET['field'] != 'tags':
+            setattr(site, request.GET['field'], suggestion.suggestion[request.GET['field']])
+            site.save()
+        else:
+            desired_tags = set(suggestion.suggestion['tags'].split(' '))
+            existing_tags = set(link.tag.name for link in site.tag_links.all())
+            for desired_tag in desired_tags:
+                if not desired_tag in existing_tags:
+                    TagSiteLink.objects.create(site=site, tag=Tag.objects.get(name=desired_tag),
+                            level=trust_level_to_numeric('respected'))
+            for existing_tag in existing_tags:
+                if not existing_tag in desired_tags:
+                    TagSiteLink.objects.filter(name=existing_tag).delete()
+    if not suggestion.mod_activity:
+        suggestion.mod_activity = { 'change': request.user.id }
+    else:
+        suggestion.mod_activity['change'] = request.user.id
+    suggestion.save()
+    return HttpResponse('ok')
 
 @staff_member_required
 def loadblocklist(request):

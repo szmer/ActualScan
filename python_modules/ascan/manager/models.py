@@ -10,6 +10,10 @@ EDIT_SUGGESTION_STATUSES = [(x, x) for x in [
     'rejected',
     'saved for later'
     ]]
+EDIT_SUGGESTION_RECORD_TYPES = [(x, x) for x in [
+    'site',
+    'tag'
+    ]]
 
 class EditSuggestion(models.Model):
     """
@@ -18,21 +22,24 @@ class EditSuggestion(models.Model):
     creator = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='suggestions',
             null=True)
     date_submitted = models.DateTimeField(auto_now_add=True)
-    # Fields: record_type (site, tag, tag-site link), target, target2, fields related to what should
-    # be changed
+    record_type = models.CharField(max_length=16, choices=EDIT_SUGGESTION_RECORD_TYPES)
+    target = models.IntegerField() # id of the object in question
+    target_name = models.CharField(max_length=1024)
+    # fields related to what should be changed
     suggestion = JSONField()
     date_responded = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=32, choices=EDIT_SUGGESTION_STATUSES, default='received')
+    comment = models.CharField(max_length=2048, null=True, blank=True)
+    mod_comment = models.CharField(max_length=2048, null=True, blank=True)
+    mod_activity = JSONField(default=dict, null=True, blank=True)
 
     def __repr__(self):
         return 'suggestion for {} from {} ({})'.format(
-                self.suggestion['target'] if 'target' in self.suggestion else '?', self.creator,
-                self.id)
+                self.target_name, self.creator, self.id)
 
     def __str__(self):
         return 'suggestion for {} from {} ({})'.format(
-                self.suggestion['target'] if 'target' in self.suggestion else '?', self.creator,
-                self.id)
+                self.target_name, self.creator, self.id)
 
 class BlockedSite(models.Model):
     """

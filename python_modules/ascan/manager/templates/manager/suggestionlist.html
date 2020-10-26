@@ -8,25 +8,27 @@
 Here you can review your suggestions for changes to the index and see the responses to them.
 
 <div class="list-group list-group-flush">
-   {% for sug, obj_id in suggestions %}
+   {% for sug in suggestions %}
    <div
       class="list-group-item list-group-item-action">
       <div class="d-flex justify-content-between align-items-center">
          <span>
-            {% if sug.suggestion.record_type == 'site' %}
-            for <strong><a href="/manager/site/{{ obj_id }}">{{ sug.suggestion.target }}</a></strong>
-            {% elif sug.suggestion.record_type == 'tag' %}
-            for <strong><a href="/manager/tag/{{ obj_id }}">{{ sug.suggestion.target }}</a></strong>
+            {% if sug.record_type == 'site' %}
+            for <strong><a href="/manager/site/{{ sug.target }}">{{ sug.target_name }}</a></strong>
+            {% elif sug.record_type == 'tag' %}
+            for <strong><a href="/manager/tag/{{ sug.target }}">{{ sug.target_name }}</a></strong>
             {% endif %}
             <small>({{ sug.date_submitted }})</small>
          </span>
          <span class="badge badge-secondary badge-pill">{{ sug.status }}</span>
       </div>
       <ul>
-      {% for field, value in sug.suggestion.items %}{% if field != 'target' and field != 'record_type' %}
+      {% for field, value in sug.suggestion.items %}
       <li>change {{ field }} to <em>{{ value }}</em></li>
-      {% endif %}{% endfor %}
+      {% endfor %}
       </ul>
+      <em class="text-muted">{{ sug.comment }}</em>
+      {% if sug.mod_comment %}<br>[&ndash; <em class="text-muted">{{ sug.mod_comment }}</em>]{% endif %}
    </div>
   {% endfor %}
 </div>

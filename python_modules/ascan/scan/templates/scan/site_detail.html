@@ -45,7 +45,40 @@
       </tr>
    </table>
    <input type="hidden" name="record_type" value="site">
-   <input type="hidden" name="target" value="{{ site.site_name }}">
+   <input type="hidden" name="target_id" value="{{ site.id }}">
+   <div class="p-2">
+   <label for="suggestion-comment">If you want, you can add a comment to your change suggestion.</label>
+   <input class="form-control" name="comment" maxlength=2048>
+   </div>
    <button type="submit" class="btn btn-secondary">Suggest your changes</button>
 </form>
+
+<div class="container p-2">
+<h3>Suggestions for changes</h3>
+{% if not suggestions %}(currently none)
+{% else %}
+<div class="list-group list-group-flush">
+   {% for sug in suggestions %}
+   <div
+      class="list-group-item list-group-item-action">
+      <div class="d-flex justify-content-between align-items-center">
+         <span>
+            for <strong><a href="/manager/site/{{ sug.target }}">{{ sug.target_name }}</a></strong>
+            by <em>{{ sug.creator }}</em>
+            <small>({{ sug.date_submitted }})</small>
+         </span>
+         <span class="badge badge-secondary badge-pill">{{ sug.status }}</span>
+      </div>
+      <ul>
+         {% for field, value in sug.suggestion.items %}
+         <li>change {{ field }} to <em>{{ value }}</em></li>
+         {% endfor %}
+      </ul>
+      <em class="text-muted">{{ sug.comment }}</em>
+      {% if sug.mod_comment %}<br>[&ndash; <em class="text-muted">{{ sug.mod_comment }}</em>]{% endif %}
+   </div>
+   {% endfor %}
+</div>
+{% endif %}
+</div>
 {% endblock %}

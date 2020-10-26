@@ -47,3 +47,7 @@
   stroke-width: 15px;
   stroke: #dfcfdf;
 }
+
+.strikethrough {
+  text-decoration: line-through;
+}

@@ -1,0 +1,59 @@
+{% extends 'scan/base.html' %}
+{% load bootstrap4 %}
+{% load static %}
+{% load manager_extras %}
+
+{% block page_title %}Suggestion decisions{% endblock %}
+
+{% block scripts %}
+<script type="application/javascript" src="{% static 'js/decidesuggestions.js' %}"></script>
+{% endblock %}
+
+{% block container %}
+<div class="list-group list-group-flush">
+   {% for sug in suggestions %}
+   <div
+      class="list-group-item list-group-item-action">
+      <div class="d-flex justify-content-between align-items-center">
+         <span>
+            {% if sug.record_type == 'site' %}
+            for <strong><a href="/manager/site/{{ sug.target }}">{{ sug.target_name }}</a></strong>
+            {% elif sug.record_type == 'tag' %}
+            for <strong><a href="/manager/tag/{{ sug.target }}">{{ sug.target_name }}</a></strong>
+            {% endif %}
+            by <em>{{ sug.creator }}</em>
+            <small>({{ sug.date_submitted }})</small>
+         </span>
+         <span class="badge badge-secondary badge-pill" id="status-badge-{{ sug.id }}">{{ sug.status }}</span>
+      </div>
+      <ul>
+         {% for field, value in sug.suggestion.items %}
+         <li id="sugg-{{ sug.id }}-{{ field }}" class="{% if not relevant|get_item:sug|get_item:field %}strikethrough{% endif %}">change {{ field }} to <em>{{ value }}</em>
+            {% if relevant|get_item:sug|get_item:field %}<a id="change-{{ sug.id }}-{{ field }}" href="#" onclick="decideChange({{ sug.id }}, '{{ field }}')">(do it)</a>{% endif %}
+         </li>
+         {% endfor %}
+      </ul>
+      <em class="text-muted">{{ sug.comment }}</em>
+      <div class="form-inline">
+         <div class="form-group p-2">
+            <label for="comment-{{ sug.id }}">Comment: </label>
+            <div class="pl-2">
+               <input id="comment-{{ sug.id }}" class="form-control" value="{% if sug.mod_comment %}{{ sug.mod_comment }}{% endif %}" oninput="markChangingComment({{ sug.id }})">
+            </div>
+         </div>
+         <div class="form-group p-2">
+            <button type="submit" class="btn btn-info" onclick="decideComment({{ sug.id }})">Submit</button>
+            <span id="server-response-{{ sug.id }}" class="p-2"></span>
+         </div>
+      </div>
+      <div>
+         Mark as:
+         {% for status_db, status in statuses %}<button class="btn btn-outline-info" onclick="decideStatus({{ sug.id }}, '{{ status_db }}', '{{ status }}')">
+            {{ status }}</button>
+         {% endfor %}
+      </div>
+   </div>
+   {% endfor %}
+</div>
+{% include 'widgets/pagination.html' %}
+{% endblock %}

@@ -31,20 +31,25 @@
            <a class="nav-link" href="/accounts/logout/">Log out</a>
         </li>
 
-        <li class="nav-item active">
-           <a class="nav-link" href="/manager/scans/">My scans</a>
+        <div class="border-right mx-1"></div>
+        <li class="nav-item">
+           <span class="nav-link">My:</span>
         </li>
 
         <li class="nav-item active">
-           <a class="nav-link" href="/manager/searches/">My searches</a>
+           <a class="nav-link" href="/manager/scans/">scans</a>
         </li>
 
         <li class="nav-item active">
-           <a class="nav-link" href="/manager/suggestions/">My suggestions</a>
+           <a class="nav-link" href="/manager/searches/">searches</a>
         </li>
 
         <li class="nav-item active">
-           <a class="nav-link" href="/accounts/info/">My account</a>
+           <a class="nav-link" href="/manager/suggestions/">suggestions</a>
+        </li>
+
+        <li class="nav-item active">
+           <a class="nav-link" href="/accounts/info/">account</a>
         </li>
         {% else %}
         <li class="nav-item active">
@@ -68,12 +73,10 @@
            <a class="nav-link" href="/scan/help/">Help</a>
         </li>
 
-        <li class="nav-item active">
-           <a class="nav-link" href="/scan/premium/">Premium &amp; Services</a>
-        </li>
-
         {% if request.user.is_staff %}
-        <div class="border-right mx-1"></div>
+        <li class="nav-item active">
+           <a class="nav-link" href="/manager/decisions">Decisions</a>
+        </li>
 
         <li class="nav-item active">
            <a class="nav-link" href="/admin/">Admin</a>
