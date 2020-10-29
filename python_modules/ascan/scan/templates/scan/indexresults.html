@@ -2,6 +2,8 @@
 {% load static %}
 {% load crispy_forms_tags %}
 {% load bootstrap4 %}
+{% load markdownify %}
+{% load scan_extras %}
 
 {% block page_title %}{% if scan_phrase %}{{ scan_phrase }}{% else %}Searching{% endif %}{% endblock %}
 
@@ -16,6 +18,56 @@
 {% endblock %}
 
 {% block big_container %}
+
+<div class="text-center p-3 m-3 border border-dark" style='background-color: #f8f8f8'>
+<form action="/scan/search/">
+   <dl>
+      {% crispy form %}
+   </dl>
+</form>
+</div>
+
+<script defer type="application/javascript">
+   var options = {
+      valueNames: [ 'possible-choice' ]
+   };
+
+   var siteList = new List('query_sites-searchable', options)
+   var tagList = new List('query_tags-searchable', options)
+
+var suggestionsGetter = new Bloodhound({
+  datumTokenizer: Bloodhound.tokenizers.obj.whitespace('value'),
+  queryTokenizer: Bloodhound.tokenizers.whitespace,
+  remote: {
+    url: '/bg/sug/?q=%QUERY',
+    wildcard: '%QUERY'
+  }
+})
+$('#id_scan_query').typeahead(null,
+   {
+      name: 'query_phrase',
+      source: suggestionsGetter
+   })
+</script>
+
+{% if possible_feedback %}
+   <script type="text/javascript">
+      window.FEEDBACK_SITE = '{{ possible_feedback.site }}'
+      window.FEEDBACK_TAG = '{{ possible_feedback.tag }}'
+   </script>
+   <script type="application/javascript" src="{% static 'js/feedback_prompt.js' %}"></script>
+{% endif %}
+<script type="text/javascript">
+   window.QUERY_PHRASE = '{{ scan_phrase }}'
+   window.SITES = {% if sites %}{{ sites }}{% else %}[]{% endif %}
+   window.TAGS = {% if tags %}{{ tags }}{% else %}[]{% endif %}
+   window.RULES_STRING = '{{ rules_string }}'
+   window.FEATURE_CODES = {
+      {% for field_name, stats in field_stats.items %}
+      '{{ field_name }}': '{{ stats.code }}',{% endfor %}
+   }
+</script>
+
 {% bootstrap_messages %}
 {% if with_errors %}
 <div class="alert alert-danger" role="alert">
@@ -39,32 +91,20 @@
 {% endif %}
 </div>
 {% endif %}
-
-<div class="text-center p-3 m-3 border border-dark" style='background-color: #f8f8f8'>
-<form action="/scan/search/">
-   <dl>
-      {% crispy form %}
-   </dl>
-</form>
+{% if not result %}
+<div class="alert alert-primary" role="alert">
+   Sorry, we did not find any results for your query.
+   {% if scan_phrase|phrase_generalizable %}
+   You can also try <a href="/scan/search/?scan_query={{ scan_phrase|generalize_phrase }}&{% include "widgets/form_link.html" with repl_field="scan_query" %}">{{ scan_phrase|generalize_phrase }}</a>.
+   {% endif %}
+   <noscript><a class="btn btn-primary mx-4" href="/">Go back</a></noscript>
+   <script>document.write('<a class="btn btn-primary align-middle mx-4" href="javascript:history.go(-1)">Go back</a>')</script>
 </div>
-
-{% if possible_feedback %}
-   <script type="text/javascript">
-      window.FEEDBACK_SITE = '{{ possible_feedback.site }}'
-      window.FEEDBACK_TAG = '{{ possible_feedback.tag }}'
-   </script>
-   <script type="application/javascript" src="{% static 'js/feedback_prompt.js' %}"></script>
+{% elif result|length < 10 %}
+<div class="alert alert-primary" role="alert">
+   You can also try <a href="/scan/search/?scan_query={{ scan_phrase|generalize_phrase }}&{% include "widgets/form_link.html" with repl_field="scan_query" %}">{{ scan_phrase|generalize_phrase }}</a>.
+</div>
 {% endif %}
-<script type="text/javascript">
-   window.QUERY_PHRASE = '{{ scan_phrase }}'
-   window.SITES = {% if sites %}{{ sites }}{% else %}[]{% endif %}
-   window.TAGS = {% if tags %}{{ tags }}{% else %}[]{% endif %}
-   window.RULES_STRING = '{{ rules_string }}'
-   window.FEATURE_CODES = {
-      {% for field_name, stats in field_stats.items %}
-      '{{ field_name }}': '{{ stats.code }}',{% endfor %}
-   }
-</script>
 
 <ul class="nav nav-tabs">
    {% for rule in tabs %}
@@ -85,7 +125,7 @@
     <a href="{{ item.url }}" class="result-url">{{ item.url }}</a><br>
     <div class="card-text">
        <span class="result-text">
-       {{ item.text_en }}{{ item.text_xx }}
+       {{ item.text_en | markdownify }}{{ item.text_xx | markdownify }}
        </span>
        <small class="text-muted">
           by <span class="result-author">{{ item.author }}</span>

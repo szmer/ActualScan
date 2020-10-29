@@ -112,7 +112,8 @@ def search(request):
         rules = settings.DEFAULT_RESULT_RULE['rule_string']
 
     try:
-        context.update(rules_results(scan_query, rules, query_site_names=query_site_names))
+        context.update(rules_results(scan_query, rules, query_site_names=query_site_names,
+            highlight=True))
     except socket.timeout:
         messages.add_message(request, messages.ERROR, 'Our server seems to be overloaded now.')
         context['with_errors'] = True

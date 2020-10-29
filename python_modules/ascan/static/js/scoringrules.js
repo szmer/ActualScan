@@ -16,9 +16,14 @@ rulesUpdateSocket.onmessage = function(event) {
       }
       itemDivs[itemN].getElementsByClassName('result-url')[0].innerHTML = data[itemN]['url']
       itemDivs[itemN].getElementsByClassName('result-url')[0].href = data[itemN]['url']
-      itemDivs[itemN].getElementsByClassName('result-text')[0].innerHTML = (
-         (data[itemN]['text_en']||'')+(data[itemN]['text_xx']||'')
-      )
+      var text = ''
+      if (data[itemN]['text_en']) {
+         text += data[itemN]['text_en'].replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      }
+      if (data[itemN]['text_xx']) {
+         text += data[itemN]['text_xx'].replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      }
+      itemDivs[itemN].getElementsByClassName('result-text')[0].innerHTML = text
       itemDivs[itemN].getElementsByClassName('result-author')[0].innerHTML = data[itemN]['author']
       itemDivs[itemN].getElementsByClassName('result-date')[0].innerHTML = data[itemN]['date_post']
       itemDivs[itemN].getElementsByClassName('result-site')[0].innerHTML = data[itemN]['site_name']

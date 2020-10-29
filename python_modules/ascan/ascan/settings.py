@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'channels',
     'bootstrap4',
     'crispy_forms',
+    'markdownify',
     'dynamic_preferences',
     'django.contrib.contenttypes',
     'django.contrib.sessions',

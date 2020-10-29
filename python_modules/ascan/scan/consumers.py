@@ -65,7 +65,7 @@ class RulesUpdateConsumer(SyncConsumer):
                     tag_links__tag__in=received_obj['tags']).all()]
             try:
                 search_context = rules_results(received_obj['query_phrase'], received_obj['rules'],
-                        query_site_names=site_names)
+                        query_site_names=site_names, highlight=True)
                 self.send({ 'type': 'websocket.send', 'text': json.dumps(search_context['result']) })
             except socket.timeout:
                 self.send({ 'type': 'websocket.send', 'text': '' })

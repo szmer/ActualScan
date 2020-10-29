@@ -9,6 +9,7 @@ django-bootstrap4==2.1.1
 django-crispy-forms==1.9.2
 django-ipware==2.1.0
 django-dynamic-preferences==1.9
+django-markdownify==0.8.1
 better-profanity==0.6.1
 
 # Testing.

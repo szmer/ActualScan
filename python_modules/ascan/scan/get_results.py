@@ -12,11 +12,13 @@ from scan.utils import date_fmt
 
 redis = Redis(host='redis', port=6379, db=0, password=os.environ['REDIS_PASS'])
 
-def rules_results(scan_query, rules, query_site_names=''):
+def rules_results(query_phrase, rules, query_site_names='', highlight=False):
     context = dict()
+    context['rules_string'] = rules
     context['rules'] = {}
     solr_filter_terms = []
     solr_boost_terms = []
+    # Collect the rules to translate them to Solr query parameters.
     if rules:
         for rule in rules.split(';'):
             parts = rule.split(',')
@@ -41,8 +43,12 @@ def rules_results(scan_query, rules, query_site_names=''):
             context['rules'][field_name] = { 'min': min_term, 'max': max_term,
                     'weight': boost_term }
 
+    # Make an AND query by default. ( TODO set it in Solr?)
+    if not ' OR ' in query_phrase and not ' AND ' in query_phrase:
+        query_phrase = query_phrase.replace(' ', ' AND ')
+
     solr_address = '/solr/{}/select'.format(settings.SOLR_CORE)
-    solr_address += '?defType=edismax&q={}&qf={}'.format(parse.quote(scan_query, safe=''),
+    solr_address += '?defType=edismax&q={}&qf={}'.format(parse.quote(query_phrase, safe=''),
             parse.quote(' '.join(settings.SOLR_TEXT_FIELDS), safe=''))
     if query_site_names:
         solr_address += '&' + parse.quote(' '.join(query_site_names), safe='')
@@ -53,6 +59,9 @@ def rules_results(scan_query, rules, query_site_names=''):
     solr_address += '&stats=true'
     for code, field_name in settings.SOLR_FEATURE_CODES.items():
         solr_address += '&stats.field='+field_name
+    if highlight:
+        solr_address += '&hl=true&hl.method=unified&hl.fl={}&hl.tag.pre=**&hl.tag.post=**'.format(
+                ','.join(settings.SOLR_TEXT_FIELDS))
     info('Constructed Solr query {}'.format(solr_address))
     solr_conn = http.client.HTTPConnection(settings.SOLR_HOST, port=settings.SOLR_PORT, timeout=20)
     solr_conn.request('GET', solr_address)
@@ -62,9 +71,23 @@ def rules_results(scan_query, rules, query_site_names=''):
         raise ValueError('Solr error in {}'.format(response_json))
     # Only notify omnivore2 if we succeeded.
     redis.lpush('queue:index_query', solr_address) # push it for omnivore2 to catch and process
-    debug('Solr responded for {}: {}'.format(scan_query, response_json))
+    debug('Solr responded for {}: {}'.format(query_phrase, response_json))
     context['result'] = response_json['response']['docs']
 
+    # Intergate the highlighting info from Solr into the results.
+    if highlight:
+        for doc_n, doc in enumerate(context['result']):
+            hl_entry = response_json['highlighting'][doc['doc_location']]
+            for field_name in settings.SOLR_TEXT_FIELDS:
+                if field_name in doc and doc[field_name]:
+                    for hl_snippet in hl_entry[field_name]:
+                        context['result'][doc_n][field_name] = (
+                                # find the version without highlight markings and replace it with the
+                                # highlighted version
+                                context['result'][doc_n][field_name].replace(
+                                    hl_snippet.replace('**', ''), hl_snippet))
+                    break
+                    
     # Add the field value stats to the context.
     context['field_stats'] = {}
     if context['result']: # don't collect stats for 0 documents
