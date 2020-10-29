@@ -1,0 +1,32 @@
+{% extends 'scan/base.html' %}
+{% load bootstrap4 %}
+{% load static %}
+
+{% block page_title %}My searches{% endblock %}
+
+{% block scripts %}
+<script type="application/javascript" src="{% static 'js/searcheslist.js' %}"></script>
+{% endblock %}
+
+{% block container %}
+<h2>My searches</h2>
+The history of your searches is kept for your convenience and for providing search suggestions.
+We don't use them for anything else.
+You can disable query history in your profile if you like.
+
+<div class="list-group list-group-flush">
+   {% for record in records %}
+   <li class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" id="record-{{ record.id }}">
+      <span>
+         <a href="#" onclick="deleteRecord({{ record.id }})">(delete)</a>
+         <a href="/scan/search/?scan_query={{ record.query_phrase }}{% for tag in record.query_tags %}&query_tags={{ tag }}{% endfor %}{% for site in record.query_site_names %}&query_sites={{ site }}{% endfor %}&minimal_level={{ record.minimal_level }}">(search again)</a>
+         <strong>{{ record.query_phrase }}</strong>
+         {% if record.query_tags %}{{ record.query_tags }}{% endif %}
+         {% if record.query_site_names %}<em>{{ record.query_site_names }}</em>{% endif %}
+         {{ record.minimal_level }}+
+      </span>
+      <span class="badge badge-primary">{{ record.date_submitted }}</span>
+   </li>
+  {% endfor %}
+</div>
+{% endblock %}

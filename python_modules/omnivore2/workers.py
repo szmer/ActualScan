@@ -38,6 +38,7 @@ class ContextualAnalyzerThread(Thread):
                             if n % 2 == 0] # the even entries are frequencies
                 except Exception as e:
                     info('Encountered exception when connecting to Solr for tags: {}'.format(e))
+                    continue
                 tag_to_use = random.choice(top_tags)
                 solr_address = '/solr/{}/select?defType=dismax&q={}&qf=tags'.format(
                         SOLR_CORE, tag_to_use)

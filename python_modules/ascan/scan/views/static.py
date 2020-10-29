@@ -12,6 +12,3 @@ def index(request):
     else:
         can_scan = maybe_issue_guest_scan_permission(get_client_ip(request))
     return render(request, 'scan/home.html', context={ 'can_scan': can_scan, 'form': form })
-
-def premium(request):
-    return render(request, 'scan/premium.html')

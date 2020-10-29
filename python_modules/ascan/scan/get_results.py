@@ -43,7 +43,7 @@ def rules_results(scan_query, rules, query_site_names=''):
 
     solr_address = '/solr/{}/select'.format(settings.SOLR_CORE)
     solr_address += '?defType=edismax&q={}&qf={}'.format(parse.quote(scan_query, safe=''),
-            parse.quote('text_en text_xx', safe=''))
+            parse.quote(' '.join(settings.SOLR_TEXT_FIELDS), safe=''))
     if query_site_names:
         solr_address += '&' + parse.quote(' '.join(query_site_names), safe='')
     for filter_term in solr_filter_terms:

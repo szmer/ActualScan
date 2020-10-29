@@ -1,6 +1,7 @@
 from logging import debug
 
 from django.contrib.auth.models import User
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.conf import settings
 from django.utils.timezone import now
@@ -114,11 +115,12 @@ class ScanJob(models.Model):
     last_checked = models.DateTimeField(auto_now=True)
     status_changed = models.DateTimeField(auto_now_add=True)
     query_phrase = models.CharField(max_length=512)
-    # Just separate tags with commas in the string. It's written and read mostly once, so we don't
-    # bother with native Postgres arrays. (explicitly allow blank values for django admin editing)
-    query_tags = models.CharField(max_length=8192, default='', blank=True)
-    # This overwrites the tags if present.
-    query_site_names = models.CharField(max_length=20480, default='', blank=True)
+    query_tags = ArrayField(
+            models.CharField(max_length=Tag._meta.get_field('name').max_length),
+            blank=True)
+    query_site_names = ArrayField(
+            models.CharField(max_length=Site._meta.get_field('site_name').max_length),
+            blank=True)
     # These counts should be filled out when starting the job; they're needed for progress reporting
     website_count = models.IntegerField(default=0)
     subreddit_count = models.IntegerField(default=0)

@@ -20,7 +20,6 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import include, path
 
 from scan.views import index
-from ascan.views import accountinfo
 
 urlpatterns = [
     path('', index),
@@ -30,7 +29,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/login/', auth_views.LoginView.as_view()),
     path('accounts/logout/', auth_views.LogoutView.as_view()),
-    path('accounts/info/', accountinfo),
 ]
 
 if settings.DEBUG:

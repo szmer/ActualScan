@@ -1,0 +1,39 @@
+{% extends 'scan/base.html' %}
+{% load bootstrap4 %}
+
+{% block page_title %}Your account{% endblock %}
+{% block container %}
+<h1>Welcome!
+     <small class="text-muted">{{ user.username }}
+     </small>
+</h1>
+<div class="card">
+  <div class="card-body">
+    <h5 class="card-title">Account options</h5>
+
+    <ul class="list-group list-group-flush">
+       <li class="list-group-item"><a href="" class="card-link">
+             Change password</a></li>
+       <li class="list-group-item">
+          <div>Query history is <strong>{% if user.userprofile.wants_query_records %}on{% else %}off{% endif %}</strong>.</div>
+          <div>
+             <form method="POST" action="" style="display: inline-block">
+                {% csrf_token %}
+                <input type="hidden" name="toggle_history" value="yes">
+                <input class="btn btn-outline-secondary" type="submit" value="Change">
+             </form>
+             <form method="POST" action="" style="display: inline-block">
+                {% csrf_token %}
+                <input type="hidden" name="clear_history" value="yes">
+                <input class="btn btn-outline-danger" type="submit" value="Clear history">
+             </form>
+          </div>
+          <div>
+             <small>If you have query history turned on, you can see your past searches in the <em>My searches</em> tab.
+                The history is also used for search suggestions for you (when you are logged in).</small>
+          </div>
+       </li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

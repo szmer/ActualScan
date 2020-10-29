@@ -99,29 +99,27 @@ def request_scan(user_iden, query_phrase : str, start_date, end_date,
     string).
     """
     # TODO also recreate the job if in an inactive status
-    query_tags_str = ','.join(query_tags)
-    query_sites_str = ','.join(query_site_names)
     # Try to get already existing jobs with the same parameters
     # NOTE deduplicating them across users
     if is_privileged:
         # Try to find still working jobs.
-        jobs = ScanJob.objects.filter(query_phrase=query_phrase, query_tags=query_tags_str,
-                query_site_names=query_sites_str, status__in=['waiting', 'working'],
+        jobs = ScanJob.objects.filter(query_phrase=query_phrase, query_tags=query_tags,
+                query_site_names=query_site_names, status__in=['waiting', 'working'],
                 start_date=start_date, end_date=end_date, allow_undated=allow_undated,
                 minimal_level=minimal_level)
         if not jobs:
             # TODO let them choose if the scan should be new
             time_threshold = datetime.now() - timedelta(minutes=5)
-            jobs = ScanJob.objects.filter(query_phrase=query_phrase, query_tags=query_tags_str,
-                    query_site_names=query_sites_str, status='finished',
+            jobs = ScanJob.objects.filter(query_phrase=query_phrase, query_tags=query_tags,
+                    query_site_names=query_site_names, status='finished',
                     status_changed__gte=time_threshold,
                     start_date=start_date, end_date=end_date, allow_undated=allow_undated,
                     minimal_level=minimal_level)
     # Non-privileged users can start a scan every 30 minutes. TODO notify them
     else:
         time_threshold = datetime.now() - timedelta(minutes=30)
-        jobs = ScanJob.objects.filter(query_phrase=query_phrase, query_tags=query_tags_str,
-                query_site_names=query_sites_str, minimal_level=minimal_level,
+        jobs = ScanJob.objects.filter(query_phrase=query_phrase, query_tags=query_tags,
+                query_site_names=query_site_names, minimal_level=minimal_level,
                 start_date=start_date, end_date=end_date, allow_undated=allow_undated,
                 status_changed__gte=time_threshold)
     debug('The user is privileged: {}, number of jobs found:'.format(is_privileged,
@@ -133,11 +131,11 @@ def request_scan(user_iden, query_phrase : str, start_date, end_date,
         if not is_ip:
             job = ScanJob.objects.create(user=user_iden, query_phrase=query_phrase,
                     start_date=start_date, end_date=end_date, allow_undated=allow_undated,
-                    query_tags=query_tags_str, query_site_names=query_sites_str, status='waiting')
+                    query_tags=query_tags, query_site_names=query_site_names, status='waiting')
         else:
             job = ScanJob.objects.create(user_ip=user_iden, query_phrase=query_phrase,
                     start_date=start_date, end_date=end_date, allow_undated=allow_undated,
-                    query_tags=query_tags_str, query_site_names=query_sites_str, status='waiting')
+                    query_tags=query_tags, query_site_names=query_site_names, status='waiting')
         jobs = [job] # the return statement wants a list
     return jobs[0]
 
@@ -157,9 +155,8 @@ def start_scan(scan_job):
             sites_to_query.add(site)
     if scan_job.query_tags:
         # TODO test for the situation with no coherent/findable tags
-        tag_strs = scan_job.query_tags.split(',')
-        info('Tags taken into account in this scan: {}'.format(tag_strs))
-        tags = Tag.objects.filter(name__in=tag_strs)
+        info('Tags taken into account in this scan: {}'.format(scan_job.query_tags))
+        tags = Tag.objects.filter(name__in=scan_job.query_tags)
         for tag in tags:
             for site_link in tag.site_links.filter(level__gte=scan_job.minimal_level).all():
                 site = site_link.site

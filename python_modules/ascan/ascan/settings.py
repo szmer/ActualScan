@@ -203,3 +203,9 @@ DEFAULT_RESULT_RULE = {
         'rule_string': 'sl,*,*,2;wl,9,*,5;awtf,*,0.4,2;neg,*,0.35,0;pos,*,0.45,0',
         'color': 'fefefe'
         }
+
+# The rule string to use when searching for text fragments for the query suggestion feature.
+# (we use the default rule instead so you can get what is suggested)
+#SUGGESTIONS_RESULT_RULE = 'awtf,*,0.2,0;sld,*,125,0.3'
+
+SOLR_TEXT_FIELDS = set(['text_en', 'text_xx'])

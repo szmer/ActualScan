@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from logging import debug, info
 import random
 import socket
@@ -9,6 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from dynamic_preferences.registries import global_preferences_registry
 from ipware import get_client_ip
 
+from bg.models import QueryRecord
 from scan.control import (maybe_issue_guest_scan_permission, request_scan, scan_progress_info,
         terminate_scan, verify_scan_permission, maybe_give_feedback_tag_site_link)
 from scan.forms import PublicScanForm, EditableScanForm
@@ -58,7 +60,7 @@ def search(request):
     # Unpacking the form data.
     scan_query = form.cleaned_data['scan_query']
     query_tags = [tag.name for tag in form.cleaned_data['query_tags']]
-    query_site_names = [site.site_name for site in form.cleaned_data['query_sites']]
+    explicit_site_names = [site.site_name for site in form.cleaned_data['query_sites']]
     minimal_level = trust_level_to_numeric(form.cleaned_data['minimal_level'])
     debug('query tags: {}, minimal level: {}'.format(query_tags, minimal_level))
 
@@ -71,7 +73,7 @@ def search(request):
             debug('A scan will be performed.')
             job = request_scan((request.user if request.user.is_authenticated
                 else get_client_ip(request)),
-                scan_query, query_tags=query_tags, query_site_names=query_site_names,
+                scan_query, query_tags=query_tags, query_site_names=explicit_site_names,
                 minimal_level=minimal_level,
                 is_ip=not request.user.is_authenticated,
                 is_privileged=request.user.is_staff)
@@ -89,9 +91,9 @@ def search(request):
         can_scan = True
     else:
         can_scan = maybe_issue_guest_scan_permission(get_client_ip(request))
-    query_site_names += [site.site_name
-                for site in Site.objects.filter(
-                    tag_links__tag__in=form.cleaned_data['query_tags']).all()]
+    query_site_names = explicit_site_names + [site.site_name
+            for site in Site.objects.filter(
+                tag_links__tag__in=form.cleaned_data['query_tags']).all()]
     context = { 'scan_phrase': scan_query, 'form': form, 'can_scan': can_scan,
             'sites': query_site_names, 'tags': query_tags }
 
@@ -141,5 +143,18 @@ def search(request):
                     'site': gradable_link.site.site_name,
                     'tag': gradable_link.tag.name
                     }
+
+    # Make the query record if needed.
+    if request.user.is_authenticated and request.user.userprofile.wants_query_records:
+        try: # don't duplicate if possible
+            existing_record = QueryRecord.objects.get(person=request.user, query_phrase=scan_query,
+                    query_site_names=explicit_site_names, query_tags=query_tags,
+                    minimal_level=form.cleaned_data['minimal_level'])
+            existing_record.date_submitted = datetime.now(tz=timezone.utc)
+            existing_record.save()
+        except QueryRecord.DoesNotExist:
+            QueryRecord.objects.create(person=request.user, query_phrase=scan_query,
+                    query_site_names=explicit_site_names, query_tags=query_tags,
+                    minimal_level=form.cleaned_data['minimal_level'])
 
     return render(request, 'scan/indexresults.html', context=context)
