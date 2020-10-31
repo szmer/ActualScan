@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta, timezone
 from logging import debug, info, error
 
-from scan.models import Site, Tag, ScanJob, ScrapeRequest, ScanPermission, FeedbackPermission
-
+from django.db.models import Max
 from dynamic_preferences.registries import global_preferences_registry
+
+from scan.models import Site, Tag, ScanJob, ScrapeRequest, ScanPermission, FeedbackPermission
 
 def verify_scan_permission(user, ip):
     """
@@ -87,9 +88,9 @@ def maybe_give_feedback_tag_site_link(user_iden, possible_subject_links, is_ip=F
                 return link
     return False
 
-def request_scan(user_iden, query_phrase : str, start_date, end_date,
-        query_tags=[], query_site_names=[], allow_undated=True, minimal_level=0,
-        force_new=False, is_ip=False, is_privileged=False):
+def request_scan(user_iden, query_phrase : str,
+        query_tags=[], query_site_names=[], minimal_level=0,
+        is_simple_crawl=False, force_new=False, is_ip=False, is_privileged=False):
     """
     Put an awaiting scan job in the database. query_tags should be a list of strings. Start and end
     dates should give months (such as 02/2020). If force_new is set and the job already exists, a
@@ -105,22 +106,19 @@ def request_scan(user_iden, query_phrase : str, start_date, end_date,
         # Try to find still working jobs.
         jobs = ScanJob.objects.filter(query_phrase=query_phrase, query_tags=query_tags,
                 query_site_names=query_site_names, status__in=['waiting', 'working'],
-                start_date=start_date, end_date=end_date, allow_undated=allow_undated,
-                minimal_level=minimal_level)
+                minimal_level=minimal_level, is_simple_crawl=is_simple_crawl)
         if not jobs:
             # TODO let them choose if the scan should be new
             time_threshold = datetime.now() - timedelta(minutes=5)
             jobs = ScanJob.objects.filter(query_phrase=query_phrase, query_tags=query_tags,
                     query_site_names=query_site_names, status='finished',
                     status_changed__gte=time_threshold,
-                    start_date=start_date, end_date=end_date, allow_undated=allow_undated,
-                    minimal_level=minimal_level)
+                    minimal_level=minimal_level, is_simple_crawl=is_simple_crawl)
     # Non-privileged users can start a scan every 30 minutes. TODO notify them
     else:
         time_threshold = datetime.now() - timedelta(minutes=30)
         jobs = ScanJob.objects.filter(query_phrase=query_phrase, query_tags=query_tags,
                 query_site_names=query_site_names, minimal_level=minimal_level,
-                start_date=start_date, end_date=end_date, allow_undated=allow_undated,
                 status_changed__gte=time_threshold)
     debug('The user is privileged: {}, number of jobs found:'.format(is_privileged,
         0 if not jobs else len(jobs)))
@@ -130,12 +128,12 @@ def request_scan(user_iden, query_phrase : str, start_date, end_date,
     if not jobs:
         if not is_ip:
             job = ScanJob.objects.create(user=user_iden, query_phrase=query_phrase,
-                    start_date=start_date, end_date=end_date, allow_undated=allow_undated,
-                    query_tags=query_tags, query_site_names=query_site_names, status='waiting')
+                    query_tags=query_tags, query_site_names=query_site_names,
+                    is_simple_crawl=is_simple_crawl, status='waiting')
         else:
             job = ScanJob.objects.create(user_ip=user_iden, query_phrase=query_phrase,
-                    start_date=start_date, end_date=end_date, allow_undated=allow_undated,
-                    query_tags=query_tags, query_site_names=query_site_names, status='waiting')
+                    query_tags=query_tags, query_site_names=query_site_names,
+                    is_simple_crawl=is_simple_crawl, status='waiting')
         jobs = [job] # the return statement wants a list
     return jobs[0]
 
@@ -148,45 +146,52 @@ def start_scan(scan_job):
     sites_to_query = set()
     website_count = 0
     subreddit_count = 0
-    if scan_job.query_site_names:
-        site_strs = scan_job.query_site_names.split(',')
-        info('Scanning the sites: {}'.format(site_strs))
-        for site in Site.objects.filter(site_name__in=site_strs):
-            sites_to_query.add(site)
-    if scan_job.query_tags:
-        # TODO test for the situation with no coherent/findable tags
-        info('Tags taken into account in this scan: {}'.format(scan_job.query_tags))
-        tags = Tag.objects.filter(name__in=scan_job.query_tags)
-        for tag in tags:
-            for site_link in tag.site_links.filter(level__gte=scan_job.minimal_level).all():
-                site = site_link.site
-                if not site in sites_to_query:
-                    sites_to_query.add(site) # a site can belong to multiple tags
-    for site in sites_to_query:
-        info('Starting requests for site {} (scan job {})'.
-                format(site.site_name, scan_job.id))
-        if site.site_type == 'web':
-            search_pointer = site.search_url_for(phrase_tokens)
-            ScrapeRequest.objects.create(target=search_pointer,
-                    is_search=True, job=scan_job,
-                    status='waiting',
-                    source_type=site.source_type, site_name=site.site_name,
-                    site_url=site.homepage_url, site_type=site.site_type,
-                    site_id = site.id,
-                    save_copies=scan_job.save_copies or site.save_copies)
-            website_count += 1
-        elif site.site_type == 'reddit':
-            ScrapeRequest.objects.create(target='[reddit] '+scan_job.query_phrase,
-                    is_search=True, job=scan_job,
-                    status='waiting', site_type=site.site_type,
-                    source_type=site.source_type, site_name=site.site_name,
-                    site_url=site.homepage_url,
-                    site_id = site.id,
-                    save_copies=scan_job.save_copies or site.save_copies)
-            subreddit_count += 1
-        else:
-            error('Unknown site type {} for site {} ({})'.format(
-                site.site_type, site.id, site.homepage_url))
+    if scan_job.is_simple_crawl:
+        site = Site.objects.get(site_name=scan_job.query_site_names[0])
+        ScrapeRequest.objects.create(target=site.homepage_url,
+                job=scan_job, status='waiting', is_search=False,
+                source_type=site.source_type, site_name=site.site_name,
+                site_url=site.homepage_url, site_type=site.site_type,
+                site_id = site.id, is_simple_crawl=True, lead_count = 0,
+                save_copies=scan_job.save_copies or site.save_copies)
+    else: # query phrase scan instead of a simple crawl
+        if scan_job.query_site_names:
+            for site in Site.objects.filter(site_name__in=scan_job.query_site_names):
+                sites_to_query.add(site)
+        if scan_job.query_tags:
+            # TODO test for the situation with no coherent/findable tags
+            info('Tags taken into account in this scan: {}'.format(scan_job.query_tags))
+            tags = Tag.objects.filter(name__in=scan_job.query_tags)
+            for tag in tags:
+                for site_link in tag.site_links.filter(level__gte=scan_job.minimal_level).all():
+                    site = site_link.site
+                    if not site in sites_to_query:
+                        sites_to_query.add(site) # a site can belong to multiple tags
+        for site in sites_to_query:
+            info('Starting requests for site {} (scan job {})'.
+                    format(site.site_name, scan_job.id))
+            if site.site_type == 'web':
+                search_pointer = site.search_url_for(phrase_tokens)
+                ScrapeRequest.objects.create(target=search_pointer,
+                        is_search=True, job=scan_job,
+                        status='waiting',
+                        source_type=site.source_type, site_name=site.site_name,
+                        site_url=site.homepage_url, site_type=site.site_type,
+                        site_id = site.id,
+                        save_copies=scan_job.save_copies or site.save_copies)
+                website_count += 1
+            elif site.site_type == 'reddit':
+                ScrapeRequest.objects.create(target='[reddit] '+scan_job.query_phrase,
+                        is_search=True, job=scan_job,
+                        status='waiting', site_type=site.site_type,
+                        source_type=site.source_type, site_name=site.site_name,
+                        site_url=site.homepage_url,
+                        site_id = site.id,
+                        save_copies=scan_job.save_copies or site.save_copies)
+                subreddit_count += 1
+            else:
+                error('Unknown site type {} for site {} ({})'.format(
+                    site.site_type, site.id, site.homepage_url))
     scan_job.change_status('working')
     scan_job.website_count = website_count
     scan_job.subreddit_count = subreddit_count
@@ -343,6 +348,19 @@ def scan_progress_info(scan_job_id):
 
     if scan_job.status == 'finished':
         dl_proportion = 1.0
+    elif scan_job.is_simple_crawl:
+        # Assume that each subsequent depth gives as many pages as the previous one the previous
+        # one times 20.
+        max_depth = global_preferences['scanning__simple_crawl_depth']
+        max_depth_observed = ScrapeRequest.objects.filter(job=scan_job).aggregate(
+                Max('lead_count'))['lead_count__max']
+        crawl_estim = 1
+        crawl_estim_observed = 0
+        for d in range(max_depth):
+            crawl_estim += crawl_estim * 20
+            if d < max_depth_observed:
+                crawl_estim_observed += crawl_estim * 20
+        dl_proportion = (crawl_estim_observed / crawl_estim) if crawl_estim else 1.0
     else:
         debug('Progress estimation for {}:\n'
                 'Done subs Reddit: {}, future estimation: {}, current load to crawl {}, '

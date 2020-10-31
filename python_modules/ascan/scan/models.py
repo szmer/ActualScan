@@ -56,6 +56,8 @@ class Site(models.Model):
     # crafting the extraction functions.
     save_copies = models.BooleanField(default=False)
     time_created = models.DateTimeField(auto_now_add=True)
+    # This flags indicates that this is a scan going from one site's homepage in a classic crawl.
+    is_simple_crawl = models.BooleanField(default=False)
 
     # NOTE we should take urlencoding schemes into account
     MOCK_STR1 = 'twenty'
@@ -110,9 +112,7 @@ class ScanJob(models.Model):
     user_ip = models.CharField(max_length=64, null=True, blank=True)
     status = models.CharField(max_length=32, choices=SCAN_JOB_STATUSES)
     minimal_level = models.IntegerField(default=0)
-    # The difference is that last checked indicates that there is user interest for the scan job,
-    # and the status_changed fields stores when the status actually changed recently.
-    last_checked = models.DateTimeField(auto_now=True)
+    is_simple_crawl = models.BooleanField(default=False)
     status_changed = models.DateTimeField(auto_now_add=True)
     query_phrase = models.CharField(max_length=512)
     query_tags = ArrayField(
@@ -158,7 +158,7 @@ class ScrapeRequest(models.Model):
     # Tells scrapy to push requests for search results or just save the contents.
     is_search = models.BooleanField()
     # Copied from the Site row to avoid the need for joins.
-
+    is_simple_crawl = models.BooleanField(default=False)
     source_type = models.CharField(max_length=32)
     site = models.ForeignKey(Site, on_delete=models.CASCADE)
     # Denormalized information from the site. As scrape requests are ephemeral, it's easier to keep
@@ -170,6 +170,7 @@ class ScrapeRequest(models.Model):
     # search pages leading up to the page in question, or yielded by it in case of executing inside
     # Selenium (only scrapy uses this). For Reddit requests, this should contain the number total 
     # of comments yielded by the search from all submissions in the subreddit.
+    # In the simple crawl, this indicates the link depth.
     lead_count = models.IntegerField(default=0)
     # The job id is also used in reason_scraped in Solr.
     job = models.ForeignKey(ScanJob, related_name='requests', on_delete=models.CASCADE)

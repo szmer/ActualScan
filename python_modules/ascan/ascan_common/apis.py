@@ -26,30 +26,26 @@ def stractor_reading(stractor_host, stractor_port, text, source_type):
         return stractor_response.status
     return stractor_response.read().decode('utf-8')
 
-def solr_update(solr_host, solr_port, solr_core, req_body, req_id=None, req_class=False):
+def eat_omnivore2(omniv2_host, omniv2_port, json_doc, req_id=None, req_class=False):
     """
-    Send req_body as payload to Solr, optionally updating the req_id ScrapeRequest (or other given
+    Send the json_doc to omnivore2, optionally updating the req_id ScrapeRequest (or other given
     req_class) on failure. Return a boolean indicating success or failure.
     """
-    # Recreate the connection each time to avoid getting stuck in bad states.
-    solr_conn = http.client.HTTPConnection(solr_host, port=solr_port, timeout=15)
-    solr_conn.request('GET', '/solr/{}/update'.format(solr_core), body=req_body,
-        headers={'Content-type': 'application/json'})
-    debug('Sent to Solr: {}'.format(req_body))
+    omniv2_conn = http.client.HTTPConnection(omniv2_host, port=omniv2_port, timeout=15)
     timeouted = False
     try:
-        solr_response = solr_conn.getresponse()
+        headers = {'Content-type': 'application/json'}
+        omniv2_conn.request('GET', '/eat/', body=json.dumps(json_doc), headers=headers)
+        omniv2_response = omniv2_conn.getresponse()
     except socket.timeout:
         timeouted = True
-    if timeouted or solr_response.status != 200:
+    if timeouted or omniv2_response.status != 200:
         if req_id is not None:
             db_request = req_class.objects.get(id=req_id)
             db_request.status = 'failed'
-            db_request.failure_comment = 'Could not reach Solr, status code {}'.format(
-                    solr_response.status)
+            db_request.failure_comment = 'Could not reach omnivore2, status code {}'.format(
+                    omniv2_response.status)
         return False
-    else:
-        debug('Solr response: {}'.format(solr_response.status))
     return True
 
 def solr_check_urls(solr_host, solr_port, solr_core, date_post_check, date_retr_check, urls):

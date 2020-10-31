@@ -5,47 +5,35 @@ import socket
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt
 from dynamic_preferences.registries import global_preferences_registry
 from ipware import get_client_ip
 
 from bg.models import QueryRecord
-from scan.control import (maybe_issue_guest_scan_permission, request_scan, scan_progress_info,
-        terminate_scan, verify_scan_permission, maybe_give_feedback_tag_site_link)
-from scan.forms import PublicScanForm, EditableScanForm
+from scan.control import (maybe_issue_guest_scan_permission, request_scan, verify_scan_permission,
+        maybe_give_feedback_tag_site_link)
+from scan.forms import EditableScanForm
 from scan.get_results import rules_results
-from scan.utils import trust_level_to_numeric, numeric_to_trust_level
-from scan.models import ScanJob, Site, TagSiteLink, ResultRule
+from scan.utils import trust_level_to_numeric
+from scan.models import Site, TagSiteLink, ResultRule
+from manager.forms import SimpleCrawlForm
 
-def scaninfo(request):
-    if not 'job_id' in request.GET:
-        messages.add_message(request, messages.ERROR, 'No scan job specified.')
-        context = { 'status_data': { 'phase': 'Unknown job.' }, 'result': False }
-        return render(request, 'scan/scaninfo.html', context=context, status=400)
-    job_id = request.GET['job_id']
-    try:
-        job = ScanJob.objects.get(id=job_id)
-    except ScanJob.DoesNotExist:
-        job = None
-    print(request.user.is_staff, request.user)
-    if job is None or not (request.user.is_staff or request.user == job.user):
-        messages.add_message(request, messages.ERROR, 'Bad scan job specified.')
-        context = { 'status_data': { 'phase': 'Bad job.' }, 'result': False }
-        return render(request, 'scan/scaninfo.html', context=context, status=400)
-    if 'terminate' in request.GET and request.GET['terminate']:
-        terminate_scan(job.id)
-    progress_info = scan_progress_info(job.id)
-    index_form_data = { 'query_tag': job.query_tag }
-    index_form_data['scan_query'] = job.query_phrase
-    index_form_data['query_sites'] = job.query_site_names
-    index_form_data['minimal_level'] = numeric_to_trust_level(job.minimal_level)
-    index_form = PublicScanForm(data=index_form_data)
-    return render(request, 'scan/scaninfo.html',
-            { 'status_data': progress_info, 'terminable': job.status in ['waiting', 'working'],
-                'site_names': job.query_site_names.strip().split(','),
-                'tag_names': job.query_tags.strip().split(','),
-                'scan_job': job, 'form': index_form })
+@staff_member_required
+def crawl(request):
+    form = SimpleCrawlForm(request.POST)
+    context = { 'form': form }
+    if form.is_valid():
+        print(form.data)
+        job = request_scan(request.user, '', query_tags=[],
+                query_site_names=[form.cleaned_data['crawl_site'].site_name],
+                is_simple_crawl=True,
+                is_ip=False, is_privileged=True)
+        context['start_ok'] = True
+        context['job_id'] = job.id
+        context['site_name'] = form.cleaned_data['crawl_site'].site_name
+    return render(request, 'scan/crawl.html', context=context)
 
 @csrf_exempt
 def search(request):

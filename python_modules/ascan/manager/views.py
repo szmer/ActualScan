@@ -15,12 +15,16 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import ListView
 from dynamic_preferences.registries import global_preferences_registry
 
-from manager.forms import SiteForm, TagForm, EditRequestSiteForm, EditRequestTagForm, BlocklistForm
+from manager.forms import (
+        SiteForm, TagForm, EditRequestSiteForm, EditRequestTagForm, BlocklistForm, SimpleCrawlForm
+        )
 from manager.models import EditSuggestion, BlockedSite, EDIT_SUGGESTION_STATUSES
 from manager.utils import relevance_table_from_suggestions
+from scan.control import scan_progress_info, terminate_scan
+from scan.forms import PublicScanForm
 from scan.models import Site, Tag, TagSiteLink, ScanJob, ScrapeRequest
 from scan.templatetags.scan_extras import format_trust_level
-from scan.utils import trust_level_to_numeric
+from scan.utils import trust_level_to_numeric, numeric_to_trust_level
 
 class HomeURLParsingError(Error):
     pass
@@ -92,13 +96,43 @@ def tagname(request, tag_name):
     tag = get_object_or_404(Tag, name=tag_name)
     return render(request, 'scan/tag_detail.html', { 'tag': tag })
 
-@login_required
+def scaninfo(request):
+    if not 'job_id' in request.GET:
+        messages.add_message(request, messages.ERROR, 'No scan job specified.')
+        context = { 'status_data': { 'phase': 'Unknown job.' }, 'result': False }
+        return render(request, 'scan/scaninfo.html', context=context, status=400)
+    job_id = request.GET['job_id']
+    try:
+        job = ScanJob.objects.get(id=job_id)
+    except ScanJob.DoesNotExist:
+        job = None
+    if job is None or not (request.user.is_staff or request.user == job.user):
+        messages.add_message(request, messages.ERROR, 'Bad scan job specified.')
+        context = { 'status_data': { 'phase': 'Bad job.' }, 'result': False }
+        return render(request, 'scan/scaninfo.html', context=context, status=400)
+    if 'terminate' in request.GET and request.GET['terminate']:
+        terminate_scan(job.id)
+    progress_info = scan_progress_info(job.id)
+    index_form_data = { 'query_tags': job.query_tags }
+    index_form_data['scan_query'] = job.query_phrase
+    index_form_data['query_sites'] = job.query_site_names
+    index_form_data['minimal_level'] = numeric_to_trust_level(job.minimal_level)
+    index_form = PublicScanForm(data=index_form_data)
+    return render(request, 'manager/scaninfo.html',
+            { 'status_data': progress_info, 'terminable': job.status in ['waiting', 'working'],
+                'site_names': job.query_site_names,
+                'tag_names': job.query_tags,
+                'scan_job': job, 'form': index_form })
+
 def scanlist(request):
-    jobs = ScanJob.objects.filter(user=request.user).order_by('-status_changed').all()
+    jobs = ScanJob.objects.all().order_by('-status_changed')
     page_counts = []
     for job in jobs:
         page_counts.append(ScrapeRequest.objects.filter(job=job).count())
-    return render(request, 'manager/scanlist.html', { 'scans': zip(jobs, page_counts) })
+    context = { 'scans': zip(jobs, page_counts) }
+    if request.user.is_staff:
+        context['form'] = SimpleCrawlForm()
+    return render(request, 'manager/scanlist.html', context)
 
 def tagsites(request, tag_name):
     tag_site_links = get_object_or_404(Tag, name=tag_name).site_links.all()

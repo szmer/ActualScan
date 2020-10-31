@@ -27,7 +27,7 @@ def phrase_generalizable(value):
     Decide whether the phrase is improvable with changing to OR matching, i.e. multi-word and without
     AND and OR operators yet.
     """
-    return len(value.split()) > 1 and not ' AND ' in value and not ' OR ' in value
+    return len([t for t in value.split() if t]) > 1 and not ' AND ' in value and not ' OR ' in value
 
 @register.filter
 def generalize_phrase(value):

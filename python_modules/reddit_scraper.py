@@ -1,6 +1,5 @@
 import argparse
 from datetime import datetime, timezone
-import json
 import logging
 from logging import getLogger
 import os
@@ -33,7 +32,7 @@ from bs4 import BeautifulSoup
 from scan.models import ScrapeRequest
 from dynamic_preferences.registries import global_preferences_registry
 
-from ascan_common.apis import solr_check_urls, solr_update
+from ascan_common.apis import eat_omnivore2, solr_check_urls
 from ascan_common.time import date_fmt
 from ascan_common.utils import update_request_status
 #
@@ -59,6 +58,8 @@ SEARCH_LIMIT = 100
 SOLR_HOST = os.environ['SOLR_HOST']
 SOLR_PORT = os.environ['SOLR_PORT']
 SOLR_CORE = os.environ['SOLR_CORE']
+OMNIVORE2_HOST = os.environ['OMNIVORE2_HOST']
+OMNIVORE2_PORT = os.environ['OMNIVORE2_PORT']
 
 #
 # Utility functions.
@@ -81,7 +82,7 @@ def format_text(text):
     # Strip Markdown markup through HTML. Not efficient, but API quota is the bottleneck.
     # TODO ? replace links
     html = markdown.markdown(text, extensions=MARKDOWN_EXTENSIONS)
-    text = BeautifulSoup(html, 'html.parser').text
+    text = BeautifulSoup(html, 'lxml').text
     # We want paragraphs separated by two new lines, and sentences by one.
     paragraphs = text.split('\n\n')
     paragraphs = [splitter.split(par) for par in paragraphs]
@@ -131,9 +132,7 @@ def process_submission(submission, submission_scrape_request):
 
         # Possibly make the comment for the submission.
         if ok(submission, 'selftext'):
-            submission_obj = {'reason_scraped': submission_scrape_request.job_id,
-                    'source_type': 'f',
-                    'date_retr': date_fmt(datetime.now(tz=timezone.utc)) }
+            submission_obj = { 'date_retr': date_fmt(datetime.now(tz=timezone.utc)) }
             logger.debug('JSON object for Solr created.')
             submission_obj['text'] = format_text(submission.selftext)
             if ok(submission, 'permalink'):
@@ -153,9 +152,13 @@ def process_submission(submission, submission_scrape_request):
                     submission_obj['site_name'] = '/r/' + submission.subreddit.display_name
                 if ok(submission.subreddit, 'over_18') and submission.subreddit.over_18:
                     submission_obj['adult_b'] = True
+            if submission_scrape_request.job.query_tags:
+                submission_obj['tags'] = submission_scrape_request.job.query_tags
+            else:
+                submission_obj['tags'] = [link.tag.name
+                        for link in submission_scrape_request.site.tag_links]
             # Send to Solr.
-            solr_json_text = json.dumps([submission_obj])
-            solr_update(SOLR_HOST, SOLR_PORT, SOLR_CORE, solr_json_text,
+            eat_omnivore2(OMNIVORE2_HOST, OMNIVORE2_PORT, submission_obj,
                     req_id=submission_scrape_request.id, req_class=ScrapeRequest)
 
         # Make the comment objects (Solr documents).
@@ -181,9 +184,7 @@ def process_comment(comment, comment_scrape_request):
             update_request_status(comment_scrape_request, 'failed',
                     failure_comment='no permalink')
             return
-        comment_obj = {'reason_scraped': comment_scrape_request.job_id,
-                'source_type': 'f',
-                'date_retr': date_fmt(datetime.now(tz=timezone.utc)),
+        comment_obj = { 'date_retr': date_fmt(datetime.now(tz=timezone.utc)),
                 'url': comment_permalink}
         if ok(comment, 'body'):
             comment_obj['text'] = format_text(comment.body)
@@ -208,12 +209,11 @@ def process_comment(comment, comment_scrape_request):
                 comment_obj['site_name'] = '/r/' + comment.subreddit.display_name
             if ok(comment.subreddit, 'over_18') and comment.subreddit.over_18:
                 comment_obj['adult_b'] = True
-        # Send to Solr (this needs a manual commit).
-        solr_json_text = json.dumps([comment_obj])
-        solr_update(SOLR_HOST, SOLR_PORT, SOLR_CORE, solr_json_text,
-                req_id=comment_scrape_request.id, req_class=ScrapeRequest)
-        # Do the manual commit.
-        solr_update(SOLR_HOST, SOLR_PORT, SOLR_CORE, '{"commit": {}}',
+        if comment_scrape_request.job.query_tags:
+            comment_obj['tags'] = comment_scrape_request.job.query_tags
+        else:
+            comment_obj['tags'] = [link.tag.name for link in comment_scrape_request.site.tag_links]
+        eat_omnivore2(OMNIVORE2_HOST, OMNIVORE2_PORT, comment_obj,
                 req_id=comment_scrape_request.id, req_class=ScrapeRequest)
         update_request_status(comment_scrape_request, 'committed')
     except (PRAWException, NotFound, ServerError) as e:

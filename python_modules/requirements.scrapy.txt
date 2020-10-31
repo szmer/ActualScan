@@ -25,3 +25,6 @@ simpleflock==0.0.3
 # (for Selenium and limiting access to it):
 Selenium==3.141.0
 python-redis-lock==3.6.0
+
+lxml==4.6.1
+beautifulsoup4==4.8.2

@@ -9,7 +9,7 @@ class PermissionAdmin(admin.ModelAdmin):
     readonly_fields = ('time_issued',)
 
 class ScanJobAdmin(admin.ModelAdmin):
-    readonly_fields = ('status_changed', 'last_checked')
+    readonly_fields = ('status_changed',)
 
 class ScrapeRequestAdmin(admin.ModelAdmin):
     readonly_fields = ('status_changed',)

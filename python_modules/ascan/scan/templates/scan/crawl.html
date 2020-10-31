@@ -1,0 +1,35 @@
+{% extends 'scan/base.html' %}
+{% load bootstrap4 %}
+
+{% block page_title %}Simple site crawl{% endblock %}
+
+{% block container %}
+{% if start_ok %}
+<div class="alert alert-success">
+   Crawling of the site <strong>{{ site_name }}</strong> should start shortly.
+</div>
+<div class="d-inline-block p-2">
+   <a href="/manager/scaninfo/?job_id={{ job_id }}" class="btn btn-secondary">See the scan job</a>
+</div>
+{% else %}
+<div class="alert alert-warning">
+   We had a problem with starting the crawl of <strong>{{ site_name }}</strong>.
+   Please contact the administration.
+   {% if form.errors %}
+   <ul>
+      {% for field in form %}
+      {% for error in field.errors %}
+      <li>{{ field.label }}: {{ error|escape }}</li>
+      {% endfor %}
+      {% endfor %}
+      {% for error in form.non_field_errors %}
+      <li>{{ error|escape }}</li>
+      {% endfor %}
+   </ul>
+   {% endif %}
+</div>
+{% endif %}
+<div class="d-inline-block p-2">
+   <a href="/manager/scans/" class="btn btn-secondary">Return to the list of scans</a>
+</div>
+{% endblock %}

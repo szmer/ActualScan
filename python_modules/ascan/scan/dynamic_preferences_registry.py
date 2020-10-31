@@ -55,6 +55,14 @@ class GuestsScanPermissionTimeToLive(IntegerPreference):
     required = True
 
 @global_preferences_registry.register
+class SimpleCrawlDepth(IntegerPreference):
+    help_text = """To what depth of hyperlinks should a simple crawl reach inside the crawled site."""
+    section = scanning
+    name = 'simple_crawl_depth'
+    default = 3
+    required = True
+
+@global_preferences_registry.register
 class RedditSearchDepth(IntegerPreference):
     help_text = """How many submission to download."""
     section = scanning

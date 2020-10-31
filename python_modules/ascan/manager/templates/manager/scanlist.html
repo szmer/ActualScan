@@ -1,15 +1,22 @@
 {% extends 'scan/base.html' %}
 {% load bootstrap4 %}
+{% load crispy_forms_tags %}
+{% load static %}
 
-{% block page_title %}My scans{% endblock %}
+{% block page_title %}Scans{% endblock %}
+
+{% block scripts %}
+<script type="application/javascript" src="{% static 'js/list.min.js' %}"></script>
+{% endblock %}
 
 {% block container %}
-<h2>My scans</h2>
-Here you can review your past and pending scans.
+<h2>Scans on the site</h2>
+
+Here you can see scans and crawls enlarging our index (currently and recently).
 
 <div class="list-group list-group-flush">
    {% for scan, page_count in scans %}
-   <a href="/scan/scaninfo?job_id={{ scan.id }}"
+   <a href="/manager/scaninfo?job_id={{ scan.id }}"
       class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
       <span>
          <strong>{{ scan.query_phrase }}</strong>
@@ -22,4 +29,18 @@ Here you can review your past and pending scans.
    </a>
   {% endfor %}
 </div>
+
+{% if form %}
+<div class="card p-2">
+<h3>Start a new simple crawl</h3>
+{% crispy form %}
+</div>
+<script defer type="application/javascript">
+   var options = {
+      valueNames: [ 'possible-choice' ]
+   };
+
+   var siteList = new List('crawl_site-searchable', options)
+</script>
+{% endif %}
 {% endblock %}

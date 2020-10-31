@@ -7,10 +7,12 @@ import os, os.path
 import re
 import socket
 import time
+from urllib.parse import urlparse
 
 import simpleflock
 import scrapy
 
+from bs4 import BeautifulSoup
 from redis import Redis
 import redis_lock
 from selenium import webdriver
@@ -22,7 +24,7 @@ from scan.models import Site, ScanJob, ScrapeRequest
 from asgiref.sync import sync_to_async
 from dynamic_preferences.registries import global_preferences_registry
 
-from ascan_common.apis import solr_check_urls, solr_update, stractor_reading
+from ascan_common.apis import eat_omnivore2, solr_check_urls, stractor_reading
 from ascan_common.time import timestamp_now
 from ascan_common.utils import full_url, update_request_status, write_to_file
 
@@ -30,11 +32,13 @@ FILEDB_PATH = '/scrapies/pagecopies/'
 SOLR_HOST = os.environ['SOLR_HOST']
 SOLR_PORT = os.environ['SOLR_PORT']
 SOLR_CORE = os.environ['SOLR_CORE']
+OMNIVORE2_HOST = os.environ['OMNIVORE2_HOST']
+OMNIVORE2_PORT = os.environ['OMNIVORE2_PORT']
 SOLR_PING_URL = 'http://{}:{}/solr/{}/admin/ping'.format(SOLR_HOST, SOLR_PORT, SOLR_CORE)
 SPEECHTRACTOR_HOST = os.environ['SPEECHTRACTOR_HOST']
 SPEECHTRACTOR_PORT = os.environ['SPEECHTRACTOR_PORT']
-REQUEST_META = ['id', 'is_search', 'job_id', 'save_copies', 'site_name', 'site_url',
-        'site_id', 'source_type']
+REQUEST_META = ['id', 'is_search', 'is_simple_crawl', 'job_id', 'lead_count', 'save_copies',
+        'site_name', 'site_url', 'site_id', 'source_type']
 
 logger = getLogger('ascan_scrapy')
 
@@ -214,6 +218,7 @@ SELENIUM_MAX_CLICK_ELEMS_TRIED = global_preferences['scanning__selenium_max_clic
 NORMAL_SEARCH_DEPTH = global_preferences['scanning__web_normal_search_depth']
 JS_SEARCH_DEPTH = global_preferences['scanning__web_js_search_depth']
 INFISCROLL_SEARCH_DEPTH = global_preferences['scanning__web_infiscroll_search_depth']
+SIMPLE_CRAWL_DEPTH = global_preferences['scanning__simple_crawl_depth']
 
 #
 # The spider.
@@ -237,6 +242,7 @@ class GeneralSpider(scrapy.Spider):
         self.normal_search_depth = NORMAL_SEARCH_DEPTH # NOTE not implemented
         self.js_search_depth = JS_SEARCH_DEPTH
         self.infiscroll_search_depth = INFISCROLL_SEARCH_DEPTH
+        self.simple_crawl_depth = SIMPLE_CRAWL_DEPTH
         super().__init__(self, **kwargs)
 
         logger.info('Renewing scheduled and ran requests not committed...')
@@ -399,6 +405,34 @@ class GeneralSpider(scrapy.Spider):
         except (JSONDecodeError, socket.timeout):
             stractor_response_json = None
 
+        if response.meta['is_simple_crawl']:
+            if response.meta['lead_count'] < self.simple_crawl_depth:
+                soup = BeautifulSoup(response.text, 'lxml')
+                for link in soup.find_all('a'):
+                    try:
+                        address = urlparse(link['href'])
+                        if not address.netloc or db_request.site_name in address.netloc:
+                            await sync_to_async(ScrapeRequest.objects.create)(
+                                    target=(link['href']
+                                        if address.netloc
+                                        else db_request.site_name+'/'+link['href']),
+                                    is_search=False,
+                                    job_id=response.meta['job_id'],
+                                    lead_count=response.meta['lead_count']+1,
+                                    status='waiting',
+                                    status_changed=datetime.now(timezone.utc),
+                                    source_type=response.meta['source_type'],
+                                    site_name=response.meta['site_name'],
+                                    site_type='web',
+                                    site_url=response.meta['site_url'],
+                                    site_id=response.meta['site_id'],
+                                    save_copies=response.meta['save_copies'])
+                    except:
+                        if 'href' in link:
+                            logger.debug('No path start slash found in {}'.format(link['href']))
+                        else:
+                            logger.debug('No href attribute for a link')
+
         # Handling search pages.
         if response.meta['is_search']:
             # If we have a good response with pages.
@@ -483,7 +517,7 @@ class GeneralSpider(scrapy.Spider):
                     stractor_response_json, response.url))
                 await self.fail_with_comment('Speechtractor unreachable',
                         db_request=db_request)
-        # The actual page indexing.
+        # The individual page indexing.
         else:
             if stractor_response_json is not None and stractor_response_json:
                 site_obj = await sync_to_async(list)(Site.objects.filter(
@@ -492,24 +526,19 @@ class GeneralSpider(scrapy.Spider):
                 for doc in stractor_response_json: # fill the missing fields before sending to Solr
                     doc['date_retr'] = timestamp_now()
                     doc['site_name'] = response.meta['site_name']
-                    doc['source_type'] = response.meta['source_type']
                     if len(stractor_response_json) == 1:
                         doc['real_doc'] = 'self'
                         doc['url'] = response.url
                     else:
                         doc['real_doc'] = response.url
                     doc['url'] = full_url(doc['url'], response.meta['site_url'])
-                    doc['reason_scraped'] = response.meta['job_id']
-                # This sends documents to solr with default settings. We need to do a manual commit
-                # afterwards.
-                solr_json_text = json.dumps(stractor_response_json)
+                    if db_request.job.query_tags:
+                        doc['tags'] = db_request.job.query_tags
+                    else:
+                        doc['tags'] = [link.tag.name for link in db_request.site.tag_links]
                 # We have to convert it to async to allow it to update the request on failure.
-                await sync_to_async(solr_update)(SOLR_HOST, SOLR_PORT, SOLR_CORE, solr_json_text,
+                await sync_to_async(eat_omnivore2)(OMNIVORE2_HOST, OMNIVORE2_PORT, doc,
                         req_id=response.meta['id'], req_class=ScrapeRequest)
-                # Do the manual commit.
-                # TODO commit one doc in one go with {add: {doc:}} json structure
-                solr_update(SOLR_HOST, SOLR_PORT, SOLR_CORE,
-                        '{"commit": {}}', req_id=response.meta['id'], req_class=ScrapeRequest)
                 await sync_to_async(update_request_status)(db_request, 'committed')
             else:
                 logger.info('Got empty/none Speechractor response: {}'

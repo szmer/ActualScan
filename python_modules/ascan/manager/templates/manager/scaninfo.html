@@ -3,10 +3,11 @@
 {% load bootstrap4 %}
 {% load scan_extras %}
 
-{% block page_title %}{{ scan_job.query_phrase }}{% endblock %}
+{% block page_title %}{% if scan_job.is_simple_crawl %}Crawling {{ scan_job.query_site_names.0 }}{% else %}{{ scan_job.query_phrase }}{% endif %}{% endblock %}
 
 {% block container %}
-<h2>{{ scan_job.query_phrase }}{% if scan_job.id %} (job id: {{ scan_job.id }}){% endif %}</h2>
+<h2>{% if scan_job.is_simple_crawl %}Crawling {{ scan_job.query_site_names.0 }}{% else %}{{ scan_job.query_phrase }}{% endif %}
+   {% if scan_job.id %} (job id: {{ scan_job.id }}){% endif %}</h2>
 
 <script type="text/javascript">window.SCAN_ID = {{ scan_job.id }}</script>
 <script type="application/javascript" src="{% static 'js/scanprogress.js' %}"></script>
@@ -29,7 +30,7 @@
       </tr>
       <tr>
       <th scope="row">Sites queried</th>
-      <td id='query_sites'>{{ scan_job.query_sites }}</td>
+      <td id='query_sites'>{{ scan_job.query_site_names }}</td>
       </tr>
       <tr>
       <th scope="row">No. of failures</th>
@@ -71,7 +72,7 @@
 </div>
 {% if terminable %}
 <div class="m-1 d-inline-block">
-   <form action="/scan/scaninfo/">
+   <form action="/manager/scaninfo/">
       <input type="hidden" value="{{ scan_job.id }}" name="job_id">
       <input type="hidden" value="1" name="terminate">
       <button type="submit" class="btn btn-secondary">Terminate the scan</button>

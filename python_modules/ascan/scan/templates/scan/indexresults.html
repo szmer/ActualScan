@@ -72,8 +72,8 @@ $('#id_scan_query').typeahead(null,
 {% if with_errors %}
 <div class="alert alert-danger" role="alert">
    <p>Sorry, we experienced a problem with your request.</p>
+   {% if form.errors %}
    <ul>
-      {% if form.errors %}
       {% for field in form %}
       {% for error in field.errors %}
       <li>{{ field.label }}: {{ error|escape }}</li>
@@ -82,8 +82,8 @@ $('#id_scan_query').typeahead(null,
       {% for error in form.non_field_errors %}
       <li>{{ error|escape }}</li>
       {% endfor %}
-      {% endif %}
    </ul>
+   {% endif %}
 <noscript><a class="btn btn-primary mx-4" href="/">Go back</a></noscript>
 <script>document.write('<a class="btn btn-primary align-middle mx-4" href="javascript:history.go(-1)">Go back</a>')</script>
 {% if not form.errors %}

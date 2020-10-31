@@ -1,8 +1,9 @@
 from django import forms
+from django.db.models import Count
 from django.forms import Form, ModelForm, CharField, URLField, ValidationError
 from django.utils.translation import gettext_lazy as _
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Div
+from crispy_forms.layout import Layout, Div, HTML
 from crispy_forms.bootstrap import InlineCheckboxes, InlineRadios
 
 from better_profanity import profanity
@@ -23,7 +24,30 @@ class CleanCharField(CharField):
                     'Sorry! Our abuse filter did not like some of the language you\'ve used. '
                     'Please change it or contact the admins to add the content.')
 
+class SimpleCrawlForm(forms.Form):
+    """
+    The form to start a simple crawl of a site.
+    """
+    crawl_site = forms.ModelChoiceField(Site.objects.annotate(
+        Count('scraperequest')).order_by('-scraperequest__count').all())
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Remove the empty choice.
+        self.fields['crawl_site'].choices = list(self.fields['crawl_site'].choices)[1:]
+
+        self.helper = FormHelper()
+        self.helper.form_action = '/scan/crawl/'
+        self.helper.layout = Layout(
+                InlineRadios('crawl_site', css_class='list',
+                        template='widgets/form_searchable_singlechoicefield.html',
+                        style='max-height: 100px'),
+                HTML('<button type="submit" id="search-button" class="btn btn-primary">Crawl the site</button>'))
+
 class SiteForm(ModelForm):
+    """
+    The form for adding sites to the directory.
+    """
     tags = forms.ModelMultipleChoiceField(Tag.objects.all(), label='Site tags')
 
     class Meta:
@@ -58,6 +82,9 @@ class SiteForm(ModelForm):
                 )
 
 class TagForm(ModelForm):
+    """
+    The form for adding tags to the directory.
+    """
     class Meta:
         model = Tag
         fields = ['name', 'description']

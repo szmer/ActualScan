@@ -43,6 +43,7 @@ services:
         - redis
         - selenium
         - website
+        - omnivore2
      volumes:
         - ./pagecopies:/scrapies/pagecopies
 
@@ -57,6 +58,7 @@ services:
         - postgres
         - solr
         - website
+        - omnivore2
 
   speechtractor:
      build:

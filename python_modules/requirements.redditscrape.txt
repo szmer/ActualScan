@@ -24,5 +24,6 @@ praw==7.1.0
 Markdown==3.2.1
 markdown-strikethrough==0.1.1
 mdx-linkify==1.4
+lxml==4.6.1
 beautifulsoup4==4.8.2
 sentence_splitter==1.4
