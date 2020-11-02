@@ -1,0 +1,34 @@
+{% extends 'scan/base.html' %}
+{% load bootstrap4 %}
+{% load scan_extras %}
+
+{% block page_title %}Result rules{% endblock %}
+
+{% block container %}
+<h2>Result rules</h2>
+
+The custom rules for ordering results that you created.
+
+<div class="list-group list-group-flush">
+   {% for rule in rules %}
+   <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+      <span>
+         <strong style="color: {{ rule.slug|colorize_string }}">{{ rule.name }}</strong>
+         <ul>
+         {% for entry in rule.rule_json %}
+         <li><strong><em>{{ entry.feature }}</em></strong>:
+            min: <code>{{ entry.min }}</code>, max: <code>{{ entry.max }}</code>, weight: <code>{{ entry.weight }}</code></li>
+         {% endfor %}
+         </ul>
+      </span>
+      <span>
+         <form action="/manager/delrule/" method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="delete_rule_id" value="{{ rule.id }}">
+            <input formmethod="post" type="submit" class="btn btn-outline-danger" value="Delete">
+         </form>
+      </span>
+   </div>
+  {% endfor %}
+</div>
+{% endblock %}

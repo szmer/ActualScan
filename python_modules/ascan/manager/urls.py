@@ -1,4 +1,5 @@
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.decorators import login_required
 from django.urls import path
 
 from . import views
@@ -14,10 +15,13 @@ urlpatterns = [
     path('tagname/<str:tag_name>/', views.tagname, name='tagname'),
     path('tagsites/<str:tag_name>/', views.tagsites, name='tagsites'),
     path('suggest/', views.suggest, name='suggest'),
+    path('makerule/', views.makerule, name='makerule'),
+    path('delrule/', views.delrule, name='delrule'),
     path('makesite/', views.makesite, name='makesite'),
     path('maketag/', views.maketag, name='maketag'),
     path('scaninfo/', views.scaninfo, name='scaninfo'),
-    path('scans/', views.scanlist, name='scans'),
+    path('scans/', views.scans, name='scans'),
+    path('rules/', login_required(views.ResultRuleList.as_view()), name='rules'),
     path('suggestions/', views.suggestionlist, name='suggestions'),
     path('loadblocklist/', views.loadblocklist, name='loadblocklist'),
     path('decisions/', staff_member_required(views.SuggestionDecisions.as_view()), name='decisions'),

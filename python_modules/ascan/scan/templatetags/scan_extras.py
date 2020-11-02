@@ -2,7 +2,7 @@ from urllib.parse import quote
 
 from django import template
 
-from scan.utils import numeric_to_trust_level
+from scan.utils import numeric_to_trust_level, string_color
 
 register = template.Library()
 
@@ -32,3 +32,7 @@ def phrase_generalizable(value):
 @register.filter
 def generalize_phrase(value):
     return value.replace(' ', ' OR ')
+
+@register.filter
+def colorize_string(string):
+    return string_color(string)

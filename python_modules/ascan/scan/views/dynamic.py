@@ -85,7 +85,8 @@ def search(request):
     context = { 'scan_phrase': scan_query, 'form': form, 'can_scan': can_scan,
             'sites': query_site_names, 'tags': query_tags }
 
-    context['tabs'] = ResultRule.objects.all()
+    context['tabs'] = ResultRule.objects.filter(assigned_user_id__in=[-1]
+            +[request.user.id] if request.user.is_authenticated else [])
     rules = ''
     if form.cleaned_data['rule']:
         rules = form.cleaned_data['rule']

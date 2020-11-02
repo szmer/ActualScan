@@ -1,14 +1,15 @@
+import re
+
 from django import forms
 from django.db.models import Count
 from django.forms import Form, ModelForm, CharField, URLField, ValidationError
 from django.utils.translation import gettext_lazy as _
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Div, HTML
+from crispy_forms.layout import Layout, Div, HTML, Submit
 from crispy_forms.bootstrap import InlineCheckboxes, InlineRadios
-
 from better_profanity import profanity
 
-from scan.models import Site, Tag
+from scan.models import Site, Tag, ResultRule
 from .models import BlockedSite
 
 profanity.load_censor_words(
@@ -78,7 +79,8 @@ class SiteForm(ModelForm):
                 Div('homepage_url'),
                 Div(InlineRadios('source_type')),
                 Div(InlineCheckboxes('tags', css_class='list',
-                    template='widgets/form_searchable_multiplechoicefield.html'))
+                    template='widgets/form_searchable_multiplechoicefield.html')),
+                HTML('<button type="submit" class="btn btn-primary">Add the site</button>')
                 )
 
 class TagForm(ModelForm):
@@ -130,6 +132,35 @@ class EditRequestTagForm(ModelForm):
     class Meta:
         model = Tag
         fields = ['description']
+
+class RuleStringField(CharField):
+    def validate(self, value):
+        super().validate(value)
+        if not re.match('^(\\w+,[\\d.*]+,[\\d.*]+,[\\d.*]+;)*\\w+,[\\d.*]+,[\\d.*]+,[\\d.*]+$',
+                value):
+            raise ValidationError('We could not parse the rule into elements.')
+        rule_entries = value.split(';')
+        for entry in rule_entries:
+            fields = entry.split(',')
+            for field in fields[1:]:
+                if not field == '*':
+                    try:
+                        float(field)
+                    except ValueError:
+                        raise ValidationError('Could not parse the number {}.'.format(field))
+
+class ResultRuleForm(ModelForm):
+    class Meta:
+        model = ResultRule
+        fields = ['name', 'rule_string']
+        field_classes = {
+                'rule_string': RuleStringField,
+                }
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.helper = FormHelper()
+        self.helper.add_input(Submit('submit', 'Submit', css_class='btn-primary'))
 
 class BlocklistForm(Form):
     blocklist_url = URLField()

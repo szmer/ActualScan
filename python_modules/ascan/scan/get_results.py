@@ -98,7 +98,7 @@ def rules_results(query_phrase, rules, query_site_names='', highlight=False):
                 max_date = datetime.strptime(response_json['stats']['stats_fields'][field_name]['max'],
                          '%Y-%m-%dT%H:%M:%SZ')
                 context['field_stats'][field_name] = { 'code': code,
-                        'full_name': ' '.join(field_name.split('_')[:-1]),
+                        'full_name': settings.HUMAN_FEATURE_NAMES[code],
                         'kind': 'date',
                         'min': min_date.strftime('%m/%d/%Y'),
                         'max': max_date.strftime('%m/%d/%Y') }

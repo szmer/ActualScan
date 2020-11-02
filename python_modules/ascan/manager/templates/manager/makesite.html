@@ -14,13 +14,8 @@
 <script type="application/javascript">window.SITE_FORM_SUBMITTED = true</script>
 {% endif %}
 <script type="application/javascript" src="{% static 'js/makesite.js' %}"></script>
-<form method="POST">
-   <dl>
-   {% csrf_token %}
-   {% crispy form %}
-   <button type="submit" class="btn btn-primary">Add the site</button>
-   </dl>
-</form>
+
+{% crispy form %}
 
    <script defer type="application/javascript">
       var options = {

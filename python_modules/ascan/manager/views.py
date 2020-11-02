@@ -16,13 +16,14 @@ from django.views.generic import ListView
 from dynamic_preferences.registries import global_preferences_registry
 
 from manager.forms import (
-        SiteForm, TagForm, EditRequestSiteForm, EditRequestTagForm, BlocklistForm, SimpleCrawlForm
+        SiteForm, TagForm, EditRequestSiteForm, EditRequestTagForm, BlocklistForm, SimpleCrawlForm,
+        ResultRuleForm
         )
 from manager.models import EditSuggestion, BlockedSite, EDIT_SUGGESTION_STATUSES
 from manager.utils import relevance_table_from_suggestions
 from scan.control import scan_progress_info, terminate_scan
 from scan.forms import PublicScanForm
-from scan.models import Site, Tag, TagSiteLink, ScanJob, ScrapeRequest
+from scan.models import Site, Tag, TagSiteLink, ScanJob, ScrapeRequest, ResultRule
 from scan.templatetags.scan_extras import format_trust_level
 from scan.utils import trust_level_to_numeric, numeric_to_trust_level
 
@@ -124,7 +125,7 @@ def scaninfo(request):
                 'tag_names': job.query_tags,
                 'scan_job': job, 'form': index_form })
 
-def scanlist(request):
+def scans(request):
     jobs = ScanJob.objects.all().order_by('-status_changed')
     page_counts = []
     for job in jobs:
@@ -132,7 +133,7 @@ def scanlist(request):
     context = { 'scans': zip(jobs, page_counts) }
     if request.user.is_staff:
         context['form'] = SimpleCrawlForm()
-    return render(request, 'manager/scanlist.html', context)
+    return render(request, 'manager/scans.html', context)
 
 def tagsites(request, tag_name):
     tag_site_links = get_object_or_404(Tag, name=tag_name).site_links.all()
@@ -427,6 +428,39 @@ def decide_change(request):
         suggestion.mod_activity['change'] = request.user.id
     suggestion.save()
     return HttpResponse('ok')
+
+@login_required
+def makerule(request):
+    if request.POST:
+        form = ResultRuleForm(request.POST)
+    elif 'custom_rules_code' in request.GET:
+        form = ResultRuleForm({ 'rule_string': request.GET['custom_rules_code'] })
+    context = { 'form': form }
+    if form.is_valid():
+        form.instance.slug = re.sub('\\s', '-', form.cleaned_data['name'].lower())
+        form.instance.assigned_user_id = request.user.id
+        form.save()
+        messages.add_message(request, messages.SUCCESS, 'The rule has been added.')
+    return render(request, 'manager/makerule.html', context)
+
+@login_required
+def delrule(request):
+    info(request.POST)
+    if not request.POST or not 'delete_rule_id' in request.POST:
+        return redirect('rules')
+    ResultRule.objects.filter(id=int(request.POST['delete_rule_id'])).delete()
+    messages.add_message(request, messages.INFO, 'The rule has been deleted.')
+    return redirect('rules')
+
+class ResultRuleList(ListView):
+    model = ResultRule
+    context_object_name = 'rules'
+    paginate_by = 30
+
+    template_name = 'manager/rules.html'
+
+    def get_queryset(self):
+        return ResultRule.objects.filter(assigned_user_id=self.request.user.id)
 
 @staff_member_required
 def loadblocklist(request):

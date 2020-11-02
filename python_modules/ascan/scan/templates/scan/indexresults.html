@@ -108,7 +108,7 @@ $('#id_scan_query').typeahead(null,
 
 <ul class="nav nav-tabs">
    {% for rule in tabs %}
-   <li class="nav-item" style="background-color: #{{ rule.color }}">
+   <li class="nav-item" style="background-color: {{ rule.slug|colorize_string }}">
       <a class="nav-link{% if rule.slug == current_tab %} active{% endif %}" href="/scan/search/?tab={{ rule.slug }}{% include "widgets/form_link.html" with repl_field="tab" repl_field2="rule" %}">
          {{ rule.name }}</a>
    </li>
@@ -168,7 +168,11 @@ $('#id_scan_query').typeahead(null,
       {% endfor %}
    </div>
    <div class="list-group-item d-flex justify-content-between">
-      Code: <input id="rules_code" value="{{ rules_string }}" oninput="updateScoringRules('ALL')" autocomplete="off">
+      <form action="/manager/makerule/">
+         <label for="custom_rules_code">Code:</label>
+         <input id="rules_code" name="custom_rules_code" value="{{ rules_string }}" oninput="updateScoringRules('ALL')" autocomplete="off">
+         <input type="submit" class="btn btn-secondary" value="Add this as a new rule">
+      </form>
    </div>
 </div>
 {% endif %}

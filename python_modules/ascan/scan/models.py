@@ -206,10 +206,21 @@ class ResultRule(models.Model):
     """
     A ready-made rule available for users when scoring the index results.
     """
-    name = models.CharField(max_length=128, unique=True)
-    slug = models.CharField(max_length=128, unique=True)
+    name = models.CharField(max_length=128)
+    slug = models.CharField(max_length=128)
     rule_string = models.CharField(max_length=2048)
-    color = models.CharField(max_length=6)
+    assigned_user_id = models.IntegerField(default=-1) # if -1, the rule is public
+
+    def rule_json(self):
+        repr_obj = []
+        for rule in self.rule_string.split(';'):
+            parts = rule.split(',')
+            field_name, min_term, max_term, boost_term = (
+                    settings.HUMAN_FEATURE_NAMES[parts[0]], parts[1], parts[2], parts[3]
+                    )
+            repr_obj.append({ 'feature': field_name, 'min': min_term, 'max': max_term,
+                'weight': boost_term })
+        return repr_obj 
 
     def __repr__(self):
         return 'rule {}/{}/{}'.format(self.pk, self.name, self.rule_string)
@@ -223,5 +234,4 @@ try:
 except ResultRule.DoesNotExist:
     ResultRule.objects.create(name=settings.DEFAULT_RESULT_RULE['name'],
             slug=settings.DEFAULT_RESULT_RULE['slug'],
-            rule_string=settings.DEFAULT_RESULT_RULE['rule_string'],
-            color=settings.DEFAULT_RESULT_RULE['color'])
+            rule_string=settings.DEFAULT_RESULT_RULE['rule_string'])

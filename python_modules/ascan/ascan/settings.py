@@ -198,11 +198,29 @@ SOLR_FEATURE_CODES = {
         'veb': 'verbs_proportion_f',
         }
 
+HUMAN_FEATURE_NAMES = {
+        'adj': 'adjectives proportion',
+        'awl': 'average word length',
+        'awtf': 'average word tfdf',
+        'cop': 'compound polarity',
+        'd': 'date post',
+        'neg': 'negative polarity',
+        'neu': 'neutral polarity',
+        'non': 'nouns proportion',
+        'pdl': 'parent document length',
+        'pn': 'period number',
+        'pos': 'positive polarity',
+        'prpn': 'proper names proportion',
+        'sl': 'sent length',
+        'sld': 'sentence length deviation',
+        'wl': 'word length',
+        'veb': 'verbs proportion',
+        }
+
 DEFAULT_RESULT_RULE = {
         'name': 'Standard',
         'slug': 'standard',
         'rule_string': 'sl,*,*,2;wl,9,*,5;awtf,*,0.4,2;neg,*,0.35,0;pos,*,0.45,0',
-        'color': 'fefefe'
         }
 
 # The rule string to use when searching for text fragments for the query suggestion feature.
