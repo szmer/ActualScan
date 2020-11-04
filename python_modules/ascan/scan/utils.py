@@ -14,6 +14,8 @@ def date_fmt(time_obj):
     return time_obj.strftime('%Y-%m-%dT%H:%M:%SZ')
 
 def trust_level_to_numeric(str_level):
+    if str_level == 'spam':
+        return -100000
     global_preferences = global_preferences_registry.manager()
     return global_preferences['trust_levels__trust_level_threshold_'+str_level]
 

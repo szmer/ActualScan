@@ -94,13 +94,13 @@ $('#id_scan_query').typeahead(null,
 {% if not result %}
 <div class="alert alert-primary" role="alert">
    Sorry, we did not find any results for your query.
-   {% if scan_phrase|phrase_generalizable %}
+   {% if scan_phrase and scan_phrase|phrase_generalizable %}
    You can also try <a href="/scan/search/?scan_query={{ scan_phrase|generalize_phrase }}&{% include "widgets/form_link.html" with repl_field="scan_query" %}">{{ scan_phrase|generalize_phrase }}</a>.
    {% endif %}
    <noscript><a class="btn btn-primary mx-4" href="/">Go back</a></noscript>
    <script>document.write('<a class="btn btn-primary align-middle mx-4" href="javascript:history.go(-1)">Go back</a>')</script>
 </div>
-{% elif result|length < 10 %}
+{% elif scan_phrase and result|length < 10 %}
 <div class="alert alert-primary" role="alert">
    You can also try <a href="/scan/search/?scan_query={{ scan_phrase|generalize_phrase }}&{% include "widgets/form_link.html" with repl_field="scan_query" %}">{{ scan_phrase|generalize_phrase }}</a>.
 </div>

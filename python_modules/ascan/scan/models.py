@@ -30,7 +30,7 @@ SCRAPE_REQUEST_STATUSES = [(x, x) for x in [
 
 class Tag(models.Model):
     name = models.CharField(max_length=256, unique=True) # TODO disallow commas
-    description = models.CharField(max_length=1024)
+    description = models.CharField(max_length=1024, null=True, blank=True)
     creator = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='tags', null=True)
     time_created = models.DateTimeField(auto_now_add=True)
 

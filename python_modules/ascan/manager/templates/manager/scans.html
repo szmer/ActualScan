@@ -12,16 +12,19 @@
 {% block container %}
 <h2>Scans on the site</h2>
 
-Here you can see scans and crawls enlarging our index (currently and recently).
+<p>
+Monitoring the index expansion with scans and crawls.
+</p>
 
 <div class="list-group list-group-flush">
    {% for scan, page_count in scans %}
    <a href="/manager/scaninfo?job_id={{ scan.id }}"
       class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
       <span>
-         <strong>{{ scan.query_phrase }}</strong>
-         {% if scan.query_tags %}{{ scan.query_tags }}{% endif %}
-         {% if scan.query_site_names %}<em>{{ scan.query_site_names }}</em>{% endif %}
+         <strong>{% if scan.is_simple_crawl %}Crawling {{ scan.query_site_names.0 }}
+            {% else %}{{ scan.query_phrase }}{% endif %}</strong>
+         {% for tag in scan.query_tags %}#{{ tag }} {% endfor %}
+         {% for site in scan.query_site_names %}<em>{{ site }}</em>{% endfor %}
          <span class="badge badge-primary">{{ scan.status }}</span>
          <small>({{ scan.status_changed }})</small>
       </span>

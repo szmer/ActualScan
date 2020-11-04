@@ -86,7 +86,7 @@ def search(request):
             'sites': query_site_names, 'tags': query_tags }
 
     context['tabs'] = ResultRule.objects.filter(assigned_user_id__in=[-1]
-            +[request.user.id] if request.user.is_authenticated else [])
+            +([request.user.id] if request.user.is_authenticated else []))
     rules = ''
     if form.cleaned_data['rule']:
         rules = form.cleaned_data['rule']
