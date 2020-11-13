@@ -7,6 +7,7 @@
 <form method="POST">
   {% csrf_token %}
   {% bootstrap_form form %}
-  <button type="submit">Login</button>
+  <button class="btn btn-primary" type="submit">Login</button>
 </form>
+<p class="p-2"><a href="/accounts/password_reset/">Forgotten password?</a></p>
 {% endblock %}

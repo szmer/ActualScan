@@ -6,7 +6,6 @@ from logging import getLogger, debug, info
 import os
 import time
 
-
 #
 # Read command line args.
 #

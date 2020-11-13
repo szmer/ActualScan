@@ -1,0 +1,18 @@
+{% extends 'scan/base.html' %}
+{% load bootstrap4 %}
+
+{% block page_title %}Bad activation token.{% endblock %}
+
+{% block container %}
+<div class="alert alert-error">
+   Sorry, the activation token you have seems to be wrong.
+</div>
+
+{% if uid %}
+<form action="/bg/activation_resend/" method="POST">
+   {% csrf_token %}
+   <input type="hidden" name="resend_uid" value="{{ uid }}">
+   <input type="submit" class="btn btn-primary" value="Resend activation link">
+</form>
+{% endif %}
+{% endblock %}

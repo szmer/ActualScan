@@ -15,20 +15,18 @@ Including another URLconf
 """
 from django.conf import settings
 from django.contrib import admin
-from django.contrib.auth import views as auth_views
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import include, path
 
 from scan.views import index
 
 urlpatterns = [
-    path('', index),
+    path('', index, name='index'),
+    path('accounts/', include('django.contrib.auth.urls')),
     path('scan/', include('scan.urls')),
     path('manager/', include('manager.urls')),
     path('bg/', include('bg.urls')),
     path('admin/', admin.site.urls),
-    path('accounts/login/', auth_views.LoginView.as_view()),
-    path('accounts/logout/', auth_views.LogoutView.as_view()),
 ]
 
 if settings.DEBUG:

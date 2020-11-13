@@ -1,0 +1,17 @@
+{% extends 'scan/base.html' %}
+{% load bootstrap4 %}
+{% load crispy_forms_tags %}
+
+{% block page_title %}Join{% endblock %}
+
+{% block container %}
+<p>As a member of ActualScan, you can:
+<ul>
+	<li>tell ActualScan to scan the Web for what you want</li>
+	<li>add new sites and tags</li>
+	<li>suggest changes in our index</li>
+	<li>keep a history of your searches (or turn it off if you prefer)</li>
+</ul>
+</p>
+{% crispy form %}
+{% endblock %}

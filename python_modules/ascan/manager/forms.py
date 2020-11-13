@@ -156,6 +156,7 @@ class ResultRuleForm(ModelForm):
         field_classes = {
                 'rule_string': RuleStringField,
                 }
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

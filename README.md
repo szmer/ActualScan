@@ -1,16 +1,12 @@
-# Structure
+# Setup
 
-Flask-Admin templates are partly overwritten in ModelViews and live inside `templates/manager`.
-Overwritten Flask-Security templates are inside the account blueprint, inside `templates/security`.
-
-# Development enviroment.
-
-Testing currently creates some example sites and tags.
-
-# Killing all containers
-
-```bash
-docker kill $(docker ps -q)
+```
+docker-compose build
+docker-compose run website python manage.py makemigrations scan
+docker-compose run website python manage.py makemigrations manager
+docker-compose run website python manage.py makemigrations bg
+docker-compose run website python manage.py migrate
+docker-compose up --build
 ```
 
 # Running migrations

@@ -3,6 +3,7 @@ from logging import debug
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
+from django.db.utils import ProgrammingError
 from django.conf import settings
 from django.utils.timezone import now
 
@@ -235,3 +236,5 @@ except ResultRule.DoesNotExist:
     ResultRule.objects.create(name=settings.DEFAULT_RESULT_RULE['name'],
             slug=settings.DEFAULT_RESULT_RULE['slug'],
             rule_string=settings.DEFAULT_RESULT_RULE['rule_string'])
+except ProgrammingError: # uninitialized db
+    pass

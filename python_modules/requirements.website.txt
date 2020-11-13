@@ -15,12 +15,11 @@ django-dynamic-preferences==1.9
 django-markdownify==0.8.1
 better-profanity==0.6.1
 
+six==1.15.0
+
 # Testing.
 pytest-django==3.10.0
 
 # Redis.
 redis==3.4.1
 python-redis-lock==3.6.0
-
-# Communicating with Omnivore.
-pexpect==4.8.0

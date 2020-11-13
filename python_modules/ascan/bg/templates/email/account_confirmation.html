@@ -1,0 +1,10 @@
+{% autoescape off %}
+Hello {{ user.username }}!
+
+It seems to us that you've registered a new account with us from this email
+address. If that was you, please click this link or copy it into your browser:
+
+https://{{ domain }}{% url 'activate' uidb64=uid token=token %}
+
+If this was someone else, simply ignore this message, sorry!
+{% endautoescape %}
