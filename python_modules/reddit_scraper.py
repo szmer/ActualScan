@@ -58,6 +58,7 @@ SEARCH_LIMIT = 100
 SOLR_HOST = os.environ['SOLR_HOST']
 SOLR_PORT = os.environ['SOLR_PORT']
 SOLR_CORE = os.environ['SOLR_CORE']
+SOLR_PASS = os.environ['SOLR_READER_PASS']
 OMNIVORE2_HOST = os.environ['OMNIVORE2_HOST']
 OMNIVORE2_PORT = os.environ['OMNIVORE2_PORT']
 
@@ -243,7 +244,8 @@ leftover_scrape_requests= ScrapeRequest.objects.filter(
 for scrape_request in leftover_scrape_requests:
     # Deduplicate with Solr.
     permalink = 'https://reddit.com'+scrape_request.target
-    is_url_skippable = solr_check_urls(SOLR_HOST, SOLR_PORT, SOLR_CORE, DEDUP_DATE_POST_CHECK,
+    is_url_skippable = solr_check_urls(SOLR_HOST, SOLR_PORT, SOLR_CORE, SOLR_PASS,
+                        DEDUP_DATE_POST_CHECK,
             DEDUP_DATE_RETR_CHECK, [permalink])
     if permalink in is_url_skippable:
         update_request_status(scrape_request, 'cancelled', failure_comment='dupe')

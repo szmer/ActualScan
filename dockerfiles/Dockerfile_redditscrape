@@ -12,5 +12,8 @@ COPY python_modules/ascan ascan
 WORKDIR /opt/ascan/ascan
 RUN pip install --editable .
 
+WORKDIR /home/certs/
+COPY certs/dev/ascan_dev_internal.pem /home/certs/ascan_internal.pem
+
 WORKDIR /opt/ascan
 COPY python_modules/reddit_scraper.py .

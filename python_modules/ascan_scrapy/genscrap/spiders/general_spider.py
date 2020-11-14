@@ -32,9 +32,10 @@ FILEDB_PATH = '/scrapies/pagecopies/'
 SOLR_HOST = os.environ['SOLR_HOST']
 SOLR_PORT = os.environ['SOLR_PORT']
 SOLR_CORE = os.environ['SOLR_CORE']
+SOLR_PASS = os.environ['SOLR_READER_PASS']
 OMNIVORE2_HOST = os.environ['OMNIVORE2_HOST']
 OMNIVORE2_PORT = os.environ['OMNIVORE2_PORT']
-SOLR_PING_URL = 'http://{}:{}/solr/{}/admin/ping'.format(SOLR_HOST, SOLR_PORT, SOLR_CORE)
+SOLR_PING_URL = 'https://{}:{}/solr/{}/admin/ping'.format(SOLR_HOST, SOLR_PORT, SOLR_CORE)
 SPEECHTRACTOR_HOST = os.environ['SPEECHTRACTOR_HOST']
 SPEECHTRACTOR_PORT = os.environ['SPEECHTRACTOR_PORT']
 REQUEST_META = ['id', 'is_search', 'is_simple_crawl', 'job_id', 'lead_count', 'save_copies',
@@ -258,7 +259,7 @@ class GeneralSpider(scrapy.Spider):
         """
         This is to be called as errback for Scrapy requests to log HTTP, DNS errors etc.
         """
-        logger.error('Scrapy error deferred to errback: '.format(repr(failure)))
+        logger.error('Scrapy error deferred to errback: {}'.format(repr(failure)))
         await self.fail_with_comment(repr(failure), request_id=failure.request.meta['id'])
 
     async def fail_with_comment(self, comment, db_request=False, request_id=False):
@@ -311,8 +312,8 @@ class GeneralSpider(scrapy.Spider):
     async def requests_from_search(self, response, stractor_response_json, lead_count=0):
         # We should skip the requests before trying to download them for that to make sense.
         urls_to_request = [doc['url'] for doc in stractor_response_json if 'url' in doc]
-        urls_to_skip = solr_check_urls(SOLR_HOST, SOLR_PORT, SOLR_CORE, self.dedup_date_post_check,
-                self.dedup_date_retr_check, urls_to_request)
+        urls_to_skip = solr_check_urls(SOLR_HOST, SOLR_PORT, SOLR_CORE, SOLR_PASS,
+                self.dedup_date_post_check, self.dedup_date_retr_check, urls_to_request)
         for found_page in stractor_response_json:
             if 'url' in found_page and not found_page['url'] in urls_to_skip:
                 is_page_search = (True

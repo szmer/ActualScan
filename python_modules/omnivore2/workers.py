@@ -1,3 +1,4 @@
+from base64 import b64encode
 from datetime import timedelta
 import http.client
 import json
@@ -7,18 +8,22 @@ import random
 from threading import Thread
 from time import sleep
 from urllib import parse
+import ssl
 
 from redis import Redis
 
 from omnivore2_conf import (
         MINIMUM_CONTEXT_SIZE, MAXIMUM_CONTEXT_SIZE, SOLR_HOST, SOLR_PORT, SOLR_CORE,
-        RECLASSIFICATION_TIME
+        SOLR_UPDATER_PASS, RECLASSIFICATION_TIME
         )
 from contextual_analysis import apply_contextual_analysis
 from utils import date_fmt, time_now
 
 redis = Redis(host='redis', port=6379, db=0, password=os.environ['REDIS_PASS'])
 WORKERS_COUNT = int(os.environ.get('OMNIVORE2_WORKERS_COUNT', 1))
+
+ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+ssl_context.load_verify_locations('/home/certs/ascan_internal.pem')
 
 class ContextualAnalyzerThread(Thread):
     def run(self):
@@ -28,9 +33,14 @@ class ContextualAnalyzerThread(Thread):
             if not query_string:
                 # First, get the top tags.
                 solr_address = '/solr/{}/terms?terms.fl=tags&terms.limit=1000'.format(SOLR_CORE)
-                solr_conn = http.client.HTTPConnection(SOLR_HOST, port=SOLR_PORT, timeout=15)
+                headers = { 'Authorization':
+                        'Basic {}'.format(
+                            b64encode(bytes('updater:'+SOLR_UPDATER_PASS, 'utf-8')).decode('ascii'))
+                        }
+                solr_conn = http.client.HTTPSConnection(SOLR_HOST,
+                        port=SOLR_PORT, timeout=15, context=ssl_context)
                 try:
-                    solr_conn.request('GET', solr_address)
+                    solr_conn.request('GET', solr_address, headers=headers)
                     response = solr_conn.getresponse()
                     response_json = json.loads(response.read().decode('utf-8'))
                     top_tags = [response_json['terms']['tags'][n]
@@ -55,9 +65,13 @@ class ContextualAnalyzerThread(Thread):
                             - timedelta(hours=RECLASSIFICATION_TIME))),
                         safe='')
             solr_address += '&rows={}'.format(MAXIMUM_CONTEXT_SIZE)
-            solr_conn = http.client.HTTPConnection(SOLR_HOST, port=SOLR_PORT, timeout=15)
+            headers = { 'Authorization':
+                    'Basic {}'.format(
+                        b64encode(bytes('updater:'+SOLR_UPDATER_PASS, 'utf-8')).decode('ascii')) }
+            solr_conn = http.client.HTTPSConnection(SOLR_HOST,
+                    port=SOLR_PORT, timeout=15, context=ssl_context)
             try:
-                solr_conn.request('GET', solr_address)
+                solr_conn.request('GET', solr_address, headers=headers)
                 response = solr_conn.getresponse()
                 response_json = json.loads(response.read().decode('utf-8'))
                 docs = response_json['response']['docs']

@@ -3,6 +3,7 @@ import os
 SOLR_HOST = os.environ.get('SOLR_HOST', 'solr')
 SOLR_PORT = os.environ.get('SOLR_PORT', 8983)
 SOLR_CORE = os.environ.get('SOLR_CORE', 'ascan')
+SOLR_UPDATER_PASS = os.environ.get('SOLR_UPDATER_PASS')
 
 MINIMAL_GOOD_PERIOD_LENGTH = 30 # in words
 MAXIMAL_GOOD_PERIOD_LENGTH = 50

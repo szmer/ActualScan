@@ -1,6 +1,47 @@
 FROM solr:8.6.1
+ARG KEYSTORE_PASSWORD
+ARG SOLR_ADMIN_HASH
+ARG SOLR_UPDATER_HASH
+ARG SOLR_READER_HASH
+ENV KEYSTORE_PASSWORD "$KEYSTORE_PASSWORD"
+ENV SOLR_ADMIN_HASH "$SOLR_ADMIN_HASH"
+ENV SOLR_UPDATER_HASH "$SOLR_UPDATER_HASH"
+ENV SOLR_READER_HASH "$SOLR_READER_HASH"
 
+# We use /home/certs to ensure that solr user (as which this container runs) has the permissions.
+WORKDIR /home/certs/
+COPY certs/dev/ascan_dev_ssl_internal.keystore.p12 /home/certs/
+
+# Add the SSL config to Solr
+USER root
+# Install xxd to be able to convert SHA256 to hex for base64.
+RUN apt-get update && apt-get install -qq -y xxd --no-install-recommends
+
+RUN chown -R solr:solr /home/certs/
+RUN echo 'SOLR_SSL_ENABLED=true' >> /etc/default/solr.in.sh
+RUN echo 'SOLR_SSL_KEY_STORE=/home/certs/ascan_dev_ssl_internal.keystore.p12' >> /etc/default/solr.in.sh
+RUN echo 'SOLR_SSL_KEY_STORE_PASSWORD='$KEYSTORE_PASSWORD >> /etc/default/solr.in.sh
+RUN echo 'SOLR_SSL_TRUST_STORE=/home/certs/ascan_dev_ssl_internal.keystore.p12' >> /etc/default/solr.in.sh
+RUN echo 'SOLR_SSL_TRUST_STORE_PASSWORD='$KEYSTORE_PASSWORD >> /etc/default/solr.in.sh
+
+# Produce the security.json configuration.
+RUN echo '{"authentication": { "class": "solr.BasicAuthPlugin",\
+                               "credentials": { "admin": "'$SOLR_ADMIN_HASH'",\
+                                                "updater": "'$SOLR_UPDATER_HASH'",\
+                                                "reader": "'$SOLR_READER_HASH'" } },\
+           "authorization": { "class": "solr.RuleBasedAuthorizationPlugin",\
+                              "blockUnknown": true,\
+                              "user-role": { "admin": "admin_role", "updater": "update_role", "reader": "read_role" },\
+                              "permissions": [ { "name": "read", "role": "*" },\
+                                               { "name": "schema-read", "role": "*" },\
+                                               { "name": "update", "role": "update_role" },\
+                                               { "name": "all", "role": "admin_role" }] }\
+           }' > /home/certs/security.json
+
+USER solr
+WORKDIR /var/solr/
 COPY solr-configset server/solr/configsets/ascan
 
 # The -q(uiet) option will display only warnings.
-CMD precreate-core ascan server/solr/configsets/ascan; exec solr -f -q
+# We have to copy security.json after precreating, so neither that or named volume can disappear it
+CMD precreate-core ascan server/solr/configsets/ascan; cp /home/certs/security.json /var/solr/data/; exec solr -f -q

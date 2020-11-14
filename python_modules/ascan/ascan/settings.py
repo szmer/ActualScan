@@ -185,6 +185,7 @@ LOGOUT_REDIRECT_URL = '/'
 SOLR_HOST = os.environ['SOLR_HOST']
 SOLR_PORT = os.environ['SOLR_PORT']
 SOLR_CORE = os.environ['SOLR_CORE']
+SOLR_READER_PASS = os.environ['SOLR_READER_PASS']
 
 SOLR_FEATURE_CODES = {
         'adj': 'adjectives_proportion_f',

@@ -26,7 +26,7 @@ services:
      env_file:
         - '.env'
      # This should restart on crashes.
-     restart: unless-stopped
+     ###restart: unless-stopped
      depends_on:
         - website # to get the DB initialization
 
@@ -103,7 +103,7 @@ services:
      env_file:
         - '.env'
 
-   # Needed for Django Channels (and Celery when we use it).
+  # Needed for Django Channels (and Celery when we use it).
   redis:
     image: 'redis:6.0-rc'
     command: 'redis-server /usr/local/etc/redis/redis.conf'
@@ -117,6 +117,11 @@ services:
      build:
         context: .
         dockerfile: dockerfiles/Dockerfile_solr
+        args:
+          KEYSTORE_PASSWORD: ${KEYSTORE_PASSWORD}
+          SOLR_ADMIN_HASH: ${SOLR_ADMIN_HASH}
+          SOLR_UPDATER_HASH: ${SOLR_UPDATER_HASH}
+          SOLR_READER_HASH: ${SOLR_READER_HASH}
      ports:
         # Map the original 8983 to 8984.
         - '127.0.0.1:8984:8983'

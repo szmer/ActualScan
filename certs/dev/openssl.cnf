@@ -1,0 +1,20 @@
+[req]
+x509_extensions = v3_req
+distinguished_name = req_distinguished_name
+prompt = no
+
+[req_distinguished_name]
+C = PL
+ST = Mazowieckie
+L = Warszawa
+O = ActualScan Dev Installation
+OU = ActualScan Dev Installation
+CN = ascan
+
+[v3_req]
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = solr
+DNS.2 = speechtractor
+DNS.3 = omnivore2

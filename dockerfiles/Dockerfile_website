@@ -1,7 +1,7 @@
 FROM python:3.7.5-slim-buster
 
 RUN apt-get update && apt-get install -qq -y \
-  build-essential libpq-dev libssl-dev netcat --no-install-recommends
+  build-essential libpq-dev libssl-dev --no-install-recommends
 
 WORKDIR /opt/ascan
 
@@ -9,5 +9,8 @@ COPY python_modules/requirements.website.txt requirements.txt
 RUN pip install -r requirements.txt
 
 COPY python_modules/ascan ascan
+
+WORKDIR /home/certs/
+COPY certs/dev/ascan_dev_internal.pem /home/certs/ascan_internal.pem
 
 WORKDIR /opt/ascan/ascan

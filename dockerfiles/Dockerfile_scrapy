@@ -15,4 +15,8 @@ RUN pip install --editable .
 
 WORKDIR /opt/ascan
 COPY python_modules/ascan_scrapy ascan_scrapy
+
+WORKDIR /home/certs/
+COPY certs/dev/ascan_dev_internal.pem /home/certs/ascan_internal.pem
+
 WORKDIR /opt/ascan/ascan_scrapy

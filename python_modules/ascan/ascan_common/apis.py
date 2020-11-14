@@ -1,8 +1,13 @@
+from base64 import b64encode
 import http.client
 import json
 from logging import debug, warning
 import socket
 import urllib
+import ssl
+
+ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+ssl_context.load_verify_locations('/home/certs/ascan_internal.pem')
 
 def stractor_reading(stractor_host, stractor_port, text, source_type):
     """
@@ -48,15 +53,20 @@ def eat_omnivore2(omniv2_host, omniv2_port, json_doc, req_id=None, req_class=Fal
         return False
     return True
 
-def solr_check_urls(solr_host, solr_port, solr_core, date_post_check, date_retr_check, urls):
+def solr_check_urls(solr_host, solr_port, solr_core, solr_pass, date_post_check, date_retr_check,
+        urls):
     urls_to_skip = set()
     debug('Asking Solr about urls: {} or more'.format(urls[:20]))
     query_str = ('/solr/{}/select?fl=url&q=date_post:{}%20date_retr:{}&q=url:({})'.format(
         solr_core,
         urllib.parse.quote(date_post_check), urllib.parse.quote(date_retr_check),
         urllib.parse.quote(' '.join(urls), safe='')))
-    conn = http.client.HTTPConnection(solr_host, port=solr_port)
-    conn.request('GET', query_str, headers={'Content-type': 'application/json'})
+    headers = { 'Content-type': 'application/json',
+            'Authorization':
+            'Basic {}'.format(b64encode(bytes('reader:'+solr_pass, 'utf-8')).decode('ascii')) }
+    conn = http.client.HTTPSConnection(solr_host, port=solr_port,
+            context=ssl_context)
+    conn.request('GET', query_str, headers=headers)
     response = conn.getresponse()
     response_text = response.read().decode('utf-8')
     response_json = json.loads(response_text)

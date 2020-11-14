@@ -1,9 +1,11 @@
+from base64 import b64encode
 from datetime import datetime 
 import http.client
 import json
 from logging import debug, info
 from urllib import parse
 import os
+import ssl
 
 from django.conf import settings
 from redis import Redis
@@ -11,6 +13,8 @@ from redis import Redis
 from scan.utils import date_fmt
 
 redis = Redis(host='redis', port=6379, db=0, password=os.environ['REDIS_PASS'])
+ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+ssl_context.load_verify_locations('/home/certs/ascan_internal.pem')
 
 def rules_results(query_phrase, rules, query_site_names='', highlight=False):
     context = dict()
@@ -63,10 +67,15 @@ def rules_results(query_phrase, rules, query_site_names='', highlight=False):
         solr_address += '&hl=true&hl.method=unified&hl.fl={}&hl.tag.pre=**&hl.tag.post=**'.format(
                 ','.join(settings.SOLR_TEXT_FIELDS))
     info('Constructed Solr query {}'.format(solr_address))
-    solr_conn = http.client.HTTPConnection(settings.SOLR_HOST, port=settings.SOLR_PORT, timeout=20)
-    solr_conn.request('GET', solr_address)
+    headers = { 'Authorization':
+            'Basic {}'.format(
+                b64encode(bytes('reader:'+settings.SOLR_READER_PASS, 'utf-8')).decode('ascii')) }
+    solr_conn = http.client.HTTPSConnection(settings.SOLR_HOST,
+            port=settings.SOLR_PORT, timeout=20, context=ssl_context)
+    solr_conn.request('GET', solr_address, headers=headers)
     response = solr_conn.getresponse()
-    response_json = json.loads(response.read().decode('utf-8'))
+    resp_bytes = response.read()
+    response_json = json.loads(resp_bytes.decode('utf-8'))
     if 'error' in response_json:
         raise ValueError('Solr error in {}'.format(response_json))
     # Only notify omnivore2 if we succeeded.
