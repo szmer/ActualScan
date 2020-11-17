@@ -65,7 +65,7 @@ def search(request):
                 minimal_level=minimal_level,
                 is_ip=not request.user.is_authenticated,
                 is_privileged=request.user.is_staff)
-            return redirect('/scan/scaninfo/?job_id={}'.format(job.id))
+            return redirect('/manager/scaninfo/?job_id={}'.format(job.id))
         # If the scan request just failed, flash the negative infomation.
         if not scan_performed:
             debug('A scan was requested and rejected.')

@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
+import ssl
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -160,14 +161,22 @@ LOGGING = {
             }
         }
 
+
+redis_ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+redis_ssl_context.load_cert_chain(certfile='/home/certs/ascan_internal.pem',
+        keyfile='/home/certs/ascan_internal_key.key')
+redis_ssl_context.load_verify_locations('/home/certs/ascan_internal.pem')
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
             "hosts": [
                 { "address": "redis://redis:6379/0",
-                    "password": os.environ['REDIS_PASS'] }
+                    "password": os.environ['REDIS_PASS'],
+                    'ssl': redis_ssl_context
+                    } 
                 ],
+            "symmetric_encryption_keys": [SECRET_KEY]
         },
     },
 }

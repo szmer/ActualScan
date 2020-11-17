@@ -34,7 +34,7 @@ services:
      build:
         context: .
         dockerfile: dockerfiles/Dockerfile_scrapy
-     command: scrapy crawl general -L WARNING
+     command: scrapy crawl general -L DEBUG
      env_file:
         - '.env'
      depends_on:
@@ -69,6 +69,8 @@ services:
      command: "sbcl --eval '(ql:quickload :speechtractor)'"
      # Make sbcl not exit immediately.
      tty: true
+     env_file:
+        - '.env'
      depends_on:
         - solr
 
@@ -78,7 +80,13 @@ services:
         dockerfile: dockerfiles/Dockerfile_omnivore2
      ports:
         - '127.0.0.1:6824:6823'
-     command: "gunicorn -b 0.0.0.0:6823 wsgi:app"
+     # Only authenticate with the client certificate for now.
+     command: >-
+       gunicorn -b 0.0.0.0:6823 wsgi:app
+       --ssl-version TLSv1_2
+       --keyfile /home/certs/ascan_internal_key.key
+       --certfile /home/certs/ascan_internal.pem
+       --ca-certs /home/certs/ascan_internal.pem
      env_file:
         - '.env'
      depends_on:
@@ -105,13 +113,20 @@ services:
 
   # Needed for Django Channels (and Celery when we use it).
   redis:
-    image: 'redis:6.0-rc'
-    command: 'redis-server /usr/local/etc/redis/redis.conf'
-    volumes:
-      - redisdata:/var/lib/redis/data
-      - ./redis.conf:/usr/local/etc/redis/redis.conf
-    ports:
-      - '127.0.0.1:6380:6379'
+     build:
+       context: .
+       dockerfile: dockerfiles/Dockerfile_redis
+     command: >-
+       redis-server /usr/local/etc/redis/redis.conf
+       --tls-port 6379 --port 0
+       --tls-cert-file /home/certs/ascan_internal.pem
+       --tls-key-file /home/certs/ascan_internal_key.key
+       --tls-ca-cert-file /home/certs/ascan_internal.pem
+     volumes:
+       - redisdata:/var/lib/redis/data
+       - ./redis.conf:/usr/local/etc/redis/redis.conf
+     ports:
+       - '127.0.0.1:6380:6379'
 
   solr:
      build:

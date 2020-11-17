@@ -20,7 +20,7 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import ElementClickInterceptedException
 
-from scan.models import Site, ScanJob, ScrapeRequest
+from scan.models import Site, ScanJob, ScrapeRequest, Tag, TagSiteLink
 from asgiref.sync import sync_to_async
 from dynamic_preferences.registries import global_preferences_registry
 
@@ -38,6 +38,8 @@ OMNIVORE2_PORT = os.environ['OMNIVORE2_PORT']
 SOLR_PING_URL = 'https://{}:{}/solr/{}/admin/ping'.format(SOLR_HOST, SOLR_PORT, SOLR_CORE)
 SPEECHTRACTOR_HOST = os.environ['SPEECHTRACTOR_HOST']
 SPEECHTRACTOR_PORT = os.environ['SPEECHTRACTOR_PORT']
+SPEECHTRACTOR_USERNAME = os.environ['SPEECHTRACTOR_USERNAME']
+SPEECHTRACTOR_PASSWORD = os.environ['SPEECHTRACTOR_PASSWORD']
 REQUEST_META = ['id', 'is_search', 'is_simple_crawl', 'job_id', 'lead_count', 'save_copies',
         'site_name', 'site_url', 'site_id', 'source_type']
 
@@ -53,7 +55,10 @@ LOGGER.setLevel(logging.WARNING)
 #
 # Selenium operation for search pages operating with JS.
 #
-redis = Redis(host='redis', port=6379, db=0, password=os.environ['REDIS_PASS'])
+redis = Redis(host='redis', port=6379, db=0, password=os.environ['REDIS_PASS'], ssl=True,
+        ssl_certfile='/home/certs/ascan_internal.pem',
+        ssl_keyfile='/home/certs/ascan_internal_key.key',
+        ssl_ca_certs='/home/certs/ascan_internal.pem')
 redis_lock.reset_all(redis)
 
 def extract_overlay_info(click_intercepted_msg):
@@ -300,6 +305,7 @@ class GeneralSpider(scrapy.Spider):
         Return the object loaded from response JSON.
         """
         stractor_output = stractor_reading(SPEECHTRACTOR_HOST, SPEECHTRACTOR_PORT,
+                SPEECHTRACTOR_USERNAME, SPEECHTRACTOR_PASSWORD,
                 html_text, source_type)
         # Speechtractor failures.
         if isinstance(stractor_output, int):
@@ -348,7 +354,7 @@ class GeneralSpider(scrapy.Spider):
         Due to the Redis lock it should be safe to call multiplw such requests at once, although
         Scrapy will limit requesrs for the dummy Solr domain.
         """
-        logger.debug('A monitoring pagse')
+        logger.debug('A monitoring parse')
         lock = redis_lock.Lock(redis, 'scrapy-monitoring-parse')
         if lock.acquire():
             scrape_requests_waiting = await sync_to_async(list)(ScrapeRequest.objects.filter(
@@ -393,6 +399,7 @@ class GeneralSpider(scrapy.Spider):
                 and db_request.lead_count > global_preferences['scanning__web_normal_search_depth']):
             await sync_to_async(update_request_status)(db_request, 'cancelled',
                     failure_comment='exceeded web search depth')
+            logger.debug('Exceeded search depth, stopping subsequent search pages.')
             return
 
         # Interpret the webpage with speechtractor.
@@ -403,7 +410,9 @@ class GeneralSpider(scrapy.Spider):
         try:
             stractor_response_json = await self.interpret_stractor(source_type, response.text,
                     response.meta['id'])
-        except (JSONDecodeError, socket.timeout):
+            logger.debug('Stractor queried.')
+        except (JSONDecodeError, socket.timeout) as e:
+            logger.info('Stractor stopped by {}'.format(e))
             stractor_response_json = None
 
         if response.meta['is_simple_crawl']:
@@ -411,12 +420,11 @@ class GeneralSpider(scrapy.Spider):
                 soup = BeautifulSoup(response.text, 'lxml')
                 for link in soup.find_all('a'):
                     try:
+                        logger.debug('Following a link to {}'.format(link['href']))
                         address = urlparse(link['href'])
                         if not address.netloc or db_request.site_name in address.netloc:
                             await sync_to_async(ScrapeRequest.objects.create)(
-                                    target=(link['href']
-                                        if address.netloc
-                                        else db_request.site_name+'/'+link['href']),
+                                    target=full_url(link['href'], response.meta['site_url']),
                                     is_search=False,
                                     job_id=response.meta['job_id'],
                                     lead_count=response.meta['lead_count']+1,
@@ -533,13 +541,27 @@ class GeneralSpider(scrapy.Spider):
                     else:
                         doc['real_doc'] = response.url
                     doc['url'] = full_url(doc['url'], response.meta['site_url'])
-                    if db_request.job.query_tags:
-                        doc['tags'] = db_request.job.query_tags
-                    else:
-                        doc['tags'] = [link.tag.name for link in db_request.site.tag_links]
+                    logger.debug('Adding tags')
+###-                    logger.debug('HM {}??'.format(db_request.job))
+###-                    if db_request.job.query_tags:
+###-                        doc['tags'] = db_request.job.query_tags
+###-                    else:
+###-                    links = await sync_to_async(list)(TagSiteLink.objects.filter(
+###-                        site=site_obj).all())
+###-                    logger.debug('LINKI {}'.format(links))
+###-                    doc['tags'] = []
+###-                    for link in links:
+###-                        tag = await sync_to_async(list)(Tag.objects.filter(id=link.tag_id).all())
+###-                        tag = tag[0]
+###-                        doc['tags'].append(tag.name)
+                    doc['tags'] = ['internet']
+                    logger.debug('TAGS {}'.format(doc['tags']))
                 # We have to convert it to async to allow it to update the request on failure.
-                await sync_to_async(eat_omnivore2)(OMNIVORE2_HOST, OMNIVORE2_PORT, doc,
+                logger.debug('Sending to omnivore2.')
+                omnivore2_ok = await sync_to_async(eat_omnivore2)(OMNIVORE2_HOST, OMNIVORE2_PORT, doc,
                         req_id=response.meta['id'], req_class=ScrapeRequest)
+                if not omnivore2_ok:
+                    logger.info('Cannot reach omnivore2')
                 await sync_to_async(update_request_status)(db_request, 'committed')
             else:
                 logger.info('Got empty/none Speechractor response: {}'

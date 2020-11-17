@@ -4,8 +4,14 @@
   (drakma:http-request
                (format nil
                        (concatenate 'string
-                                    "http://127.0.0.1:~A/api/v01/interpret")
+                                    "https://127.0.0.1:~A/api/v01/interpret")
                        speechtractor::*http-port*)
+               :force-ssl t
+               :basic-authorization
+               (if (sb-ext:posix-getenv "SPEECHTRACTOR_USERNAME")
+                   (list (sb-ext:posix-getenv "SPEECHTRACTOR_USERNAME")
+                         (sb-ext:posix-getenv "SPEECHTRACTOR_PASSWORD"))
+                   (list "stractor" "stractor"))
                :method :post
                :parameters
                (list (cons "sourcetype" source-type)
@@ -44,13 +50,13 @@
       ;; That's how cl-json re-reads date_post
       (is (equalp "2020-01-10T18:03:00Z" (cdr (assoc :date--post (first parsed-docs)))))
       (is (equalp "#p32010571" (cdr (assoc :url (first parsed-docs)))))
-      (is (equalp (format nil "Alright fashionistas.~%What is fashion faux pas drives you crazy?~%I will get the ball rolling: men who wear white crew necks under their dress shirts and leave the neck open.~%It's so sloppy.")
+      (is (equalp (format nil "Alright fashionistas. What is fashion faux pas drives you crazy? I will get the ball rolling: men who wear white crew necks under their dress shirts and leave the neck open. It's so sloppy.")
                   (cdr (assoc :text (first parsed-docs)))))
       (is (equalp "smartie" (cdr (assoc :author (nth 11 parsed-docs)))))
       (is (equalp "2020-01-14T21:52:00Z" (cdr (assoc :date--post (nth 11 parsed-docs)))))
       (is (equalp "#p32027817" (cdr (assoc :url (nth 11 parsed-docs)))))
       (is (search "Becks wrote:" (cdr (assoc :text (nth 11 parsed-docs)))))
-      (is (search (format nil "I have to ask which area do you live?~%Seems a lot artists there")
+      (is (search (format nil "I have to ask which area do you live? Seems a lot artists there")
                   (cdr (assoc :text (nth 11 parsed-docs))))))))
 
 (deftest x-headfi-xenforo ()
@@ -112,7 +118,7 @@
                   (cdr (assoc :url (first parsed-docs)))))
       (is (equalp "circumspice" (cdr (assoc :author (second parsed-docs)))))
       (is (equalp "2020-01-06T15:53:00Z" (cdr (assoc :date--post (second parsed-docs)))))
-      (is (equalp (format nil "@Gus may have some recommendations.~%I think something in this vein is his travel pent jam")
+      (is (equalp (format nil "@Gus may have some recommendations. I think something in this vein is his travel pent jam")
                   (cdr (assoc :text (second parsed-docs)))))
       (is (equalp (format nil "Not finding much in search, unfortunately")
                   (cdr (assoc :text (fourth parsed-docs)))))
@@ -154,7 +160,7 @@
                   (cdr (assoc :date--post (second parsed-docs)))))
       ;; NOTE the space in Diana , is because of text node concatenation. It could potentially not
       ;; add that before a punctuation mark?
-      (is (equalp (format nil "Diana , you look amazing.~%SOOOOO cozy all bundled up.~%Of course your first \"me\" outfit had to include one of your beautiful hand knits!~%That sweater is so texturally rich.~%Love both outfits on you.")
+      (is (equalp (format nil "Diana , you look amazing. SOOOOO cozy all bundled up. Of course your first \"me\" outfit had to include one of your beautiful hand knits! That sweater is so texturally rich. Love both outfits on you.")
                   (cdr (assoc :text (second parsed-docs)))))
       (is (equalp "https://youlookfab.com/welookfab/topic/angie-challenge-day-1-ffbo-handknit-sweater-jeans-combat-boots#post-2006846"
                   (cdr (assoc :url (car (last parsed-docs))))))

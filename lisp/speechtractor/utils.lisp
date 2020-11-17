@@ -4,7 +4,11 @@
   (map 'list #'identity vector))
 
 (defun cleaned-text (str)
-  (cl-strings:clean (cl-strings:clean str :char #\space) :char #\newline))
+  (if (find-if (lambda (char) (and (not (eq char #\space))
+                                   (not (eq char #\newline))))
+               str)
+      (cl-strings:clean (cl-strings:clean str :char #\space) :char #\newline)
+      ""))
 
 (defmacro add-end (list elem)
   "Return the list with elem (non-nil) added at the end. This destructively modifies the original \

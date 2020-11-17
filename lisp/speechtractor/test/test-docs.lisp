@@ -4,10 +4,13 @@
   "<html><head><title>Test document</title></head> \
                     <p>Don't mind<br>me</p>\
                     <body><section data-author='isaac'><p>Hello there</p>\ 
-                    <p>Green mooshrums? Mooks</p>\ 
+                    <p>Green mooshrums? Mooks        </p>\ 
                     <date>Jan 1, 2050</date></section> \
                     <section> <p>Farewell</p>\ 
                     <a href='www.example.com/somewhere' title='Permalink'>go there</a>\ 
+                    <p></p><p></p>\
+                    \
+                    \
                     <p>Really gigantic molluscs. I did it again!</p></section> \
                     </body></html>")
 
@@ -83,10 +86,9 @@
                 *test-document* *test-metadata-funs*
                 :classification-settings (alexandria:alist-hash-table
                                            (list (cons :length-low 3) (cons :length-high 10)
-                                                 (cons :stopwords-high 0) (cons :stopwords-low 0)))
-                :split-sents t))
+                                                 (cons :stopwords-high 0) (cons :stopwords-low 0)))))
          (reread-json (cl-json:decode-json-from-string json)))
-    (is (equalp (format nil "Hello there~%~%Green mooshrums?~%Mooks~%~%Jan 1, 2050")
+    (is (equalp (format nil "Hello there~%~%Green mooshrums? Mooks~%~%Jan 1, 2050")
                 (cdr (assoc :text (first reread-json)))))
-    (is (equalp (format nil "Farewell~%~%Really gigantic molluscs.~%I did it again!")
+    (is (equalp (format nil "Farewell~%~%Really gigantic molluscs. I did it again!")
                 (cdr (assoc :text (second reread-json)))))))

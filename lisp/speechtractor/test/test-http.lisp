@@ -6,12 +6,18 @@
     (let* ((response (drakma:http-request
                          (format nil
                                  (concatenate 'string
-                                              "http://127.0.0.1:~A/api/v01/interpret"
+                                              "https://127.0.0.1:~A/api/v01/interpret"
                                               "?sourcetype=test&emptyurl=1&html=~A")
                                  speechtractor::*http-port*
                                  (drakma:url-encode
                                    "<body><p author='Sophie'>My very interesting and completely realistic example with lots of words</p></body>"
                                    :utf-8))
+                         :force-ssl t
+                         :basic-authorization
+                         (if (sb-ext:posix-getenv "SPEECHTRACTOR_USERNAME")
+                             (list (sb-ext:posix-getenv "SPEECHTRACTOR_USERNAME")
+                                   (sb-ext:posix-getenv "SPEECHTRACTOR_PASSWORD"))
+                             (list "stractor" "stractor"))
                          ;; don't mess with our encoding
                          :preserve-uri t))
            (response-json (cl-json:decode-json-from-string response)))

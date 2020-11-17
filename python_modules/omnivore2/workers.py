@@ -19,7 +19,10 @@ from omnivore2_conf import (
 from contextual_analysis import apply_contextual_analysis
 from utils import date_fmt, time_now
 
-redis = Redis(host='redis', port=6379, db=0, password=os.environ['REDIS_PASS'])
+redis = Redis(host='redis', port=6379, db=0, password=os.environ['REDIS_PASS'], ssl=True,
+        ssl_certfile='/home/certs/ascan_internal.pem',
+        ssl_keyfile='/home/certs/ascan_internal_key.key',
+        ssl_ca_certs='/home/certs/ascan_internal.pem')
 WORKERS_COUNT = int(os.environ.get('OMNIVORE2_WORKERS_COUNT', 1))
 
 ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)

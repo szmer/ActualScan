@@ -18,5 +18,6 @@ COPY python_modules/ascan_scrapy ascan_scrapy
 
 WORKDIR /home/certs/
 COPY certs/dev/ascan_dev_internal.pem /home/certs/ascan_internal.pem
+COPY certs/dev/ascan_dev_internal_key.key /home/certs/ascan_internal_key.key
 
 WORKDIR /opt/ascan/ascan_scrapy

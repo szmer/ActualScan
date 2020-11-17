@@ -5,8 +5,6 @@
 
   :depends-on ("chronicity" "cl-json" "cl-ppcre" "cl-strings" "fiasco" "hunchentoot" "local-time"
                "plump" "log4cl" "purl"
-               ;; These are used strictly by the copied sentence-splitting code.
-               "rutils" "rutilsx"
                ;; For testing http.
                "drakma")
   :components ((:file "speechtractor")
@@ -19,7 +17,6 @@
                 :depends-on ("utils"))
                (:module "src"
                 :components ((:file "paragraph")
-                             (:file "sent-split")
                              (:file "classify" :depends-on ("paragraph"))
                              (:file "out" :depends-on ("classify"))
                              ;; The http server makes use of functions defined in meta-funs.

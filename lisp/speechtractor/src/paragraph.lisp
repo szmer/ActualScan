@@ -16,8 +16,12 @@
     (if cleanp #'cleaned-text #'identity)
     (with-output-to-string (result-str-stream)
       (let ((previous-node-text))
+        ;; Assemble the text from all the text nodes covered by the paragraph.
         (dolist (node-text (paragraph-text-nodes paragraph))
+          ;; Add an additional space unless it's the first node, or there is already whitespace at
+          ;; the boundary, or the node being added is empty.
           (unless (or (null previous-node-text)
+                      (zerop (length (cleaned-text node-text)))
                       (unless (zerop (length previous-node-text))
                         (find (elt previous-node-text (1- (length previous-node-text)))
                               '(#\Space #\Newline #\Backspace #\Tab
@@ -26,9 +30,10 @@
                         (find (elt node-text 0)
                               '(#\Space #\Newline #\Backspace #\Tab
                                 #\Linefeed #\Page #\Return #\Rubout))))
-            (format result-str-stream " "))
+            (princ " " result-str-stream))
           (setf previous-node-text node-text)
-          (format result-str-stream "~A" node-text))))))
+          ;; Use princ instead of format to avoid padding other "niceties" meant for line printing
+          (princ node-text result-str-stream))))))
 
 (defmethod print-object ((paragraph paragraph) stream)
   (print-unreadable-object (paragraph stream :type t :identity t)

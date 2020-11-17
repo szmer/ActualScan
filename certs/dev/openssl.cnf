@@ -18,3 +18,4 @@ subjectAltName = @alt_names
 DNS.1 = solr
 DNS.2 = speechtractor
 DNS.3 = omnivore2
+DNS.4 = redis

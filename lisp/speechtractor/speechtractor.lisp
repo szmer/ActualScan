@@ -12,6 +12,12 @@
 (defparameter *server-enter-debug-p* t)
 ;; Should we print logs for incoming HTTP requests.
 (defparameter *log-requests-p* t)
+;; Authentication setup - accepted login, password pairs.
+(defparameter *auth-pairs* (if (sb-ext:posix-getenv "SPEECHTRACTOR_USERNAME")
+                               (list (list (sb-ext:posix-getenv "SPEECHTRACTOR_USERNAME")
+                                           (sb-ext:posix-getenv "SPEECHTRACTOR_PASSWORD")))
+                               ;; the default e.g. for testing:
+                               (list (list "stractor" "stractor"))))
 
 ;;; Set timezone that will be also returned by chronicity.
 (setf local-time:*default-timezone* local-time:+utc-zone+)

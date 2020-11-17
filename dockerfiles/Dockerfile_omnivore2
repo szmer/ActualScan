@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -qq -y \
 
 WORKDIR /home/certs/
 COPY certs/dev/ascan_dev_internal.pem /home/certs/ascan_internal.pem
+COPY certs/dev/ascan_dev_internal_key.key /home/certs/ascan_internal_key.key
 
 WORKDIR /opt/omnivore2
 COPY python_modules/requirements.omnivore2.txt requirements.txt

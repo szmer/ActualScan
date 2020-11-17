@@ -12,7 +12,10 @@ from redis import Redis
 
 from scan.utils import date_fmt
 
-redis = Redis(host='redis', port=6379, db=0, password=os.environ['REDIS_PASS'])
+redis = Redis(host='redis', port=6379, db=0, password=os.environ['REDIS_PASS'], ssl=True,
+        ssl_certfile='/home/certs/ascan_internal.pem',
+        ssl_keyfile='/home/certs/ascan_internal_key.key',
+        ssl_ca_certs='/home/certs/ascan_internal.pem')
 ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
 ssl_context.load_verify_locations('/home/certs/ascan_internal.pem')
 

@@ -8,8 +8,10 @@ import ssl
 
 ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
 ssl_context.load_verify_locations('/home/certs/ascan_internal.pem')
+ssl_context.load_cert_chain(certfile='/home/certs/ascan_internal.pem',
+        keyfile='/home/certs/ascan_internal_key.key')
 
-def stractor_reading(stractor_host, stractor_port, text, source_type):
+def stractor_reading(stractor_host, stractor_port, stractor_user, stractor_pass, text, source_type):
     """
     Get the text of JSON response of Speechtractor for text and source_type, or HTTP status error
     code as int, or -1 on local timeout.
@@ -17,26 +19,32 @@ def stractor_reading(stractor_host, stractor_port, text, source_type):
     params = urllib.parse.urlencode({'html': text, 'sourcetype': source_type,
         'emptyurl': '1' if source_type in ['media', 'blog'] else '0'},
         quote_via=urllib.parse.quote)
-    headers = {"Content-type": "application/x-www-form-urlencoded",
-            "Accept": "text/json"}
-    stractor_conn = http.client.HTTPConnection(stractor_host, port=stractor_port, timeout=15)
+    headers = {'Content-type': 'application/x-www-form-urlencoded',
+            'Accept': 'text/json',
+            'Authorization':
+            'Basic {}'.format(
+                b64encode(bytes(stractor_user+':'+stractor_pass, 'utf-8')).decode('ascii'))}
+    stractor_conn = http.client.HTTPSConnection(stractor_host, port=stractor_port, timeout=15,
+            context=ssl_context)
     stractor_conn.request('POST', '/api/v01/interpret', params, headers)
     try:
         stractor_response = stractor_conn.getresponse()
     except socket.timeout:
         warning('Speechtractor timed out')
         return -1
+    resp = stractor_response.read()
     if stractor_response.status != 200:
-        warning(stractor_response.read())
+        warning('Failing Speechtractor: {}'.format(resp))
         return stractor_response.status
-    return stractor_response.read().decode('utf-8')
+    return resp.decode('utf-8')
 
 def eat_omnivore2(omniv2_host, omniv2_port, json_doc, req_id=None, req_class=False):
     """
     Send the json_doc to omnivore2, optionally updating the req_id ScrapeRequest (or other given
     req_class) on failure. Return a boolean indicating success or failure.
     """
-    omniv2_conn = http.client.HTTPConnection(omniv2_host, port=omniv2_port, timeout=15)
+    omniv2_conn = http.client.HTTPSConnection(omniv2_host, port=omniv2_port, timeout=15,
+            context=ssl_context)
     timeouted = False
     try:
         headers = {'Content-type': 'application/json'}
@@ -44,6 +52,7 @@ def eat_omnivore2(omniv2_host, omniv2_port, json_doc, req_id=None, req_class=Fal
         omniv2_response = omniv2_conn.getresponse()
     except socket.timeout:
         timeouted = True
+    warning('{}, {}'.format(timeouted, omniv2_response.status))
     if timeouted or omniv2_response.status != 200:
         if req_id is not None:
             db_request = req_class.objects.get(id=req_id)
