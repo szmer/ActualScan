@@ -1,0 +1,98 @@
+# Custom configuration for StormCrawler
+# This is used to override the default values from crawler-default.xml and provide additional ones 
+# for your custom components.
+# Use this file with the parameter -conf when launching your extension of ConfigurableTopology.
+# This file does not contain all the key values but only the most frequently used ones. See crawler-default.xml for an extensive list.
+
+#nimbus.seeds : ["stormcrawler"]
+
+topology.workers: 1
+topology.message.timeout.secs: 300
+topology.max.spout.pending: 100
+topology.debug: false
+
+fetcher.threads.number: 1 #50
+
+# override the JVM parameters for the workers
+topology.worker.childopts: "-Xmx2g -Djava.net.preferIPv4Stack=true"
+
+# mandatory when using Flux
+topology.kryo.register:
+  - com.digitalpebble.stormcrawler.Metadata
+
+# metadata to transfer to the outlinks
+# used by Fetcher for redirections, sitemapparser, etc...
+# these are also persisted for the parent document (see below)
+# metadata.transfer:
+# - customMetadataName
+
+# lists the metadata to persist to storage
+# these are not transfered to the outlinks
+#  metadata.persist:
+#   - _redirTo
+#   - error.cause
+#   - error.source
+#   - isSitemap
+#   - isFeed
+
+http.agent.name: "{{ ascan_uagent_string }}"
+http.agent.version: ""
+http.agent.description: "" 
+http.agent.url: ""
+http.agent.email: ""
+
+# The maximum number of bytes for returned HTTP response bodies.
+# The fetched page will be trimmed to 65KB in this case
+# Set -1 to disable the limit.
+http.content.limit: 1240000
+
+# FetcherBolt queue dump => comment out to activate
+# if a file exists on the worker machine with the corresponding port number
+# the FetcherBolt will log the content of its internal queues to the logs
+# fetcherbolt.queue.debug.filepath: "/tmp/fetcher-dump-{port}"
+
+#parsefilters.config.file: "parsefilters.json"
+#urlfilters.config.file: "urlfilters.json"
+
+# revisit a page weekly (value in minutes)
+# set it to -1 to never refetch a page
+fetchInterval.default: 10080
+
+# revisit a page with a fetch error after 2 hours (value in minutes)
+# set it to -1 to never refetch a page
+fetchInterval.fetch.error: 120
+
+# never revisit a page with an error (or set a value in minutes)
+fetchInterval.error: -1
+
+# ActualScan-specific options.
+#  ascan.keystore.path: "/home/certs/"
+#  ascan.keystore.password: {{ ascan_keystore_password }}
+#  ascan.omnivore2.host: omnivore2
+#  ascan.omnivore2.port: 6823
+#  ascan.postgres.host: {{ ascan_postgres_host }}
+#  ascan.postgres.port: {{ ascan_postgres_port }}
+#  ascan.postgres.user: {{ ascan_postgres_user }}
+#  # (we use the JDBC default to connect to the database with the same name as the user)
+#  ascan.postgres.password: {{ ascan_postgres_password }}
+#  ascan.scanning.normal_search_depth: 3
+#  ascan.speechtractor.host: {{ ascan_speechtractor_host }}
+#  ascan.speechtractor.port: {{ ascan_speechtractor_port }}
+#  ascan.speechtractor.user: {{ ascan_speechtractor_user }}
+#  ascan.speechtractor.password: {{ ascan_speechtractor_password }}
+
+# Metrics consumers:
+topology.metrics.consumer.register:
+   - class: "org.apache.storm.metric.LoggingMetricsConsumer"
+     parallelism.hint: 1
+
+storm.log.dir: "/logs"
+storm.local.dir: "/data"
+storm.log4j2.conf.dir: "/home/ascan_java/log4j2"
+
+# We need to get the search pages. TODO separately filter for simple crawls
+http.skip.robots: true
+http.robots.file.skip: true
+http.robots.headers.skip: true
+http.robots.meta.skip: true
+robots.noFollow.strict: false

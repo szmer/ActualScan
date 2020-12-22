@@ -21,7 +21,7 @@
               (progn
                 (setf (hunchentoot:return-code*) hunchentoot:+http-bad-request+)
                 (format nil "Cannot interpret content: html: ~A sourcetype: ~A" html sourcetype))
-              (html-document-data-json html (gethash sourcetype *source-type-meta-funs*
+              (let ((output-json (html-document-data-json html (gethash sourcetype *source-type-meta-funs*
                                                      ;; apparently we cannot put an error call here directly
                                                      ;; b/c it would be evaluated.
                                                      (format nil "no meta-funs for sourcetype ~S"
@@ -30,7 +30,10 @@
                                        (gethash sourcetype *source-type-classification-settings*
                                                 (format nil "no classif. settings for sourcetype ~S"
                                                         sourcetype))
-                                       :remove-if-empty-url (not (equalp emptyurl "1"))))))))
+                                       :remove-if-empty-url (not (equalp emptyurl "1")))))
+                (when *log-requests-p*
+                  (log:info "Responded with ~A chars" (length output-json)))
+                output-json))))))
 
 (hunchentoot:define-easy-handler (status-01 :uri "/api/v01/status") (html sourcetype)
   (setf (hunchentoot:content-type*) "text/plain")

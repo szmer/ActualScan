@@ -21,6 +21,14 @@ openssl pkcs12 -export -in ascan_dev_internal.pem -inkey ascan_dev_internal.pem 
 ```
 All passwords that you enter should be consistent with `KEYSTORE_PASSWORD` variable in your `.env` file.
 
+# Compiling Java (TODO: to script or something)
+From `java/generalcrawl` run:
+```
+mvn compile
+mvn package
+```
+before running `docker-compose up --build`
+
 # Running migrations
 
 NOTE on docker-compose you need to those manually (to allow you to delay migrations in development),
@@ -65,9 +73,9 @@ The container must be running for "exec" to work!
 Note that `while True` loops in the website container generally produce an unending stream of
 transaction, so it may have to be restarted.
 
-## Debugging Scrapy, Reddit scraper
+## Debugging the Reddit scraper
 
-- change the call in scrapy_process.py, reddit_process.py to -L INFO or -L DEBUG
+- change the call in the reddit process to -L INFO or -L DEBUG
 
 # Solr cores
 

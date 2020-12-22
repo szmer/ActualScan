@@ -109,7 +109,7 @@ def make_scrape_request(base_scrape_request, target, job_id, status='ran'):
             site_url=base_scrape_request.site_url,
             site_id=base_scrape_request.site_id,
             site_type='reddit',
-            save_copies=base_scrape_request.save_copies)
+            query_tags=base_scrape_request.job.id)
 
 def process_submission(submission, submission_scrape_request):
     logger.info('Processing the submission: {}'.format(submission_scrape_request.target))

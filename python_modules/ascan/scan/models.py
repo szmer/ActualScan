@@ -53,9 +53,6 @@ class Site(models.Model):
     site_type = models.CharField(max_length=32,
             choices=[(v, v) for v in ['web', 'reddit']])
     creator = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='sites', null=True)
-    # Possibly save raw copies of everything requested from the site to disk. For debugging and
-    # crafting the extraction functions.
-    save_copies = models.BooleanField(default=False)
     time_created = models.DateTimeField(auto_now_add=True)
     # This flags indicates that this is a scan going from one site's homepage in a classic crawl.
     is_simple_crawl = models.BooleanField(default=False)
@@ -125,9 +122,6 @@ class ScanJob(models.Model):
     # These counts should be filled out when starting the job; they're needed for progress reporting
     website_count = models.IntegerField(default=0)
     subreddit_count = models.IntegerField(default=0)
-    # This controls whether scrapy should also save raw copies of html to disk. Setting spread to
-    # requests.
-    save_copies = models.BooleanField(default=False)
 
     def change_status(self, status):
         self.status = status
@@ -167,6 +161,10 @@ class ScrapeRequest(models.Model):
     site_name = models.CharField(max_length=512)
     site_type = models.CharField(max_length=32)
     site_url = models.CharField(max_length=8192)
+    # Tbis is copied from the job object.
+    query_tags = ArrayField(
+            models.CharField(max_length=Tag._meta.get_field('name').max_length),
+            blank=True)
     # This has meaning for search requests. For website requests, this should contain the number of
     # search pages leading up to the page in question, or yielded by it in case of executing inside
     # Selenium (only scrapy uses this). For Reddit requests, this should contain the number total 
@@ -178,8 +176,7 @@ class ScrapeRequest(models.Model):
     # (job field defined as a backref)
     status = models.CharField(max_length=32, choices=SCRAPE_REQUEST_STATUSES)
     status_changed = models.DateTimeField(auto_now_add=True)
-    save_copies = models.BooleanField(default=False)
-    failure_comment = models.CharField(max_length=2048)
+    failure_comment = models.CharField(max_length=2048, null=True, blank=True)
 
     def change_status(self, status):
         self.status = status

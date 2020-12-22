@@ -48,3 +48,10 @@ certs/dev/*.pem
 certs/dev/*.key
 certs/dev/*.pfx
 certs/dev/*.p12
+
+# Java jars
+*.jar
+*.war
+*.ear
+# The whole "target" directory
+java/generalcrawl/target/

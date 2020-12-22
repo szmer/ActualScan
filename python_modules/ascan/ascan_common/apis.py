@@ -43,8 +43,8 @@ def eat_omnivore2(omniv2_host, omniv2_port, json_doc, req_id=None, req_class=Fal
     Send the json_doc to omnivore2, optionally updating the req_id ScrapeRequest (or other given
     req_class) on failure. Return a boolean indicating success or failure.
     """
-    omniv2_conn = http.client.HTTPSConnection(omniv2_host, port=omniv2_port, timeout=15,
-            context=ssl_context)
+    # HTTPS here seems to hang Scrapy?
+    omniv2_conn = http.client.HTTPConnection(omniv2_host, port=omniv2_port, timeout=15)
     timeouted = False
     try:
         headers = {'Content-type': 'application/json'}

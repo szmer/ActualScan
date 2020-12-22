@@ -13,8 +13,8 @@
 ;; Should we print logs for incoming HTTP requests.
 (defparameter *log-requests-p* t)
 ;; Authentication setup - accepted login, password pairs.
-(defparameter *auth-pairs* (if (sb-ext:posix-getenv "SPEECHTRACTOR_USERNAME")
-                               (list (list (sb-ext:posix-getenv "SPEECHTRACTOR_USERNAME")
+(defparameter *auth-pairs* (if (sb-ext:posix-getenv "SPEECHTRACTOR_USER")
+                               (list (list (sb-ext:posix-getenv "SPEECHTRACTOR_USER")
                                            (sb-ext:posix-getenv "SPEECHTRACTOR_PASSWORD")))
                                ;; the default e.g. for testing:
                                (list (list "stractor" "stractor"))))

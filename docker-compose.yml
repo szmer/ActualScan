@@ -30,13 +30,17 @@ services:
      depends_on:
         - website # to get the DB initialization
 
-  scrapy:
+  stormcrawler:
      build:
         context: .
-        dockerfile: dockerfiles/Dockerfile_scrapy
-     command: scrapy crawl general -L DEBUG
+        dockerfile: dockerfiles/Dockerfile_stormcrawler
+        args:
+          UAGENT_STRING: ${UAGENT_STRING}
+     # We run it in local mode, not to deal with Zookeeper.
+     command: storm local generalcrawl-0.1.jar com.actualscan.crawling.CrawlTopology
      env_file:
         - '.env'
+     restart: unless-stopped # Storm local mode dies every 30 secs
      depends_on:
         - postgres
         - solr
@@ -44,8 +48,6 @@ services:
         - selenium
         - website
         - omnivore2
-     volumes:
-        - ./pagecopies:/scrapies/pagecopies
 
   redditscrape:
      build:

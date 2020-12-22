@@ -8,8 +8,8 @@
                        speechtractor::*http-port*)
                :force-ssl t
                :basic-authorization
-               (if (sb-ext:posix-getenv "SPEECHTRACTOR_USERNAME")
-                   (list (sb-ext:posix-getenv "SPEECHTRACTOR_USERNAME")
+               (if (sb-ext:posix-getenv "SPEECHTRACTOR_USER")
+                   (list (sb-ext:posix-getenv "SPEECHTRACTOR_USER")
                          (sb-ext:posix-getenv "SPEECHTRACTOR_PASSWORD"))
                    (list "stractor" "stractor"))
                :method :post

@@ -8,6 +8,7 @@
 - ascan_hosts_user_key: "{{ lookup('file', 'path to your public key') }}"
 # you won't be able to use this password to ssh, but can using direct access to the system
 - ascan_hosts_user_password: password
+- ascan_keystore_password:
 #
 # Applications setup.
 #
@@ -37,3 +38,5 @@
 - ascan_solr_user: user name #
 - ascan_solr_password: password # 
 - ascan_solr_salt: "" # up to 16 chars
+- scan_speechtractor_user:
+- scan_speechtractor_password:

@@ -120,7 +120,7 @@ def request_scan(user_iden, query_phrase : str,
         jobs = ScanJob.objects.filter(query_phrase=query_phrase, query_tags=query_tags,
                 query_site_names=query_site_names, minimal_level=minimal_level,
                 status_changed__gte=time_threshold)
-    debug('The user is privileged: {}, number of jobs found:'.format(is_privileged,
+    debug('The user is privileged: {}, number of jobs found: {}'.format(is_privileged,
         0 if not jobs else len(jobs)))
     if jobs and force_new:
         jobs.delete()
@@ -153,7 +153,7 @@ def start_scan(scan_job):
                 source_type=site.source_type, site_name=site.site_name,
                 site_url=site.homepage_url, site_type=site.site_type,
                 site_id = site.id, is_simple_crawl=True, lead_count = 0,
-                save_copies=scan_job.save_copies or site.save_copies)
+                query_tags = scan_job.query_tags)
     else: # query phrase scan instead of a simple crawl
         if scan_job.query_site_names:
             for site in Site.objects.filter(site_name__in=scan_job.query_site_names):
@@ -178,7 +178,7 @@ def start_scan(scan_job):
                         source_type=site.source_type, site_name=site.site_name,
                         site_url=site.homepage_url, site_type=site.site_type,
                         site_id = site.id,
-                        save_copies=scan_job.save_copies or site.save_copies)
+                        query_tags = scan_job.query_tags)
                 website_count += 1
             elif site.site_type == 'reddit':
                 ScrapeRequest.objects.create(target='[reddit] '+scan_job.query_phrase,
@@ -187,7 +187,7 @@ def start_scan(scan_job):
                         source_type=site.source_type, site_name=site.site_name,
                         site_url=site.homepage_url,
                         site_id = site.id,
-                        save_copies=scan_job.save_copies or site.save_copies)
+                        query_tags = scan_job.query_tags)
                 subreddit_count += 1
             else:
                 error('Unknown site type {} for site {} ({})'.format(
@@ -222,7 +222,7 @@ def scan_progress_info(scan_job_id):
     global_preferences = global_preferences_registry.manager()
     scan_job = ScanJob.objects.get(id=scan_job_id)
     if scan_job is None:
-        debug('Returning status unexisting for the job'.format(scan_job_id))
+        debug('Returning status unexisting for the job {}'.format(scan_job_id))
         return {'phase': 'unexisting'}
 
     # TODO possibly optimize queries
