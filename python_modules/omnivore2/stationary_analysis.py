@@ -1,4 +1,4 @@
-from copy import copy
+from copy import deepcopy
 
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
@@ -36,16 +36,16 @@ def periods_from_solr_document(doc_dict):
         if not sentence_groups:
             sentence_groups.append([sentence])
             group_langs.append(sentence._.language['language'])
-        elif group_langs[-1] == sentence._.language['language']:
+        elif group_langs[-1] == sentence._.language['language']: # add to the previous sentence group
             sentence_groups[-1].append(sentence)
-        else:
+        else: # start a new sentence group
             sentence_groups.append([sentence])
             group_langs.append(sentence._.language['language'])
     all_period_dicts = []
     for group_n, group in enumerate(sentence_groups):
         group_periods, period_sent_counts, period_word_counts = periods_from_spacy_sentences(group)
         for period_n, period_str in enumerate(group_periods):
-            period_dict = copy(doc_dict)
+            period_dict = deepcopy(doc_dict)
             period_dict[lang_text_field_code(group_langs[group_n])] = period_str
             del period_dict['text']
             period_dict['language_code'] = group_langs[group_n]

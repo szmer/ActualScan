@@ -93,31 +93,40 @@ def rules_results(query_phrase, rules, query_site_names='', highlight=False):
             for field_name in settings.SOLR_TEXT_FIELDS:
                 if field_name in doc and doc[field_name]:
                     for hl_snippet in hl_entry[field_name]:
+                        # KLUDGE we account for the possibility of these fields containing list, which
+                        # could happen because of bogus multi-valueness of text fields in Solr schema
+                        # (delete after switching to a new crawler)
+                        hl_str = hl_snippet[0] if isinstance(hl_snippet, list) else hl_snippet
+                        result_str = (context['result'][doc_n][field_name][0]
+                                if isinstance(context['result'][doc_n][field_name], list)
+                                else context['result'][doc_n][field_name])
                         context['result'][doc_n][field_name] = (
                                 # find the version without highlight markings and replace it with the
                                 # highlighted version
-                                context['result'][doc_n][field_name].replace(
-                                    hl_snippet.replace('**', ''), hl_snippet))
+                                result_str.replace(
+                                    hl_str.replace('**', ''), hl_snippet))
                     break
                     
     # Add the field value stats to the context.
     context['field_stats'] = {}
     if context['result']: # don't collect stats for 0 documents
         for code, field_name in settings.SOLR_FEATURE_CODES.items():
-            if 'date' in field_name:
-                min_date = datetime.strptime(response_json['stats']['stats_fields'][field_name]['min'],
-                         '%Y-%m-%dT%H:%M:%SZ')
-                max_date = datetime.strptime(response_json['stats']['stats_fields'][field_name]['max'],
-                         '%Y-%m-%dT%H:%M:%SZ')
-                context['field_stats'][field_name] = { 'code': code,
-                        'full_name': settings.HUMAN_FEATURE_NAMES[code],
-                        'kind': 'date',
-                        'min': min_date.strftime('%m/%d/%Y'),
-                        'max': max_date.strftime('%m/%d/%Y') }
-            else:
-                context['field_stats'][field_name] = { 'code': code,
-                        'full_name': ' '.join(field_name.split('_')[:-1]),
-                        'kind': 'number',
-                        'min': '{:.2f}'.format(float(response_json['stats']['stats_fields'][field_name]['min'])),
-                        'max': '{:.2f}'.format(float(response_json['stats']['stats_fields'][field_name]['max'])) }
+            # Skip if this is NaN:
+            if response_json['stats']['stats_fields'][field_name]['min'] is not None:
+                if 'date' in field_name:
+                    min_date = datetime.strptime(response_json['stats']['stats_fields'][field_name]['min'],
+                             '%Y-%m-%dT%H:%M:%SZ')
+                    max_date = datetime.strptime(response_json['stats']['stats_fields'][field_name]['max'],
+                             '%Y-%m-%dT%H:%M:%SZ')
+                    context['field_stats'][field_name] = { 'code': code,
+                            'full_name': settings.HUMAN_FEATURE_NAMES[code],
+                            'kind': 'date',
+                            'min': min_date.strftime('%m/%d/%Y'),
+                            'max': max_date.strftime('%m/%d/%Y') }
+                else:
+                    context['field_stats'][field_name] = { 'code': code,
+                            'full_name': settings.HUMAN_FEATURE_NAMES[code],
+                            'kind': 'number',
+                            'min': '{:.2f}'.format(float(response_json['stats']['stats_fields'][field_name]['min'])),
+                            'max': '{:.2f}'.format(float(response_json['stats']['stats_fields'][field_name]['max'])) }
     return context

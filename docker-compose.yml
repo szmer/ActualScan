@@ -8,11 +8,12 @@ services:
      ports:
         - '127.0.0.1:8000:8000'
      # Use -v2 for more reporting
-     command: daphne -b 0.0.0.0 -p 8000 -v1 ascan.asgi:application
+     command: daphne -b 0.0.0.0 -p 8000 -v3 ascan.asgi:application
      env_file:
         - '.env'
      depends_on:
         - postgres
+        - redis
         - solr
      volumes:
         # lets us persist migrations and change templates without restarting
@@ -30,24 +31,53 @@ services:
      depends_on:
         - website # to get the DB initialization
 
-  stormcrawler:
-     build:
-        context: .
-        dockerfile: dockerfiles/Dockerfile_stormcrawler
-        args:
-          UAGENT_STRING: ${UAGENT_STRING}
-     # We run it in local mode, not to deal with Zookeeper.
-     command: storm local generalcrawl-0.1.jar com.actualscan.crawling.CrawlTopology
+  zookeeper:
+     image: zookeeper
+     restart: unless-stopped
+     volumes:
+        - ./zoo.cfg:/conf/zoo.cfg
+
+  nimbus:
+     image: storm
+     command: "storm admin remove_corrupt_topologies ; storm nimbus"
+     restart: unless-stopped
+     ports:
+       - 6628:6627
      env_file:
         - '.env'
-     restart: unless-stopped # Storm local mode dies every 30 secs
+     tty: true
      depends_on:
+        - omnivore2
         - postgres
-        - solr
         - redis
+        - solr
         - selenium
         - website
-        - omnivore2
+        - zookeeper
+
+  storm_supervisor:
+     image: storm
+     command: storm supervisor
+     restart: unless-stopped
+     tty: true
+     depends_on:
+       - nimbus # to lead us
+       - zookeeper # to register
+
+###-  stormcrawler:
+###-     build:
+###-        context: .
+###-        dockerfile: dockerfiles/Dockerfile_stormcrawler
+###-        args:
+###-          UAGENT_STRING: ${UAGENT_STRING}
+###-     # We run it in local mode, not to deal with Zookeeper.
+###-     command: storm jar generalcrawl-0.1.jar com.actualscan.crawling.CrawlTopology
+###-     env_file:
+###-        - '.env'
+###-          #restart: unless-stopped # Storm local mode dies every 30 secs
+###-     tty: true
+###-     depends_on:
+###-        - nimbus
 
   redditscrape:
      build:
@@ -92,6 +122,7 @@ services:
      env_file:
         - '.env'
      depends_on:
+        - redis
         - solr
 
   postgres:

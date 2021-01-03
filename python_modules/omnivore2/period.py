@@ -15,6 +15,11 @@ def common_strings_count(list1, list2):
     return len(set(list1).intersection(set(list2)))
 
 def periods_from_spacy_sentences(spacy_sentences):
+    """
+    Transform a sequence of spacy sentences into a list of periods (combining possibly few sentences)
+    as strings. The additional return values contain word and sentence counts of the subsequent
+    periods.
+    """
     spacy_sentences = list(spacy_sentences)
     periods = []
     period_sent_counts = []

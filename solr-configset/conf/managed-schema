@@ -345,8 +345,8 @@
      <!--
         Document text (searchable).
         -->
-     <field name="text_en" type="text_en" indexed="true" stored="true"/>
-     <field name="text_xx" type="text_general" indexed="true" stored="true"/>
+     <field name="text_en" type="text_en" indexed="true" stored="true" multiValued="false"/>
+     <field name="text_xx" type="text_general" indexed="true" stored="true" multiValued="false"/>
      <!--
         Date posted (as determined when scraping).
         -->

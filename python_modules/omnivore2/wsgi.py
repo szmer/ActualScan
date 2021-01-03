@@ -17,6 +17,7 @@ ssl_context.load_verify_locations('/home/certs/ascan_internal.pem')
 
 @app.route('/eat/')
 def eat():
+    # NOTE the incoming json has to be a list of documents
     periods_to_submit = stationary_analysis_applied(request.json)
     timeouted = False
     headers = { 'Content-type': 'application/json',

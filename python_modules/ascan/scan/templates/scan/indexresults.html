@@ -145,7 +145,7 @@ $('#id_scan_query').typeahead(null,
       <div id="results-status"></div>
       {% for field_name, stats in field_stats.items %}
       <div class="list-group-item d-flex justify-content-between">
-         <div class="col-sm-6"><h4>{{ stats.full_name }}</h3></div>
+         <div class="col-sm-6"><h5>{{ stats.full_name }}</h5></div>
          <div>
          {% if stats.kind == 'date' %}
             min

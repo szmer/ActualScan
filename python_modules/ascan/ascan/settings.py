@@ -196,48 +196,50 @@ SOLR_PORT = os.environ['SOLR_PORT']
 SOLR_CORE = os.environ['SOLR_CORE']
 SOLR_READER_PASS = os.environ['SOLR_READER_PASS']
 
+# NOTE this currently determines the order in the interface
 SOLR_FEATURE_CODES = {
-        'adj': 'adjectives_proportion_f',
+        'd': 'date_post',
+        'cop': 'compound_polarity_f',
+        'wl': 'word_length_i',
+        'sl': 'sent_length_i',
         'awl': 'average_word_length_f',
         'awtf': 'average_word_tf_idf_f',
-        'cop': 'compound_polarity_f',
-        'd': 'date_post',
+        'pos': 'positive_polarity_f',
         'neg': 'negative_polarity_f',
         'neu': 'neutral_polarity_f',
         'non': 'nouns_proportion_f',
+        'veb': 'verbs_proportion_f',
+        'adj': 'adjectives_proportion_f',
+        'prpn': 'proper_names_proportion_f',
         'pdl': 'parent_document_length_i',
         'pn': 'period_number_i',
-        'pos': 'positive_polarity_f',
-        'prpn': 'proper_names_proportion_f',
-        'sl': 'sent_length_i',
         'sld': 'sentence_length_deviation_f',
-        'wl': 'word_length_i',
-        'veb': 'verbs_proportion_f',
         }
 
 HUMAN_FEATURE_NAMES = {
-        'adj': 'adjectives proportion',
-        'awl': 'average word length',
-        'awtf': 'average word tfdf',
-        'cop': 'compound polarity',
-        'd': 'date post',
-        'neg': 'negative polarity',
-        'neu': 'neutral polarity',
-        'non': 'nouns proportion',
-        'pdl': 'parent document length',
-        'pn': 'period number',
-        'pos': 'positive polarity',
-        'prpn': 'proper names proportion',
-        'sl': 'sent length',
-        'sld': 'sentence length deviation',
-        'wl': 'word length',
-        'veb': 'verbs proportion',
+        'adj': 'adjectives',
+        'awl': 'length of the average word',
+        'awtf': 'word uniqueness',
+        'cop': 'mood',
+        'd': 'publication date',
+        'neg': 'negativity',
+        'neu': 'neutrality',
+        'non': 'nouns',
+        'pdl': 'length of the whole document',
+        'pn': 'position in the whole document',
+        'pos': 'positivity',
+        'prpn': 'proper names',
+        'sl': 'length (in sentences)',
+        'sld': 'extremeness of sentence lengths',
+        'wl': 'length (in words)',
+        'veb': 'verbs',
         }
 
 DEFAULT_RESULT_RULE = {
         'name': 'Standard',
         'slug': 'standard',
-        'rule_string': 'sl,*,*,2;wl,9,*,5;awtf,*,0.4,2;neg,*,0.35,0;pos,*,0.45,0',
+        'rule_string': '',
+        #'sl,*,*,2;wl,9,*,5;awtf,*,0.4,2;neg,*,0.35,0;pos,*,0.45,0',
         }
 
 # The rule string to use when searching for text fragments for the query suggestion feature.
