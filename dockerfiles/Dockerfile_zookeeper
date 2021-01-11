@@ -1,0 +1,8 @@
+FROM zookeeper
+
+COPY ./java/zoo.cfg /conf/zoo.cfg
+RUN chown zookeeper /conf/zoo.cfg
+
+ENV ALLOW_ANONYMOUS_LOGIN=yes
+# Hide logging from the command line
+ENV ZOO_LOG4J_PROP="INFO,ROLLINGFILE"

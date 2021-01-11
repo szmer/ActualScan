@@ -15,7 +15,7 @@ app = Flask('omnivore2')
 ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
 ssl_context.load_verify_locations('/home/certs/ascan_internal.pem')
 
-@app.route('/eat/')
+@app.route('/eat/', methods=['POST'])
 def eat():
     # NOTE the incoming json has to be a list of documents
     periods_to_submit = stationary_analysis_applied(request.json)

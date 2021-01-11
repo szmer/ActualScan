@@ -27,25 +27,24 @@ services:
      env_file:
         - '.env'
      # This should restart on crashes.
-     ###restart: unless-stopped
+     restart: on-failure
      depends_on:
         - website # to get the DB initialization
 
   zookeeper:
-     image: zookeeper
-     restart: unless-stopped
-     volumes:
-        - ./zoo.cfg:/conf/zoo.cfg
+     build:
+        context: .
+        dockerfile: dockerfiles/Dockerfile_zookeeper
+     restart: on-failure
 
   nimbus:
-     image: storm
-     command: "storm admin remove_corrupt_topologies ; storm nimbus"
-     restart: unless-stopped
-     ports:
-       - 6628:6627
-     env_file:
-        - '.env'
-     tty: true
+     build:
+        context: .
+        dockerfile: dockerfiles/Dockerfile_stormcrawler
+        args:
+          UAGENT_STRING: ${UAGENT_STRING}
+     command: storm nimbus
+     restart: on-failure
      depends_on:
         - omnivore2
         - postgres
@@ -54,43 +53,63 @@ services:
         - selenium
         - website
         - zookeeper
+     env_file:
+        - '.env'
 
   storm_supervisor:
-     image: storm
+     build:
+        context: .
+        dockerfile: dockerfiles/Dockerfile_stormcrawler
+        args:
+          UAGENT_STRING: ${UAGENT_STRING}
      command: storm supervisor
-     restart: unless-stopped
-     tty: true
+     restart: on-failure
      depends_on:
        - nimbus # to lead us
        - zookeeper # to register
-
-###-  stormcrawler:
-###-     build:
-###-        context: .
-###-        dockerfile: dockerfiles/Dockerfile_stormcrawler
-###-        args:
-###-          UAGENT_STRING: ${UAGENT_STRING}
-###-     # We run it in local mode, not to deal with Zookeeper.
-###-     command: storm jar generalcrawl-0.1.jar com.actualscan.crawling.CrawlTopology
-###-     env_file:
-###-        - '.env'
-###-          #restart: unless-stopped # Storm local mode dies every 30 secs
-###-     tty: true
-###-     depends_on:
-###-        - nimbus
-
-  redditscrape:
-     build:
-        context: .
-        dockerfile: dockerfiles/Dockerfile_redditscrape
-     command: python reddit_scraper.py -L INFO
      env_file:
         - '.env'
+
+  storm_ui:
+     build:
+        context: .
+        dockerfile: dockerfiles/Dockerfile_stormcrawler
+        args:
+          UAGENT_STRING: ${UAGENT_STRING}
+     command: storm ui
      depends_on:
-        - postgres
-        - solr
-        - website
-        - omnivore2
+       - nimbus
+     ports:
+        - '127.0.0.1:8888:8080'
+     env_file:
+        - '.env'
+
+  stormcrawler:
+     build:
+        context: .
+        dockerfile: dockerfiles/Dockerfile_stormcrawler
+        args:
+          UAGENT_STRING: ${UAGENT_STRING}
+     # We run it in local mode, not to deal with Zookeeper.
+     command: "storm jar generalcrawl-0.1.jar com.actualscan.crawling.CrawlTopology"
+     env_file:
+        - '.env'
+          #restart: on-failure # Storm local mode dies every 30 secs
+     depends_on:
+        - nimbus
+
+###-  redditscrape:
+###-     build:
+###-        context: .
+###-        dockerfile: dockerfiles/Dockerfile_redditscrape
+###-     command: python reddit_scraper.py -L INFO
+###-     env_file:
+###-        - '.env'
+###-     depends_on:
+###-        - postgres
+###-        - solr
+###-        - website
+###-        - omnivore2
 
   speechtractor:
      build:
@@ -149,6 +168,8 @@ services:
      build:
        context: .
        dockerfile: dockerfiles/Dockerfile_redis
+       args:
+         REDIS_PASS: ${REDIS_PASS}
      command: >-
        redis-server /usr/local/etc/redis/redis.conf
        --tls-port 6379 --port 0
@@ -157,7 +178,6 @@ services:
        --tls-ca-cert-file /home/certs/ascan_internal.pem
      volumes:
        - redisdata:/var/lib/redis/data
-       - ./redis.conf:/usr/local/etc/redis/redis.conf
      ports:
        - '127.0.0.1:6380:6379'
 

@@ -1,5 +1,7 @@
 # Setup
 
+Prepare the .env file.
+
 ```
 docker-compose build
 docker-compose run website python manage.py makemigrations scan
@@ -7,8 +9,10 @@ docker-compose run website python manage.py makemigrations manager
 docker-compose run website python manage.py makemigrations bg
 docker-compose run website python manage.py migrate
 docker-compose run website python manage.py createsuperuser
-docker-compose up --build
+docker-compose up
 ```
+
+Issuing `docker-compose down` is needed for non-crashing nimbus.
 
 ## Creating SSL certs for internal communications
 

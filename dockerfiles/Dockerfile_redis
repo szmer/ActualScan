@@ -1,9 +1,15 @@
 FROM redis:6.0-rc
+ARG REDIS_PASS
+ENV REDIS_PASS "$REDIS_PASS"
 
 USER root
 WORKDIR /home/certs/
 COPY certs/dev/ascan_dev_internal.pem /home/certs/ascan_internal.pem
 COPY certs/dev/ascan_dev_internal_key.key /home/certs/ascan_internal_key.key
 RUN chown -R redis:redis /home/certs/
+
+RUN mkdir -p /usr/local/etc/redis
+# redis freaks out if we allow a space here
+RUN echo -n 'requirepass "'$REDIS_PASS'"'>/usr/local/etc/redis/redis.conf
 
 WORKDIR /data

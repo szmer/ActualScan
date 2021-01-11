@@ -26,11 +26,10 @@ RUN chown storm /home/certs/ascan_dev_ssl_internal.keystore.p12
 
 wORKDIR /home/ascan_java/
 COPY java/generalcrawl/target/generalcrawl-0.1.jar ./
-RUN mkdir log4j2
-COPY java/generalcrawl/src/main/resources/log4j2.xml ./log4j2/
 RUN chown -R storm /home/ascan_java
 
-COPY java/generalcrawl/crawler-conf.yaml /conf/storm.yaml
+COPY java/generalcrawl/storm.yaml /conf/storm.yaml
+RUN chown storm /conf/storm.yaml
 
 RUN sed -i 's!{{ ascan_uagent_string }}!'"$UAGENT_STRING"'!' /conf/storm.yaml
 #RUN sed -i 's!{{ ascan_keystore_password }}!'"$KEYSTORE_PASSWORD"'!' crawler-conf.yaml

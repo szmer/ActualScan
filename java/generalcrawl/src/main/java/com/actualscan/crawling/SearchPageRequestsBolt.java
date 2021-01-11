@@ -138,10 +138,7 @@ public class SearchPageRequestsBolt extends BaseRichBolt {
                new TypeReference<List<StractorDocument>>(){});
          stractorClient.close();
          URL sourceURL = new URL(metadata.getFirstValue("site_url"));
-         logger.info("GOT THE RESPONSE " + responseText);
-         logger.info("THE DOCS ARE " + stractorDocs.toString());
          for (StractorDocument doc : stractorDocs) {
-            logger.info("SEARCH? " + String.valueOf(doc.isSearch));
             if (doc.isSearch // drop search beyond the designated depth
                   && Integer.parseInt(metadata.getFirstValue("lead_count"))
                   >= maxNormalSearchDepth)
