@@ -1,24 +1,6 @@
 FROM storm:2.2.0
 ARG UAGENT_STRING
-#ARG KEYSTORE_PASSWORD
-#ARG POSTGRES_HOST
-#ARG POSTGRES_PORT
-#ARG POSTGRES_USER
-#ARG POSTGRES_PASSWORD
-#ARG SPEECHTRACTOR_HOST
-#ARG SPEECHTRACTOR_PORT
-#ARG SPEECHTRACTOR_USER
-#ARG SPEECHTRACTOR_PASSWORD
-#ENV UAGENT_STRING "$UAGENT_STRING"
-#ENV KEYSTORE_PASSWORD "$KEYSTORE_PASSWORD"
-#ENV POSTGRES_HOST "$POSTGRES_HOST"
-#ENV POSTGRES_PORT "$POSTGRES_PORT"
-#ENV POSTGRES_USER "$POSTGRES_USER"
-#ENV POSTGRES_PASSWORD "$POSTGRES_PASSWORD"
-#ENV SPEECHTRACTOR_HOST "$SPEECHTRACTOR_HOST"
-#ENV SPEECHTRACTOR_PORT "$SPEECHTRACTOR_PORT"
-#ENV SPEECHTRACTOR_USER "$SPEECHTRACTOR_USER"
-#ENV SPEECHTRACTOR_PASSWORD "$SPEECHTRACTOR_PASSWORD"
+ENV UAGENT_STRING "$UAGENT_STRING"
 
 WORKDIR /home/certs/
 COPY certs/dev/ascan_dev_ssl_internal.keystore.p12 /home/certs/
@@ -32,14 +14,5 @@ COPY java/generalcrawl/storm.yaml /conf/storm.yaml
 RUN chown storm /conf/storm.yaml
 
 RUN sed -i 's!{{ ascan_uagent_string }}!'"$UAGENT_STRING"'!' /conf/storm.yaml
-#RUN sed -i 's!{{ ascan_keystore_password }}!'"$KEYSTORE_PASSWORD"'!' crawler-conf.yaml
-#RUN sed -i 's!{{ ascan_postgres_host }}!'"$POSTGRES_HOST"'!' crawler-conf.yaml
-#RUN sed -i 's!{{ ascan_postgres_port }}!'"$POSTGRES_PORT"'!' crawler-conf.yaml
-#RUN sed -i 's!{{ ascan_postgres_user }}!'"$POSTGRES_USER"'!' crawler-conf.yaml
-#RUN sed -i 's!{{ ascan_postgres_password }}!'"$POSTGRES_PASSWORD"'!' crawler-conf.yaml
-#RUN sed -i 's!{{ ascan_speechtractor_host }}!'"$SPEECHTRACTOR_HOST"'!' crawler-conf.yaml
-#RUN sed -i 's!{{ ascan_speechtractor_port }}!'"$SPEECHTRACTOR_PORT"'!' crawler-conf.yaml
-#RUN sed -i 's!{{ ascan_speechtractor_user }}!'"$SPEECHTRACTOR_USER"'!' crawler-conf.yaml
-#RUN sed -i 's!{{ ascan_speechtractor_password }}!'"$SPEECHTRACTOR_PASSWORD"'!' crawler-conf.yaml
-#
+
 ENV KEYSTORE_PATH=/home/certs/ascan_dev_ssl_internal.keystore.p12

@@ -84,7 +84,7 @@ class ContextualAnalyzerThread(Thread):
             if len(docs) < MINIMUM_CONTEXT_SIZE:
                 continue
             apply_contextual_analysis(docs)
-            solr_conn.request('GET', '/solr/{}/update'.format(SOLR_CORE),
+            solr_conn.request('GET', '/solr/{}/update?commit=true'.format(SOLR_CORE),
                     body=json.dumps(docs),
                     headers={'Content-type': 'application/json'})
 

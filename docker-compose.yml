@@ -198,6 +198,7 @@ services:
 
 # Named volumes.
 volumes:
+   nimbusdata:
    pgdata:
    redisdata:
    solrdata:

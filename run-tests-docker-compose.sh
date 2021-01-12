@@ -10,9 +10,10 @@ echo '==========================='
 echo '====== Website tests ======'
 echo '==========================='
 docker-compose exec website pytest
-echo '====== Scrapy tests ======'
-echo '==========================='
-docker-compose exec scrapy pytest
+echo '================================='
+echo '======== Omnivore2 tests ========'
+echo '================================='
+docker-compose exec omnivore2 pytest
 echo '================================='
 echo '====== Speechtractor tests ======'
 echo '================================='

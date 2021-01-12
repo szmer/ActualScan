@@ -27,7 +27,7 @@ def eat():
     solr_conn = http.client.HTTPSConnection(SOLR_HOST,
             port=SOLR_PORT, timeout=15, context=ssl_context)
     try:
-        solr_conn.request('GET', '/solr/{}/update'.format(SOLR_CORE),
+        solr_conn.request('GET', '/solr/{}/update?commit=true'.format(SOLR_CORE),
                 body=json.dumps(periods_to_submit),
                 headers=headers)
         solr_response = solr_conn.getresponse()
