@@ -13,7 +13,7 @@ class TestScanControl():
     def test_scan_start_stop(self, tag_site_links):
         test_scan_capacity1 = spare_scan_capacity()
 
-        request_scan('127.0.0.1', 'hey', '01/2000', '01/2010',
+        request_scan('127.0.0.1', 'hey',
                 query_tags=['test-tag-one'], is_ip=True)
         test_scan_job = ScanJob.objects.get(query_phrase='hey')
         assert test_scan_job

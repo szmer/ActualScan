@@ -1,7 +1,8 @@
 import pytest
 
 from manager.models import EditSuggestion
-from scan.models import ScanJob, Site, Tag
+from scan.models import Site, Tag
+from scan.templatetags.scan_extras import phrase_generalizable
 
 from django.urls import reverse
 
@@ -23,36 +24,10 @@ class TestGenericViews():
         assert response.status_code == 302 # get a redirect
 
 @pytest.mark.django_db
-class TestScanViews():
-    """
-    The views under the scan package.
-    """
-    def test_account_info(self, client):
-        response = client.get('/accounts/info/')
-        assert response.status_code == 302 # get a redirect to the login page
-
-    def test_scaninfo(self, client, user):
-        response = client.get(reverse('scaninfo'), {'job_id': 0})
-        assert response.status_code == 400
-        job = ScanJob.objects.create(status='terminated', query_phrase='test_progress', user=user)
-        response = client.get(reverse('scaninfo'), {'job_id': job.id})
-        assert response.status_code == 400 # no permission for the wrong user
-        client.login(username='test_username', password='password')
-        response = client.get(reverse('scaninfo'), {'job_id': job.id})
-        assert response.status_code == 200
-
-@pytest.mark.django_db
 class TestManagerViews():
     """
     The views under the manager package.
     """
-    def test_scanlist(self, client, user):
-        response = client.get(reverse('scans'))
-        assert response.status_code == 302 # get a redirect to the login page
-        client.login(username='test_username', password='password')
-        response = client.get(reverse('scans'))
-        assert response.status_code == 200
-
     def test_sitelist(self, client, user, tag_site_links):
         response = client.get(reverse('sites'))
         assert response.status_code == 200
@@ -86,8 +61,9 @@ class TestManagerViews():
         assert EditSuggestion.objects.all().count() == 0
         client.login(username='test_username', password='password')
         # (this should be rejected because doesn't change anything:)
+        site_id_example = tag_site_links[1].site.id
         response = client.get(reverse('suggest'),
-               {'record_type': 'site', 'target': 'crazy.example.org',
+               {'record_type': 'site', 'target_id': site_id_example,
                    'search_pointer': '//crazy.example.org/q=twenty+cats',
                    'site_type': 'web', 'source_type': 'blog',
                    'homepage_url': '//example.com',
@@ -95,14 +71,15 @@ class TestManagerViews():
         assert EditSuggestion.objects.all().count() == 0
         tag = Tag.objects.get(name='another-test-tag')
         response = client.get(reverse('suggest'),
-               {'record_type': 'site', 'target': 'crazy.example.org',
+               {'record_type': 'site', 'target_id': site_id_example,
                    'search_pointer': '//crazy.example.org/search?q=twenty+cats',
                    'site_type': 'web', 'source_type': 'blog',
                    'homepage_url': '//crazy.example.org',
                    'tags': [tag.id]})
         assert EditSuggestion.objects.all().count() == 1
+        tag_id_example = tag_site_links[1].tag.id
         response = client.get(reverse('suggest'),
-               {'record_type': 'tag', 'target': 'test-tag-one',
+               {'record_type': 'tag', 'target_id': tag_id_example,
                    'description': 'a better, funnier description'})
         assert EditSuggestion.objects.all().count() == 2
 
@@ -127,3 +104,8 @@ class TestManagerViews():
         response = client.post(reverse('maketag'),
                {'name': 'new-tag', 'description': 'better than ever before'})
         assert Tag.objects.all().count() == 1
+
+    def test_tag_phrase_generalizable(self):
+        assert not phrase_generalizable('cats')
+        assert not phrase_generalizable('cats ')
+        assert phrase_generalizable('twenty cats')

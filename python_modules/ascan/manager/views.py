@@ -294,11 +294,13 @@ def maketag(request):
 @login_required
 def suggest(request):
     """
+    The user is sent here when submitting a form from a Site or Tag details page.
     The view expects record_type (site, tag) and target (i.e. the name of the object) GET args.
     """
     context = { 'record_type': request.GET['record_type'], 'target_id': request.GET['target_id'] }
     suggestion_dict = {} # we'll fill it only with the values that are changed
     form_ok = False
+    error_cause = ''
     # Process possible suggestion types.
     if request.GET['record_type'] == 'site':
         form = EditRequestSiteForm(data=request.GET)
@@ -316,7 +318,14 @@ def suggest(request):
                 if set(form.cleaned_data['tags']) != set([link.tag for link in site.tag_links.all()]):
                     suggestion_dict['tags'] = ' '.join([tag.name for tag in form.cleaned_data['tags']])
             except Site.DoesNotExist:
-                pass
+                error_cause = 'site does not exist'
+        else:
+            error_cause = 'bad site form'
+            for field in form:
+                for error in field.errors:
+                    error_cause += ', ' + field.label + ': ' + str(error)
+            for error in form.non_field_errors():
+                error_cause += ', ' + str(error)
     elif request.GET['record_type'] == 'tag':
         form = EditRequestTagForm(data=request.GET)
         context['form'] = form
@@ -328,9 +337,17 @@ def suggest(request):
                 if form.cleaned_data['description'] != tag.description:
                     suggestion_dict['description'] = form.cleaned_data['description']
             except Tag.DoesNotExist:
-                pass
+                error_cause = 'tag does not exist'
+        else:
+            error_cause = 'bad tag form'
+            for field in form:
+                for error in field.errors:
+                    error_cause += ', ' + field.label + ': ' + str(error)
+            for error in form.non_field_errors():
+                error_cause += ', ' + str(error)
     else:
         warning('Unknown suggestion record type {}'.format(request.GET['record_type']))
+        error_cause = 'unknown record type'
     # Use the assembled information to possibly create the suggestion.
     if form_ok:
         # When a change was actually requested:
@@ -354,7 +371,7 @@ def suggest(request):
                             "Suggest yourrget changes" button.')
     else:
         messages.add_message(request, messages.ERROR,
-                'We were unable to process you suggestion, sorry! Please contact the admins.')
+                'We were unable to process you suggestion, sorry! ({})'.format(error_cause))
     return render(request, 'manager/suggest.html', context=context)
 
 @login_required

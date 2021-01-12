@@ -115,10 +115,10 @@ class ScanJob(models.Model):
     query_phrase = models.CharField(max_length=512)
     query_tags = ArrayField(
             models.CharField(max_length=Tag._meta.get_field('name').max_length),
-            blank=True)
+            null=True, blank=True)
     query_site_names = ArrayField(
             models.CharField(max_length=Site._meta.get_field('site_name').max_length),
-            blank=True)
+            null=True, blank=True)
     # These counts should be filled out when starting the job; they're needed for progress reporting
     website_count = models.IntegerField(default=0)
     subreddit_count = models.IntegerField(default=0)
@@ -164,7 +164,7 @@ class ScrapeRequest(models.Model):
     # Tbis is copied from the job object.
     query_tags = ArrayField(
             models.CharField(max_length=Tag._meta.get_field('name').max_length),
-            blank=True)
+            null=True, blank=True)
     # This has meaning for search requests. For website requests, this should contain the number of
     # search pages leading up to the page in question, or yielded by it in case of executing inside
     # Selenium (only scrapy uses this). For Reddit requests, this should contain the number total 

@@ -4,22 +4,6 @@
 {% block page_title %}Index change suggestion{% endblock %}
 
 {% block container %}
-{% if form.errors %}
-<div class="alert alert-danger" role="alert">
-   <ul>
-      {% if form.errors %}
-      {% for field in form %}
-      {% for error in field.errors %}
-      <li>{{ field.label }}: {{ error|escape }}</li>
-      {% endfor %}
-      {% endfor %}
-      {% for error in form.non_field_errors %}
-      <li>{{ error|escape }}</li>
-      {% endfor %}
-      {% endif %}
-   </ul>
-</div>
-{% endif %}
 {% if record_type == 'site' %}
 <a class="btn btn-primary" href="/manager/site/{{ target_id }}/">Go back to {{ target }}</a>
 {% elif record_type == 'tag' %}
