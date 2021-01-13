@@ -1,4 +1,4 @@
-FROM storm:2.2.0
+FROM storm:1.2.3
 ARG UAGENT_STRING
 ENV UAGENT_STRING "$UAGENT_STRING"
 
@@ -8,11 +8,13 @@ RUN chown storm /home/certs/ascan_dev_ssl_internal.keystore.p12
 
 wORKDIR /home/ascan_java/
 COPY java/generalcrawl/target/generalcrawl-0.1.jar ./
+COPY java/generalcrawl/storm.yaml ./
 RUN chown -R storm /home/ascan_java
 
 COPY java/generalcrawl/storm.yaml /conf/storm.yaml
 RUN chown storm /conf/storm.yaml
 
 RUN sed -i 's!{{ ascan_uagent_string }}!'"$UAGENT_STRING"'!' /conf/storm.yaml
+RUN sed -i 's!{{ ascan_uagent_string }}!'"$UAGENT_STRING"'!' /home/ascan_java/storm.yaml
 
 ENV KEYSTORE_PATH=/home/certs/ascan_dev_ssl_internal.keystore.p12

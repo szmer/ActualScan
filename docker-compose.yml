@@ -91,7 +91,7 @@ services:
         args:
           UAGENT_STRING: ${UAGENT_STRING}
      # We run it in local mode, not to deal with Zookeeper.
-     command: "storm jar generalcrawl-0.1.jar com.actualscan.crawling.CrawlTopology"
+     command: "storm jar generalcrawl-0.1.jar com.actualscan.crawling.CrawlTopology -conf storm.yaml"
      env_file:
         - '.env'
           #restart: on-failure # Storm local mode dies every 30 secs

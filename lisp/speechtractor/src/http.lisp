@@ -13,9 +13,9 @@
           (setf (hunchentoot:content-type*) "text/json")
           (when *log-requests-p*
             (log:info "Received a request for processing ~A, source type ~A"
-                      (if (or (not html) (<= (length html) 140))
+                      (if (or (not html) (<= (length html) 2000))
                           html ; don't do replacements on short ones, they may be nil
-                          (cl-strings:replace-all (subseq html 0 140) (format nil "~%") " "))
+                          (cl-strings:replace-all (subseq html 0 2000) (format nil "~%") " "))
                       sourcetype))
           (if (not (and html sourcetype))
               (progn
