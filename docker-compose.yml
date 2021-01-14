@@ -31,6 +31,39 @@ services:
      depends_on:
         - website # to get the DB initialization
 
+  speechtractor:
+     build:
+        context: .
+        dockerfile: dockerfiles/Dockerfile_stractor
+     ports:
+        - '127.0.0.1:3757:3756'
+     command: "sbcl --eval '(ql:quickload :speechtractor)'"
+     # Make sbcl not exit immediately.
+     tty: true
+     env_file:
+        - '.env'
+     depends_on:
+        - solr
+
+  omnivore2:
+     build:
+        context: .
+        dockerfile: dockerfiles/Dockerfile_omnivore2
+     ports:
+        - '127.0.0.1:6824:6823'
+     # Only authenticate with the client certificate for now.
+     command: >-
+       gunicorn -b 0.0.0.0:6823 wsgi:app
+       --ssl-version TLSv1_2
+       --keyfile /home/certs/ascan_internal_key.key
+       --certfile /home/certs/ascan_internal.pem
+       --ca-certs /home/certs/ascan_internal.pem
+     env_file:
+        - '.env'
+     depends_on:
+        - redis
+        - solr
+
   zookeeper:
      build:
         context: .
@@ -111,38 +144,14 @@ services:
 ###-        - website
 ###-        - omnivore2
 
-  speechtractor:
-     build:
-        context: .
-        dockerfile: dockerfiles/Dockerfile_stractor
+  selenium:
+     image: 'selenium/standalone-chrome:3.141.59'
+     volumes:
+        - /dev/shm:/dev/shm
      ports:
-        - '127.0.0.1:3757:3756'
-     command: "sbcl --eval '(ql:quickload :speechtractor)'"
-     # Make sbcl not exit immediately.
-     tty: true
+        - '127.0.0.1:4444:4444'
      env_file:
         - '.env'
-     depends_on:
-        - solr
-
-  omnivore2:
-     build:
-        context: .
-        dockerfile: dockerfiles/Dockerfile_omnivore2
-     ports:
-        - '127.0.0.1:6824:6823'
-     # Only authenticate with the client certificate for now.
-     command: >-
-       gunicorn -b 0.0.0.0:6823 wsgi:app
-       --ssl-version TLSv1_2
-       --keyfile /home/certs/ascan_internal_key.key
-       --certfile /home/certs/ascan_internal.pem
-       --ca-certs /home/certs/ascan_internal.pem
-     env_file:
-        - '.env'
-     depends_on:
-        - redis
-        - solr
 
   postgres:
      image: 'postgres:12.2'
@@ -151,15 +160,6 @@ services:
      ports:
         # Map the original 5432 to 5433.
         - '127.0.0.1:5433:5432'
-     env_file:
-        - '.env'
-
-  selenium:
-     image: 'selenium/standalone-chrome:3.141.59'
-     volumes:
-        - /dev/shm:/dev/shm
-     ports:
-        - '127.0.0.1:4444:4444'
      env_file:
         - '.env'
 
