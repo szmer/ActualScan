@@ -53,10 +53,10 @@ would have to be clearly better and for the long term*.
 is in `lisp/speechtractor`.
 *The continued use of Common Lisp is not certain. It has been already abandoned for Omnivore; the reasoning with pros and cons may
 appear on the blog at some point.*
-- **Omnivore2**: a Python service used by the crawler and working on the index in the background. It gets the parsed articles (divided
-into a-couple-sentences chunks loosely called "[periods](http://dcc.dickinson.edu/grammar/latin/structure-period)") and applies
-various text analytics. The texts are then annotated with this info in Solr and this can be used freely for sorting results.
-The code lives in `python_modules/omnivore2`.
+- **Omnivore2**: a Python service used by the crawler and working on the index in the background. It gets the articles,
+parses them with [spaCy](https://spacy.io/), splits them into a-couple-sentences chunks loosely called 
+"[periods](http://dcc.dickinson.edu/grammar/latin/structure-period)", and applies various text analytics. The texts are then
+annotated with this info in Solr and it can be used freely for sorting results. The code lives in `python_modules/omnivore2`.
 - A **[StormCrawler](https://stormcrawler.net/)-based crawler** (the zookeeper, nimbus and other Storm cluster members):
 this does the actual crawling and fetching pages with reasonable politeness. The process is tightly controlled and monitorable
 from the website through objects stored in PostgreSQL. The relevant Storm topology code lives in `java/generalcrawl`.

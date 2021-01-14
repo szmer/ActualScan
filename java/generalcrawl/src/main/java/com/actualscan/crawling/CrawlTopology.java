@@ -47,8 +47,9 @@ public class CrawlTopology extends ConfigurableTopology {
                 .shuffleGrouping("spout");
 
         // TODO !!! filters (depth etc.) must be declared in storm config
-        builder.setBolt("fetch", new RobotsIgnoringFetcherBolt())
-                .fieldsGrouping("partitioner", new Fields("key")); // the key was given looking at the domain
+        builder.setBolt("fetch", new AscanFetcherBolt())
+                .fieldsGrouping("partitioner", new Fields("key")) // the key was given looking at the domain
+                .shuffleGrouping("fetch", "redirections");
 
 // TODO We could use these to parse sitemaps and feeds in simple crawls, but need to figure out
 // the metadata to control this

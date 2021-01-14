@@ -16,7 +16,7 @@ package com.actualscan.crawling;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// Edited to always ignore robots.txt - Szymon Rutkowski
+// Edited for ActualScan - Szymon Rutkowski
 
 import java.io.File;
 import java.net.InetAddress;
@@ -75,10 +75,10 @@ import crawlercommons.robots.BaseRobotRules;
  * politeness and handles the fetching threads itself.
  */
 @SuppressWarnings("serial")
-public class RobotsIgnoringFetcherBolt extends StatusEmitterBolt {
+public class AscanFetcherBolt extends StatusEmitterBolt {
 
     private static final org.slf4j.Logger LOG = LoggerFactory
-            .getLogger(RobotsIgnoringFetcherBolt.class);
+            .getLogger(AscanFetcherBolt.class);
 
     private static final String SITEMAP_DISCOVERY_PARAM_KEY = "sitemap.discovery";
 
@@ -555,7 +555,8 @@ public class RobotsIgnoringFetcherBolt extends StatusEmitterBolt {
                             Boolean.toString(foundSitemap));
 
                     // NOTE we ignore robots.txt which often disallows search pages
-                    /*if (!rules.isAllowed(fit.url)) {
+                    boolean isSearch = Boolean.parseBoolean(metadata.getFirstValue("is_search"));
+                    if (!isSearch && !rules.isAllowed(fit.url)) {
                         LOG.info("Denied by robots.txt: {}", fit.url);
                         // pass the info about denied by robots
                         metadata.setValue(Constants.STATUS_ERROR_CAUSE,
@@ -568,7 +569,7 @@ public class RobotsIgnoringFetcherBolt extends StatusEmitterBolt {
                         // that site
                         asap = true;
                         continue;
-                    }*/
+                    }
                     FetchItemQueue fiq = fetchQueues
                             .getFetchItemQueue(fit.queueID);
                     if (rules.getCrawlDelay() > 0
@@ -715,7 +716,10 @@ public class RobotsIgnoringFetcherBolt extends StatusEmitterBolt {
 
                         if (allowRedirs()
                                 && StringUtils.isNotBlank(redirection)) {
+                           // The Status stream, which we (Ascan) don't really use?
                             emitOutlink(fit.t, url, redirection, mergedMD);
+                           // re-feed the redirection back into the bolt, queueID is the "key" field
+                           collector.emit("redirections", new Values(redirection, fit.queueID, mergedMD));
                         }
                     }
                     // error
@@ -873,6 +877,8 @@ public class RobotsIgnoringFetcherBolt extends StatusEmitterBolt {
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         super.declareOutputFields(declarer);
         declarer.declare(new Fields("url", "content", "metadata"));
+        // the same as the incoming schema from the URL partitioner
+        declarer.declareStream("redirections", new Fields("url", "key", "metadata"));
     }
 
     @Override

@@ -127,7 +127,7 @@ public class Omnivore2SubmitBolt extends BaseRichBolt {
       HttpPost stractorRequest = new HttpPost(speechtractorURIString);
       // The POST form params.
       List<NameValuePair> form = new ArrayList<>();
-      form.add(new BasicNameValuePair("html", URLEncoder.encode(content)));
+      form.add(new BasicNameValuePair("html", content));
       form.add(new BasicNameValuePair("sourcetype", sourceType));
       form.add(new BasicNameValuePair("emptyurl", emptyUrl));
       UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(form, Consts.UTF_8);
