@@ -63,14 +63,17 @@ public class ScrapeRequestSortBolt extends BaseRichBolt {
       try {
          String contentString = responseStringReader.responseText(content, url, metadata);
          // Sort the requests between further bolts.
-         if (metadata.getFirstValue("is_crawl") == "true") {
+         if (Boolean.parseBoolean(metadata.getFirstValue("is_crawl"))) {
             outputCollector.emit("crawl_reqs", tuple, new Values(url, contentString, metadata));
+            logger.debug("Sent "+url+" to crawl_reqs");
          }
-         else if (metadata.getFirstValue("is_search") == "true") {
+         else if (Boolean.parseBoolean(metadata.getFirstValue("is_search"))) {
             outputCollector.emit("search_reqs", tuple, new Values(url, contentString, metadata));
+            logger.debug("Sent "+url+" to search_reqs");
          }
          else {
             outputCollector.emit("scan_leaf_reqs", tuple, new Values(url, contentString, metadata));
+            logger.debug("Sent "+url+" to scan_leaf_reqs");
          }
 
          String reqId = metadata.getFirstValue("req_id");

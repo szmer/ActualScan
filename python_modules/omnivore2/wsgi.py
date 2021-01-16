@@ -1,6 +1,7 @@
 from base64 import b64encode
 import http.client
 import json
+import logging
 import socket
 import ssl
 
@@ -15,10 +16,16 @@ app = Flask('omnivore2')
 ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
 ssl_context.load_verify_locations('/home/certs/ascan_internal.pem')
 
+gunicorn_logger = logging.getLogger('gunicorn.error')
+app.logger.handlers = gunicorn_logger.handlers
+app.logger.setLevel(gunicorn_logger.level)
+
 @app.route('/eat/', methods=['POST'])
 def eat():
     # NOTE the incoming json has to be a list of documents
+    app.logger.debug('Received {}'.format(request.json))
     periods_to_submit = stationary_analysis_applied(request.json)
+    app.logger.info('{} periods split and analyzed.'.format(len(periods_to_submit)))
     timeouted = False
     headers = { 'Content-type': 'application/json',
             'Authorization':

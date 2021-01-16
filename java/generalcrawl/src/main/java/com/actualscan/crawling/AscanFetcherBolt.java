@@ -66,6 +66,7 @@ import com.digitalpebble.stormcrawler.protocol.ProtocolResponse;
 import com.digitalpebble.stormcrawler.protocol.RobotRules;
 import com.digitalpebble.stormcrawler.util.ConfUtils;
 import com.digitalpebble.stormcrawler.util.PerSecondReducer;
+import com.digitalpebble.stormcrawler.util.URLUtil;
 
 import crawlercommons.domains.PaidLevelDomain;
 import crawlercommons.robots.BaseRobotRules;
@@ -719,6 +720,7 @@ public class AscanFetcherBolt extends StatusEmitterBolt {
                            // The Status stream, which we (Ascan) don't really use?
                             emitOutlink(fit.t, url, redirection, mergedMD);
                            // re-feed the redirection back into the bolt, queueID is the "key" field
+                           // TODO modify the scrape request?
                            collector.emit("redirections", new Values(redirection, fit.queueID, mergedMD));
                         }
                     }

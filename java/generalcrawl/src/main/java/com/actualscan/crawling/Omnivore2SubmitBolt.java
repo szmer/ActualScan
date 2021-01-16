@@ -108,36 +108,38 @@ public class Omnivore2SubmitBolt extends BaseRichBolt {
       String url = (String) tuple.getValueByField("url");
       String content = tuple.getStringByField("content");
       Metadata metadata = (Metadata) tuple.getValueByField("metadata");
-
-      //
-      // Get the Speechtractor's reading of the text.
-      // 
-      // Determine info for the POST form params.
-      String sourceType = metadata.getFirstValue("source_type");
-      String emptyUrl = "";
-      if (sourceType == "media" || sourceType == "blog")
-         emptyUrl = "1";
-      else
-         emptyUrl = "0";
-
-      // Constructing and sending the request.
-      HttpClientBuilder clientBouilder = HttpClients.custom();
-      clientBouilder = clientBouilder.setSSLSocketFactory(sslSocketFactory);
-      CloseableHttpClient stractorClient = clientBouilder.build();
-      HttpPost stractorRequest = new HttpPost(speechtractorURIString);
-      // The POST form params.
-      List<NameValuePair> form = new ArrayList<>();
-      form.add(new BasicNameValuePair("html", content));
-      form.add(new BasicNameValuePair("sourcetype", sourceType));
-      form.add(new BasicNameValuePair("emptyurl", emptyUrl));
-      UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(form, Consts.UTF_8);
-      stractorRequest.setEntity(formEntity);
-      stractorRequest.addHeader("Content-type", "application/x-www-form-urlencoded");
-      stractorRequest.addHeader("Accept", "text/json");
-      stractorRequest.addHeader("Authorization", speechtractorAuthString);
-      String stage = "pre-stractor";
+      String stage = "collecting metadata";
       try {
+         //
+         // Get the Speechtractor's reading of the text.
+         //
+         // Determine info for the POST form params.
+         String sourceType = metadata.getFirstValue("source_type");
+         String emptyUrl = "";
+         if (sourceType.equals("media") || sourceType.equals("blog"))
+            emptyUrl = "1";
+         else
+            emptyUrl = "0";
+         logger.debug("For url: "+url+" source type: "+sourceType+" empty URL ok: "+emptyUrl);
+
+         // Constructing and sending the request.
+         stage = "pre-stractor";
+         HttpClientBuilder clientBouilder = HttpClients.custom();
+         clientBouilder = clientBouilder.setSSLSocketFactory(sslSocketFactory);
+         CloseableHttpClient stractorClient = clientBouilder.build();
+         HttpPost stractorRequest = new HttpPost(speechtractorURIString);
+         // The POST form params.
+         List<NameValuePair> form = new ArrayList<>();
+         form.add(new BasicNameValuePair("html", content));
+         form.add(new BasicNameValuePair("sourcetype", sourceType));
+         form.add(new BasicNameValuePair("emptyurl", emptyUrl));
+         UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(form, Consts.UTF_8);
+         stractorRequest.setEntity(formEntity);
+         stractorRequest.addHeader("Content-type", "application/x-www-form-urlencoded");
+         stractorRequest.addHeader("Accept", "text/json");
+         stractorRequest.addHeader("Authorization", speechtractorAuthString);
          HttpResponse stractorResponse = stractorClient.execute(stractorRequest);
+         logger.debug("HTML sent to Speechtractor for "+url);
          if (stractorResponse.getStatusLine().getStatusCode() != 200) {
             outputCollector.fail(tuple);
             logger.error("Cannot send documents to Speechtractor for "+url
@@ -159,7 +161,7 @@ public class Omnivore2SubmitBolt extends BaseRichBolt {
             doc.dateRetr = timestamp;
             doc.tags = metadata.getValues("doc_tags"); // taken from query or site tags
 
-            if (sourceType == "media" || sourceType == "blog") {
+            if (sourceType.equals("media") || sourceType.equals("blog")) {
                doc.realDoc = "self";
                doc.url = url;
             }
@@ -175,6 +177,7 @@ public class Omnivore2SubmitBolt extends BaseRichBolt {
          omniv2Request.setEntity(omniv2Entity);
          omniv2Request.addHeader("Content-type", "application/json");
          HttpResponse omniv2Response = omniv2Client.execute(omniv2Request);
+         logger.debug("HTML sent to Omnivore2 for "+url);
          if (omniv2Response.getStatusLine().getStatusCode() != 200) {
             outputCollector.fail(tuple);
             logger.error("Cannot send documents to Omnivore2 for "+url

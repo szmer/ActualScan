@@ -80,7 +80,7 @@ public class ScrapeRequestsSpout extends BaseRichSpout {
    protected void fillBuffer() throws SQLException {
       // Cancel all the requests from terminated jobs.
       queryHandler.executeUpdate("UPDATE scan_scraperequest SET status='cancelled', status_changed=CURRENT_TIMESTAMP"
-            + " WHERE job_id IN (SELECT id FROM scan_scanjob WHERE status = 'terminated')");
+            + " WHERE job_id IN (SELECT id FROM scan_scanjob WHERE status = 'terminated') AND status != 'committed'");
 
       logger.debug("Getting a new set of scrape requests...");
       Connection conn = queryHandler.getConnection();

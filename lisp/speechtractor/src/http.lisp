@@ -12,11 +12,12 @@
         (progn
           (setf (hunchentoot:content-type*) "text/json")
           (when *log-requests-p*
-            (log:info "Received a request for processing ~A, source type ~A"
+            (log:info "Received a request for processing ~A, source type ~A, empty URL allowed? ~A"
                       (if (or (not html) (<= (length html) 2000))
                           html ; don't do replacements on short ones, they may be nil
                           (cl-strings:replace-all (subseq html 0 2000) (format nil "~%") " "))
-                      sourcetype))
+                      sourcetype
+                      emptyurl))
           (if (not (and html sourcetype))
               (progn
                 (setf (hunchentoot:return-code*) hunchentoot:+http-bad-request+)

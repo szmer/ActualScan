@@ -125,8 +125,11 @@ scripted with the [fiasco](https://github.com/joaotavora/fiasco) package.
 `docker-compose exec website pytest -x --pdb` can be useful (in this case for the `website` service).
 - To plug directly into the PostgreSQL console, use `docker-compose exec postgres psql -U <your-postgres-username>`.
 - To get more logs from the `redditscrape` service, change `-L INFO` in its entry in  `docker-compose.yml`
-to `-L DEBUG`.
+to `-L DEBUG`. For `omnivore2` this is controlled by the `--log-level=debug` (you may replace `debug` with `info` etc.)
+parameter.
 - You sometimes can also see more logs from a service with `docker-compose logs <container_name>`.
+- Use the Storm UI available at `http://localhost:8888`. There you inspect the configuration, the `crawl` topology,
+change its log level and so on.
 - To directly inspect the Storm topology (crawler) logs, modify this snippet. The exact directory changes depending
 on the timestamp when the crawler topology started.
 ```bash

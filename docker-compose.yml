@@ -53,7 +53,7 @@ services:
         - '127.0.0.1:6824:6823'
      # Only authenticate with the client certificate for now.
      command: >-
-       gunicorn -b 0.0.0.0:6823 wsgi:app
+       gunicorn -b 0.0.0.0:6823 wsgi:app --log-level=info
        --ssl-version TLSv1_2
        --keyfile /home/certs/ascan_internal_key.key
        --certfile /home/certs/ascan_internal.pem
