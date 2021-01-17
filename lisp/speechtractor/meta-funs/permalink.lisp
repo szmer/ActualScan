@@ -65,10 +65,15 @@
     ((and (equalp "a" (plump:tag-name node))
           (typep node 'plump:child-node)
           (plump:has-attribute (plump:parent node) "class")
-          (search "searchItem" (plump:attribute (plump:parent node) "class")))
+          (or
+            (search "searchItem" (plump:attribute (plump:parent node) "class"))
+            ;; macrumors; Reuters: search-result-title
+            (search "title" (plump:attribute (plump:parent node) "class"))))
      (plump:attribute node "href"))
     ((and (equalp "a" (plump:tag-name node))
-          (search "next" (plump:attribute node "class")))
+          (or (search "next" (plump:attribute node "class"))
+              (search "article-link" (plump:attribute node "class"))
+              (search "next" (plump:attribute node "rel"))))
      (plump:attribute node "href"))
     ;; CNN
     ((and (equalp "a" (plump:tag-name node))

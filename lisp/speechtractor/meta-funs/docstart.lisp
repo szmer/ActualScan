@@ -46,11 +46,16 @@
          ;; CNET, some thin Solr wrapping?
          (search "searchItem" (plump:attribute node "class"))
          (search "next" (plump:attribute node "class"))
+         ;; Reuters.
+         (cl-ppcre:scan (boundary-regex "search-result-indiv") (plump:attribute node "class"))
          ;; CNN: cnn-search__result--article or gallery
          (cl-ppcre:scan "result-+article" (plump:attribute node "class"))
          (cl-ppcre:scan "result-+gallery" (plump:attribute node "class"))
          ;; Where the search item may be preceded by date (e.g. New Scientist)
-         (cl-ppcre:scan (boundary-regex "published-date") (plump:attribute node "class"))
+         ;;(cl-ppcre:scan (boundary-regex "published-date") (plump:attribute node "class"))
+         (cl-ppcre:scan (boundary-regex "card") (plump:attribute node "class"))
+         ;; Toms Hardware.
+         (cl-ppcre:scan (boundary-regex "listingResult") (plump:attribute node "class"))
          ;; Gatesnotes.
          (cl-ppcre:scan "SearchThumb" (plump:attribute node "class"))
          ;; Pagination area - get the "next" link from the inside

@@ -673,7 +673,6 @@
   (when speechtractor::*server-running-p*
     (let* ((response (request-test-page "cnet-search.html" "searchpage"))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
-
       (is (= 13 (length parsed-docs))) ;; 11 docs (10 declared!) + 2 next links (first and last one)
       (is (equalp "/news/fortnite-how-to-install-the-game-on-android-phones-without-using-googles-play-store/"
                   (cdr (assoc :url (second parsed-docs)))))
@@ -697,4 +696,36 @@
       (is (not (search "not be effective at killing germs."
                        (cdr (assoc :text (first parsed-docs))))))
       (is (not (search "IRS may still owe you"
+                       (cdr (assoc :text (first parsed-docs)))))))))
+
+(deftest x-reuters-search ()
+   (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "reuters-search.html" "searchpage"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      (is (= 10 (length parsed-docs)))
+      (is (equalp "/article/idUSKBN26K2IJ"
+                  (cdr (assoc :url (first parsed-docs))))))))
+
+(deftest x-tomshardware-search ()
+   (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "tomshardware-search.html" "searchpage"))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      (is (= 20 (length parsed-docs)))
+      (is (equalp "news/cyberpunk-2077-sony-microsoft-cd-projekt-red-refunds"
+                  (cdr (assoc :url (first parsed-docs))))))))
+
+(deftest x-tomshardware ()
+  (when speechtractor::*server-running-p*
+    (let* ((response (request-test-page "tomshardware.html" "media" :remove-if-empty-url nil))
+           (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
+      (is (= 1 (length parsed-docs)))
+      (is (equalp "Anton Shilov" (cdr (assoc :author (first parsed-docs)))))
+      (is (equalp "2020-12-28T18:29:46Z" (cdr (assoc :date--post (first parsed-docs)))))
+      (is (search "Sony has released an official Linux driver"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (search "make other PS5 peripherals"
+                  (cdr (assoc :text (first parsed-docs)))))
+      (is (not (search "No spam, we promise"
+                       (cdr (assoc :text (first parsed-docs))))))
+      (is (not (search "best training for your Brain"
                        (cdr (assoc :text (first parsed-docs)))))))))

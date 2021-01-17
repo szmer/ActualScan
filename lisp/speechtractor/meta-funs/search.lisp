@@ -9,4 +9,6 @@
               (or
                 ;;(cl-ppcre:scan "pagination" (plump:attribute node "class"))
                 ;; Test quotes.toscrape.com
-                (cl-ppcre:scan "next" (plump:attribute node "class")))))))
+                (cl-ppcre:scan "next" (plump:attribute node "class"))
+                (cl-ppcre:scan "next" (plump:attribute node "rel")))))))
+

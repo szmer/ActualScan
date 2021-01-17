@@ -24,6 +24,7 @@
             (cond ((and (equalp "meta" (plump:tag-name node))
                         (or
                           (equalp "author" (plump:attribute node "name"))
+                          (equalp "parsely-author" (plump:attribute node "name"))
                           (equalp "author" (plump:attribute node "property"))
                           (equalp "article:author" (plump:attribute node "property")))))
                   (t (find-if

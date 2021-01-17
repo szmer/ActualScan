@@ -163,7 +163,10 @@
                                 (getf meta-output key))
                         metadata-log)
                   (setf (getf (car (last docs-metadata)) key)
-                        (getf meta-output key))))))
+                        (or
+                          (getf meta-output key)
+                          ;; don't replace something with nothing
+                          (getf (car (last docs-metadata)) key)))))))
           ;; The normal procedure with non-refused tags.
           (progn
             (when (plump:element-p node) ; elements in plump have tags, but directly no text
