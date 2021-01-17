@@ -58,7 +58,8 @@ def rules_results(query_phrase, rules, query_site_names='', highlight=False):
     solr_address += '?defType=edismax&q={}&qf={}'.format(parse.quote(query_phrase, safe=''),
             parse.quote(' '.join(settings.SOLR_TEXT_FIELDS), safe=''))
     if query_site_names:
-        solr_address += '&fq=site_name:(' + parse.quote(' '.join(query_site_names), safe='')+')'
+        solr_address += '&fq=site_name:(' + ' '.join(
+            ['"{}"'.format(site) for site in query_site_names]) + ')'
     for filter_term in solr_filter_terms:
         solr_address += '&fq=' + parse.quote(filter_term, safe='')
     for boost_term in solr_boost_terms:

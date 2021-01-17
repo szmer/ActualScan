@@ -109,7 +109,7 @@ def make_scrape_request(base_scrape_request, target, job_id, status='ran'):
             site_url=base_scrape_request.site_url,
             site_id=base_scrape_request.site_id,
             site_type='reddit',
-            query_tags=base_scrape_request.job.id)
+            query_tags=base_scrape_request.query_tags)
 
 def process_submission(submission, submission_scrape_request):
     logger.info('Processing the submission: {}'.format(submission_scrape_request.target))
@@ -153,13 +153,15 @@ def process_submission(submission, submission_scrape_request):
                     submission_obj['site_name'] = '/r/' + submission.subreddit.display_name
                 if ok(submission.subreddit, 'over_18') and submission.subreddit.over_18:
                     submission_obj['adult_b'] = True
+            logger.debug('Searching for tags for {}'.format(submission_obj['url']))
             if submission_scrape_request.job.query_tags:
                 submission_obj['tags'] = submission_scrape_request.job.query_tags
             else:
                 submission_obj['tags'] = [link.tag.name
-                        for link in submission_scrape_request.site.tag_links]
+                        for link in submission_scrape_request.site.tag_links.all()]
+            logger.info('Sending with tags {} to omnivore2...'.format(submission_obj['tags']))
             # Send to Solr.
-            eat_omnivore2(OMNIVORE2_HOST, OMNIVORE2_PORT, submission_obj,
+            eat_omnivore2(OMNIVORE2_HOST, OMNIVORE2_PORT, [submission_obj],
                     req_id=submission_scrape_request.id, req_class=ScrapeRequest)
 
         # Make the comment objects (Solr documents).
@@ -210,11 +212,13 @@ def process_comment(comment, comment_scrape_request):
                 comment_obj['site_name'] = '/r/' + comment.subreddit.display_name
             if ok(comment.subreddit, 'over_18') and comment.subreddit.over_18:
                 comment_obj['adult_b'] = True
+        logger.debug('Searching for tags for {}'.format(comment_obj['url']))
         if comment_scrape_request.job.query_tags:
             comment_obj['tags'] = comment_scrape_request.job.query_tags
         else:
-            comment_obj['tags'] = [link.tag.name for link in comment_scrape_request.site.tag_links]
-        eat_omnivore2(OMNIVORE2_HOST, OMNIVORE2_PORT, comment_obj,
+            comment_obj['tags'] = [link.tag.name for link in comment_scrape_request.site.tag_links.all()]
+        logger.info('Sending with tags {} to omnivore2...'.format(comment_obj['tags']))
+        eat_omnivore2(OMNIVORE2_HOST, OMNIVORE2_PORT, [comment_obj],
                 req_id=comment_scrape_request.id, req_class=ScrapeRequest)
         update_request_status(comment_scrape_request, 'committed')
     except (PRAWException, NotFound, ServerError) as e:
@@ -246,14 +250,14 @@ for scrape_request in leftover_scrape_requests:
     permalink = 'https://reddit.com'+scrape_request.target
     is_url_skippable = solr_check_urls(SOLR_HOST, SOLR_PORT, SOLR_CORE, SOLR_PASS,
                         DEDUP_DATE_POST_CHECK,
-            DEDUP_DATE_RETR_CHECK, [permalink])
+                        DEDUP_DATE_RETR_CHECK, [permalink])
     if permalink in is_url_skippable:
         update_request_status(scrape_request, 'cancelled', failure_comment='dupe')
         continue
 
     slash_count = scrape_request.target.count('/')
     if slash_count == 6: # if it's a whole submission, just add it to the queue
-        if scrape_request.status != 'waiting':
+        if scrape_request.status != 'scheduled':
             update_request_status(scrape_request, 'scheduled')
     elif slash_count == 7: # process the leftover comments now, as we work by submissions
         comment = Comment(reddit, url=permalink)
@@ -293,7 +297,7 @@ while True:
             for submission in submissions: # is seems that here bad subreddit names may fail
                 if not ok(submission, 'permalink'):
                     continue
-                is_url_skippable = solr_check_urls(SOLR_HOST, SOLR_PORT, SOLR_CORE,
+                is_url_skippable = solr_check_urls(SOLR_HOST, SOLR_PORT, SOLR_CORE, SOLR_PASS,
                         DEDUP_DATE_POST_CHECK, DEDUP_DATE_RETR_CHECK,
                         [submission.permalink])
                 if submission.permalink in is_url_skippable:
@@ -325,7 +329,7 @@ while True:
             continue
         # Do deduplication with Solr.
         permalink = 'https://reddit.com'+scrape_request.target
-        is_url_skippable = solr_check_urls(SOLR_HOST, SOLR_PORT, SOLR_CORE,
+        is_url_skippable = solr_check_urls(SOLR_HOST, SOLR_PORT, SOLR_CORE, SOLR_PASS,
                 DEDUP_DATE_POST_CHECK, DEDUP_DATE_RETR_CHECK,
                 [permalink])
         if permalink in is_url_skippable:

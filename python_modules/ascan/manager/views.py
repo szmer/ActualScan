@@ -174,9 +174,9 @@ def makesite(request):
                     site_form.instance.site_type = 'reddit'
                     # Where does the subreddit name end.
                     r_end = site_form.instance.homepage_url[r_position+len('/r/'):].find('/')
-                    if r_end != -1:
+                    if r_end == -1:
                         # do skip the ending slash, that's how the sites are indexed in Solr
-                        r_end = len(site_form.instance.homepage_url[r_position:]) - 1
+                        r_end = len(site_form.instance.homepage_url[r_position:])
                     site_form.instance.site_name = site_form.instance.homepage_url[r_position:r_end]
                     site_form.instance.search_pointer = site_form.instance.site_name[len('/r/'):]
                     site_form.instance.homepage_url = ('https://reddit.com'
