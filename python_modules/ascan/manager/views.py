@@ -120,7 +120,7 @@ def scaninfo(request):
     index_form_data['minimal_level'] = numeric_to_trust_level(job.minimal_level)
     index_form = PublicScanForm(data=index_form_data)
     return render(request, 'manager/scaninfo.html',
-            { 'status_data': progress_info, 'terminable': job.status in ['waiting', 'working'],
+            { 'status_data': progress_info, 'terminable': job.status in ['waiting', 'working', 'finished'],
                 'site_names': job.query_site_names,
                 'tag_names': job.query_tags,
                 'scan_job': job, 'form': index_form })

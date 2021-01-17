@@ -59,10 +59,8 @@ class SiteForm(ModelForm):
                 'homepage_url': _('Address of the homepage of the site (like <em>en.wikipedia.org</em>).'),
                 'search_pointer': _('Hi! Please find the <strong>search</strong> 🔍 function in the'
                     ' site you want to add, and search for the following:  '
-                    '<span style="display: inline" class="card p-2 text-muted">twenty cats</span>'
-                    ' (copy contents of the box, including the vertical pipes). Then paste the '
-                    '<strong>address</strong> of the search page that you get below.<br>'
-                    '<img src="/static/scan/search_pointer.png" style="max-width: 80%"><br>'
+                    '<span style="display: inline" class="card p-2 text-muted">twenty cats</span>. '
+                    'Then paste the <strong>address</strong> of the search page that you get below.<br>'
                     '(Psst! If you want add a <strong>subreddit</strong>, you can just paste its '
                     'address or the <em>/r/name</em>, I will find its search when you\'ll add the '
                     'site!)')

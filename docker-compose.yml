@@ -131,18 +131,18 @@ services:
      depends_on:
         - nimbus
 
-###-  redditscrape:
-###-     build:
-###-        context: .
-###-        dockerfile: dockerfiles/Dockerfile_redditscrape
-###-     command: python reddit_scraper.py -L INFO
-###-     env_file:
-###-        - '.env'
-###-     depends_on:
-###-        - postgres
-###-        - solr
-###-        - website
-###-        - omnivore2
+  redditscrape:
+     build:
+        context: .
+        dockerfile: dockerfiles/Dockerfile_redditscrape
+     command: python reddit_scraper.py -L INFO
+     env_file:
+        - '.env'
+     depends_on:
+        - postgres
+        - solr
+        - website
+        - omnivore2
 
   selenium:
      image: 'selenium/standalone-chrome:3.141.59'

@@ -33,6 +33,7 @@ Monitoring the index expansion with scans and crawls.
   {% endfor %}
 </div>
 
+{# <uncomment after porting the simple crawl code to StormCrawler>
 {% if form %}
 <div class="card p-2">
 <h3>Start a new simple crawl</h3>
@@ -46,4 +47,5 @@ Monitoring the index expansion with scans and crawls.
    var siteList = new List('crawl_site-searchable', options)
 </script>
 {% endif %}
+#}
 {% endblock %}

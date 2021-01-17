@@ -5,7 +5,8 @@
   - setup instructions
   - testing
   - debugging
-3. Contributing and communications
+3. How to use your install!
+4. Contributing and communications
 
 # Introduction
 
@@ -18,10 +19,10 @@ and [analytic results](https://tech.actualscan.com/posts/analytic-results/) on t
 ActualScan is free software (AGPL v3): you can run your own instance and review and modify the code, as long
 as you also make the source available to users.
 
-Currently indexing should work decently on most Wordpress sites, some media and forums sites, and Reddit
+Currently indexing should work decently on many Wordpress sites, some media and forums sites, and Reddit
 (optional: you have to use your own [Reddit API key](https://www.reddit.com/wiki/api)).
 
-The project is still in a very early stage! Stay tuned for a public alpha server.
+The project is still in a *very early* stage! Stay tuned for a public alpha server.
 You can follow the [blog](https://tech.actualscan.com/) with the email newsletter or RSS.
 Also see the **contributing** info at the end.
 
@@ -38,6 +39,12 @@ The Ansible version, on the other hand, should offer a relatively plug-and-play 
 provide your servers and get a search engine. Due to some recent serious changes in the stack,
 and apparently changes in RedHat's CentOS support guarantees, this is currently *not up to date*.
 *It is possible to go fully Ansible in the future, but then we would require using virtual machines for local development*.
+
+**Important note**: *only* for sites' search pages, the crawler ignores robots.txt (the unofficial standard for telling crawlers
+what to crawl). This is unlikely to get you into any trouble  if you play with ActualScan casually on a local machine:
+but consider yourself warned. In the future there will be config option to disable this. This is done because website owners
+are likely not to predict our use case when blocking robots specifically from their search pages. (Search pages are useless
+for most existing crawlers and search engines.) If sites (also) block their *content* pages from robots, we won't save or index them anyway.
 
 ## List of services (architecture overview)
 
@@ -85,7 +92,7 @@ In each case use **the same** passphrase that you set as `KEYSTORE_PASSWORD` var
 From the `certs/dev` directory run:
 ```bash
 openssl req -x509 -newkey rsa:4096 -keyout ascan_dev_internal.pem -out ascan_dev_internal.pem \
--config ./openssl.cnf -days 365
+-config openssl.cnf -days 9999
 # Make a copy of the key without the passphrase:
 openssl rsa -in ascan_dev_internal.pem -out ascan_dev_internal_key.key
 openssl pkcs12 -export -in ascan_dev_internal.pem -inkey ascan_dev_internal.pem \
@@ -100,13 +107,19 @@ mvn package
 7. Before starting the website, perform necessary database migrations like so:
 The last command will walk you through creating the admin account.
 ```bash
+docker-compose run website python manage.py makemigrations scan
+docker-compose run website python manage.py makemigrations manager
+docker-compose run website python manage.py makemigrations bg
 docker-compose run website python manage.py makemigrations
 docker-compose run website python manage.py migrate
 docker-compose run website python manage.py createsuperuser
 ```
 8. Finally, you can issue the `docker-compose up` command. Your local ActualScan instance is now up and running!
 
-Troubleshooting:
+**Troubleshooting**
+- If you paste the first openssl command and it does nothing (says `req: Use -help for summary.`), try
+retyping it manually. See [here](https://serverfault.com/questions/1021663/creating-csr-for-ssl-request-on-ubuntu-gives-error#comment1326408_1021666)
+for a similar problem.
 - If you use and enforce SELinux, the containers may have problems with reading from disk inside them. The
 usual symptom is Python complaining about unimportable modules. You can change the rules appropriately
 by running `chcon -Rt svirt_sandbox_file_t .` (probably as sudo) in the project directory.
@@ -137,12 +150,57 @@ docker-compose exec storm_supervisor ls /logs/workers-artifacts
 docker-compose exec storm_supervisor cat /logs/workers-artifacts/crawl-1-<THIS PART CHANGES>/6700/worker.log
 ```
 
+# How to use your install
+After following the setup instructions you can navigate to the website address (`localhost:8000` for the
+Docker Compose version) in your browser. You will see something like this:
+![](screenshot.png)
+*Search the index* button searches the already indexed pages. *Scan the Web* button scans the selected sites
+(and/or sites with selected tags) for the query phrase. But for now, you have no tags or sites in your database.
+Let's change that.
+
+Login to the admin account that you created (you may also register a new user, if you configured email properly).
+Go to the *Tags* tab on the website. Create some tags that you want to classify sites with: for example
+*technology*, *news* etc.
+
+Now go to the *Sites* tab and click *Add a new site*. The way ActualScan does selective crawling is by making
+use of the sites' own search function. (You can also just crawl them traditionally, this will be ported soon.)
+You normally add sites by entering `twenty cats` into **their** search box, then clicking on *Search* or an
+equivalent button on **their** website. Then copy the URL from your browser to the *Add site* form in
+the ActualScan interface.
+![](searchpointer.png)
+Because ActualScan performs smart text extraction and analysis, not all websites will be succesfully crawled.
+The number of them will be increasing with improvements in the crawler and Speechtractor. For now,
+you can try these websites:
+- `https://www.cnet.com/search/?query=twenty+cats`
+- `https://www.newscientist.com/search/?q=twenty+cats&search=&sort=relevance`
+- `https://www.reuters.com/search/news?blob=twenty+cats`
+- `https://www.tomshardware.com/search?searchTerm=twenty+cats`
+
+You can also add subreddits (if you configured Reddit API in `.env`).
+
+The interface should be able to guess the site's homepage address for you. Select one of the content types
+(blog, forums, media, social) -- this is used by Speechtractor to guide the text and metadata extraction.
+Select at least one tag for the website. Click *Add the site*.
+
+After adding the sites you can return to the ActualScan homepage. Type your query (for example *curiosity*)
+into the search box and click on *Scan the Web* button. This will create a new scan and take you to its monitoring
+page. You can wait for the scan to finish, or click *Search the index now* even while it's still working.
+
+Once you have more than 10 results for a query, custom ranking comes into play. Use the sliders to the right
+to change the scoring rules in real time. For example, *mood* refers to positive/negative sentiment detected
+in the text. You can set minimal and maximal value for a parameter, and adjust its weight (if you set a higher
+weight, text fragments with higher values of the parameter will come to the top).
+
+Click on *Add rule* at the bottom of the slider column to name and add the rule permanently
+to your ActualScan installation. You can also edit, copy, paste and share the rule strings next to that
+button, such as `sl,*,*,2;wl,9,*,5;awtf,*,0.4,2;neg,*,0.35,0;pos,*,0.45,0`.
+
 # Contributing and communications
-- For your own sake, do not submit patches/pull requests without asking first.
+- Please do not submit patches/pull requests without talking about it first.
 - Main needs and plans for the project are communicated with GitHub issues.
 - Your opinions and suggestions are very kindly welcome! (Agreement not guaranteed though 🙃)
 - Currently the main channel **for suggestions** is email (see below) or GitHub issues. We will think of opening a mailing list
-or a IRC/Matrix room *(or something different but open and reasonable)* if there's a need for it.
+and/or a IRC/Matrix room *(or something different but open and reasonable)* if there's a need for it.
 - Get in touch especially if you use, or seriously want to use, the software: **write an email** to contact@actualscan.com.
 Do communicate your needs, so they can be taken into account in new features and you can get info on important changes.
 (Note that this is *only* good will and best effort, as ActualScan is currently developed completely for free.)

@@ -181,7 +181,8 @@ public class Omnivore2SubmitBolt extends BaseRichBolt {
          if (omniv2Response.getStatusLine().getStatusCode() != 200) {
             outputCollector.fail(tuple);
             logger.error("Cannot send documents to Omnivore2 for "+url
-                  +", status code: "+Integer.toString((omniv2Response.getStatusLine().getStatusCode())));
+                  +", status code: "+Integer.toString((omniv2Response.getStatusLine().getStatusCode()))
+                  +", message: "+EntityUtils.toString(omniv2Response.getEntity()));
             return;
          }
          stage = "omniv2-sent";
