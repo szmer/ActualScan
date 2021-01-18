@@ -33,7 +33,7 @@
 
 (deftest x-redflagdeals-phpbb ()
   (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "redflagdeals-phpbb.html" "forums"))
+    (let* ((response (request-test-page "redflagdeals-phpbb.txt" "forums"))
            ;; If it fails, we may want to format t the response to debug
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       (is (= 12 (length parsed-docs)))
@@ -61,7 +61,7 @@
 
 (deftest x-headfi-xenforo ()
   (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "headfi-xenforo.html" "forums"))
+    (let* ((response (request-test-page "headfi-xenforo.txt" "forums"))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       (is (= 15 (length parsed-docs)))
       ;; The basic check for lost posts.
@@ -91,7 +91,7 @@
 
 (deftest x-headfi-1stpage-xenforo ()
   (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "headfi-1stpage-xenforo.html" "forums"))
+    (let* ((response (request-test-page "headfi-1stpage-xenforo.txt" "forums"))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       ;; The purpose of this test is checking how we handle junk that may happen in the date field.
       (is (= 1 (length parsed-docs)))
@@ -101,7 +101,7 @@
 
 (deftest x-styleforum-xenforo ()
   (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "styleforum-xenforo.html" "forums"))
+    (let* ((response (request-test-page "styleforum-xenforo.txt" "forums"))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       (is (= 6 (length parsed-docs)))
       ;; The basic check for lost posts.
@@ -131,7 +131,7 @@
 
 (deftest x-welookfab-wordpress ()
   (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "welookfab-wordpress.html" "forums"))
+    (let* ((response (request-test-page "welookfab-wordpress.txt" "forums"))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       (is (= 22 (length parsed-docs)))
       ;; The basic check for lost posts.
@@ -173,7 +173,7 @@
 
 (deftest x-thestudentroom ()
   (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "thestudentroom.html" "forums"))
+    (let* ((response (request-test-page "thestudentroom.txt" "forums"))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       (is (= 9 (length parsed-docs)))
       ;; The basic check for lost posts.
@@ -211,7 +211,7 @@
 (deftest x-wallstreetoasis ()
   ;; NOTE Here tests are a little sloppy for now, since we are bombarded with low-effort posts.
   (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "wallstreetoasis.html" "forums"))
+    (let* ((response (request-test-page "wallstreetoasis.txt" "forums"))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       ;; it's hard to count them here
       (is (< 20 (length parsed-docs)))
@@ -236,7 +236,7 @@
 
 (deftest x-fashionspot-maybe-xenforo ()
   (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "fashionspot-maybe-xenforo.html" "forums"))
+    (let* ((response (request-test-page "fashionspot-maybe-xenforo.txt" "forums"))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       (is (= 15 (length parsed-docs)))
       ;; The basic check for lost posts.
@@ -277,7 +277,7 @@
 
 (deftest x-askandyaboutclothes-xenforo ()
   (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "askandyaboutclothes-xenforo.html" "forums"))
+    (let* ((response (request-test-page "askandyaboutclothes-xenforo.txt" "forums"))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       (is (= 3 (length parsed-docs)))
       ;; The basic check for lost posts.
@@ -305,7 +305,7 @@
 
 (deftest x-edcforums-xenforo ()
   (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "edcforums-xenforo.html" "forums"))
+    (let* ((response (request-test-page "edcforums-xenforo.txt" "forums"))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       ;; The basic check for lost posts.
       (is (eq nil
@@ -345,14 +345,14 @@
 
 (deftest x-dieworkwear-tumblr ()
   (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "dieworkwear-tumblr.html" "blog"))
+    (let* ((response (request-test-page "dieworkwear-tumblr.txt" "blog"))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       ;; TODO - ld+json
       nil)))
 
 (deftest x-pennypincherfashion-wordpress ()
   (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "pennypincherfashion-wordpress.html" "blog" :remove-if-empty-url nil))
+    (let* ((response (request-test-page "pennypincherfashion-wordpress.txt" "blog" :remove-if-empty-url nil))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       (is (= 1 (length parsed-docs)))
       (is (equalp "Kimberly" (cdr (assoc :author (first parsed-docs)))))
@@ -375,7 +375,7 @@
 
 (deftest x-themodestman-wordpress ()
   (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "themodestman-wordpress.html" "blog" :remove-if-empty-url nil))
+    (let* ((response (request-test-page "themodestman-wordpress.txt" "blog" :remove-if-empty-url nil))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       (is (= 1 (length parsed-docs)))
       (is (equalp "Brock" (cdr (assoc :author (first parsed-docs)))))
@@ -393,7 +393,7 @@
 
 (deftest x-kendieveryday-wordpress ()
   (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "kendieveryday-wordpress.html" "blog" :remove-if-empty-url nil))
+    (let* ((response (request-test-page "kendieveryday-wordpress.txt" "blog" :remove-if-empty-url nil))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       (is (= 1 (length parsed-docs)))
       ;; TODO ld+json
@@ -412,7 +412,7 @@
 
 (deftest x-effortlesseverydaystyle-blogspot ()
   (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "effortlesseverydaystyle-blogspot.html" "blog" :remove-if-empty-url nil))
+    (let* ((response (request-test-page "effortlesseverydaystyle-blogspot.txt" "blog" :remove-if-empty-url nil))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       (is (= 1 (length parsed-docs)))
       (is (equalp "Effortless Everyday Style" (cdr (assoc :author (first parsed-docs)))))
@@ -435,7 +435,7 @@
 
 (deftest x-fashionista ()
   (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "fashionista.html" "media" :remove-if-empty-url nil))
+    (let* ((response (request-test-page "fashionista.txt" "media" :remove-if-empty-url nil))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       ;; Note that we don't require :url in media articles.
       (is (= 1 (length parsed-docs)))
@@ -454,7 +454,7 @@
 
 (deftest x-vogue ()
   (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "vogue.html" "media" :remove-if-empty-url nil))
+    (let* ((response (request-test-page "vogue.txt" "media" :remove-if-empty-url nil))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       ;; KLUDGE This has ellipses "..." expanded by sentence splitter to separate sentences, which
       ;; is very questionable
@@ -483,7 +483,7 @@
 
 (deftest x-wwd ()
   (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "wwd.html" "media" :remove-if-empty-url nil))
+    (let* ((response (request-test-page "wwd.txt" "media" :remove-if-empty-url nil))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       (is (= 1 (length parsed-docs)))
       ;; NOTE NOTE This semi-bogus value is present in a schema.org thing at the end of the document.
@@ -511,7 +511,7 @@
 
 (deftest x-dazeddigital ()
   (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "dazeddigital.html" "media" :remove-if-empty-url nil))
+    (let* ((response (request-test-page "dazeddigital.txt" "media" :remove-if-empty-url nil))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       (is (= 1 (length parsed-docs)))
       (is (equalp "Jessica Heron-Langton" (cdr (assoc :author (first parsed-docs)))))
@@ -530,7 +530,7 @@
 
 (deftest x-glamour ()
   (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "glamour.html" "media" :remove-if-empty-url nil))
+    (let* ((response (request-test-page "glamour.txt" "media" :remove-if-empty-url nil))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       (is (= 1 (length parsed-docs)))
       (is (equalp "Anne T. Donahue" (cdr (assoc :author (first parsed-docs)))))
@@ -551,7 +551,7 @@
 
 (deftest x-thefashionpolice ()
   (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "thefashionpolice.html" "media" :remove-if-empty-url nil))
+    (let* ((response (request-test-page "thefashionpolice.txt" "media" :remove-if-empty-url nil))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       (is (= 1 (length parsed-docs)))
       ;; should we allow such hacks as having links in the author field? (currently being erased)
@@ -592,7 +592,7 @@
 
 (deftest x-quotestoscrape-author ()
   (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "quotestoscrape-author.html" "blog" :remove-if-empty-url nil))
+    (let* ((response (request-test-page "quotestoscrape-author.txt" "blog" :remove-if-empty-url nil))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       (is (= 1 (length parsed-docs)))
       ;;-(is (equalp "Albert Einstein" (cdr (assoc :author (first parsed-docs)))))
@@ -626,7 +626,7 @@
 
 (deftest x-editioncnn ()
   (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "editioncnn.html" "media" :remove-if-empty-url nil))
+    (let* ((response (request-test-page "editioncnn.txt" "media" :remove-if-empty-url nil))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       (is (= 1 (length parsed-docs)))
       (is (equalp "Oscar Holland, CNN" (cdr (assoc :author (first parsed-docs)))))
@@ -655,7 +655,7 @@
 
 (deftest x-gatesnotes ()
   (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "gatesnotes.html" "blog" :remove-if-empty-url nil))
+    (let* ((response (request-test-page "gatesnotes.txt" "blog" :remove-if-empty-url nil))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       (is (= 1 (length parsed-docs)))
       (is (equalp "Bill Gates" (cdr (assoc :author (first parsed-docs)))))
@@ -684,7 +684,7 @@
 
 (deftest x-cnet ()
   (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "cnet.html" "media" :remove-if-empty-url nil))
+    (let* ((response (request-test-page "cnet.txt" "media" :remove-if-empty-url nil))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       (is (= 1 (length parsed-docs)))
       (is (equalp "Steve Tobak" (cdr (assoc :author (first parsed-docs)))))
@@ -716,7 +716,7 @@
 
 (deftest x-tomshardware ()
   (when speechtractor::*server-running-p*
-    (let* ((response (request-test-page "tomshardware.html" "media" :remove-if-empty-url nil))
+    (let* ((response (request-test-page "tomshardware.txt" "media" :remove-if-empty-url nil))
            (parsed-docs (ignore-errors (cl-json:decode-json-from-string response))))
       (is (= 1 (length parsed-docs)))
       (is (equalp "Anton Shilov" (cdr (assoc :author (first parsed-docs)))))
