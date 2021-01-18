@@ -9,10 +9,8 @@
 4. Contributing and communications
 
 # Introduction
-
-ActualScan is a search engine addressing the problems of browsing the modern Web, while focusing
-on informative and niche websites with discussions and articles. It's good for exploring what
-people have to say about any topic.
+ActualScan is a smart (analytic) Web search engine with infinitely sortable results. It focuses on informative and niche
+websites, online discussions and articles. It's good for exploring what people have to say about any topic.
 Read more on the visions for [social indexing](https://tech.actualscan.com/posts/social-indexing/)
 and [analytic results](https://tech.actualscan.com/posts/analytic-results/) on the blog.
 
@@ -32,7 +30,7 @@ Under the hood ActualScan is a bunch of services written in Python, Java and som
 provided with two orchestration schemes, Docker Compose and Ansible.
 
 Docker Compose is intended for testing and developing ActualScan code on your local machine. We try to
-include as much of production-level network security (TLS etc.) as possible, to test that everything works,
+include as much of production-like network security (TLS etc.) as possible, to test that everything works,
 but overall this version is not intended for serious production use.
 
 The Ansible version, on the other hand, should offer a relatively plug-and-play experience where you
@@ -82,7 +80,7 @@ Sorry that this is a longish, somewhat manual process. **If you're not sure what
 The experience should be gradually improved when the project matures.
 
 1. These instructions are written for Linux, but everything we use is cross-platform. Install Docker and Docker Compose.
-You will also need openssl, JDK 11+ and Apache Maven installed.
+You will also need OpenSSL, JDK 11+ and Apache Maven installed.
 2. Clone this repository. Make a copy of the `.env.sample` file and name it `.env`.
 3. Open that file and follow instructions, setting up passwords, secrets etc. for the services. Never
 reuse those in production!
@@ -104,7 +102,7 @@ mvn compile
 mvn package
 ```
 6. Now you can build the services with `docker-compose build` in the main repo directory.
-7. Before starting the website, perform necessary database migrations like so:
+7. Before starting the website, perform necessary database migrations like so.
 The last command will walk you through creating the admin account.
 ```bash
 docker-compose run website python manage.py makemigrations scan
@@ -117,14 +115,14 @@ docker-compose run website python manage.py createsuperuser
 8. Finally, you can issue the `docker-compose up` command. Your local ActualScan instance is now up and running!
 
 **Troubleshooting**
-- If you paste the first openssl command and it does nothing (says `req: Use -help for summary.`), try
+- If you paste the first OpenSSL command and it does nothing (says `req: Use -help for summary.`), try
 retyping it manually. See [here](https://serverfault.com/questions/1021663/creating-csr-for-ssl-request-on-ubuntu-gives-error#comment1326408_1021666)
 for a similar problem.
 - If you use and enforce SELinux, the containers may have problems with reading from disk inside them. The
 usual symptom is Python complaining about unimportable modules. You can change the rules appropriately
 by running `chcon -Rt svirt_sandbox_file_t .` (probably as sudo) in the project directory.
-- If things (especially Storm and the `nimbus` container) behave strangely after restarting, try stopping
-everything with `docker-compose down` and restarting again with `docker-compose up`.
+- Storm and the `nimbus` container can crash after restarting if you don't run `docker-compose down` after
+stopping everything. You probably have to run `docker-compose down` before running `docker-compose up` again.
 
 ## Running tests and some tips for debugging
 
@@ -164,7 +162,7 @@ Go to the *Tags* tab on the website. Create some tags that you want to classify 
 
 Now go to the *Sites* tab and click *Add a new site*. The way ActualScan does selective crawling is by making
 use of the sites' own search function. (You can also just crawl them traditionally, this will be ported soon.)
-You normally add sites by entering `twenty cats` into **their** search box, then clicking on *Search* or an
+You normally add sites by typing `twenty cats` into **their** search box, then clicking on *Search* or an
 equivalent button on **their** website. Then copy the URL from your browser to the *Add site* form in
 the ActualScan interface.
 ![](searchpointer.png)
