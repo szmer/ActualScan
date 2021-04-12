@@ -1,3 +1,23 @@
+/*
+SPDX-License-Identifier: AGPL-3.0-or-later
+Copyright (c) 2020-2021 Szymon Rutkowski.
+
+Adapted from code for Stormcrawler - its original license:
+ * Licensed to DigitalPebble Ltd under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * DigitalPebble licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.actualscan.crawling;
 
 import java.io.ByteArrayInputStream;
@@ -17,13 +37,12 @@ import org.apache.tika.mime.MediaType;
 public class ResponseStringReader {
    private Detector detector = TikaConfig.getDefaultConfig().getDetector();
 
-   /**
-    *      * Length of content to use for detecting the charset. Set to -1 to use the
-    *           * full content (will make the parser slow), 0 to deactivate the detection
-    *                * altogether, or any other value (at least a few hundred bytes).
-    *                     **/
+   /*
+    * Length of content to use for detecting the charset. Set to -1 to use the
+    * full content (will make the parser slow), 0 to deactivate the detection
+    * altogether, or any other value (at least a few hundred bytes).
+    */
    private int maxLengthCharsetDetection = 2048;
-
 
    public String guessMimeType(String URL, String httpCT, byte[] content) {
 
@@ -50,10 +69,6 @@ public class ResponseStringReader {
 
    public String responseText(byte[] content, String url, Metadata metadata) throws IOException {
       // This is adapted from Stormcrawler's JSoupParserBolt.
-      // check that its content type is HTML
-      // look at value found in HTTP headers
-      boolean CT_OK = false;
-
       // originally the default here was this.protocolMDprefix
       String mimeType = metadata.getFirstValue(HttpHeaders.CONTENT_TYPE, "");
 
@@ -66,16 +81,6 @@ public class ResponseStringReader {
       }
       // store identified type in md
       metadata.setValue("parse.Content-Type", mimeType);
-
-      if (StringUtils.isNotBlank(mimeType)) {
-         if (mimeType.toLowerCase().contains("html")) {
-            CT_OK = true;
-         }
-      }
-      // go ahead even if no mimetype is available
-      else {
-         CT_OK = true;
-      }
 
       String charset = CharsetIdentification.getCharset(metadata, content,
                             maxLengthCharsetDetection);

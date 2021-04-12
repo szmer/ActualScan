@@ -1,3 +1,7 @@
+/*
+SPDX-License-Identifier: AGPL-3.0-or-later
+Copyright (c) 2021 Szymon Rutkowski.
+ */qq
 package com.actualscan.crawling;
 
 import java.sql.*;
@@ -6,8 +10,8 @@ import java.util.List;
 import java.util.LinkedList;
 import java.util.Map;
 
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -25,7 +29,7 @@ public class ScrapeRequestsSpout extends BaseRichSpout {
 
    private DBQueryHandler queryHandler;
 
-   private static final Logger logger = LogManager.getLogger(ScrapeRequestsSpout.class);
+   private static final Logger logger = LoggerFactory.getLogger(ScrapeRequestsSpout.class);
 
    public ScrapeRequestsSpout() {
    }

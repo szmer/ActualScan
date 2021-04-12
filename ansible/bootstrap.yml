@@ -42,6 +42,7 @@
           proto: "tcp"
           setype: "ssh_port_t"
           state: "present"
+       when: 'ansible_selinux.status == "enabled"'
      - name: allow ssh on our custom port with firewalld
        firewalld:
           port: "{{ ascan_hosts_ssh_port }}/tcp"

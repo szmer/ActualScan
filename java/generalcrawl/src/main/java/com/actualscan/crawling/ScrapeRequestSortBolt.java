@@ -1,11 +1,15 @@
+/*
+SPDX-License-Identifier: AGPL-3.0-or-later
+Copyright (c) 2021 Szymon Rutkowski.
+ */
 package com.actualscan.crawling;
 
 import java.io.IOException;
 import java.sql.*;
 import java.util.Map;
 
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.task.OutputCollector;
@@ -25,7 +29,7 @@ public class ScrapeRequestSortBolt extends BaseRichBolt {
 
    private ResponseStringReader responseStringReader;
 
-   private static final Logger logger = LogManager.getLogger(ScrapeRequestSortBolt.class);
+   private static final Logger logger = LoggerFactory.getLogger(ScrapeRequestSortBolt.class);
 
    @Override
    public void declareOutputFields(OutputFieldsDeclarer declarer) {
@@ -50,15 +54,13 @@ public class ScrapeRequestSortBolt extends BaseRichBolt {
 
    @Override
    public void execute(Tuple tuple) {
-      Metadata metadata = null;
-
-      if (tuple.contains("metadata"))
-         metadata = (Metadata) tuple.getValueByField("metadata");
+      Metadata metadata = (Metadata) tuple.getValueByField("metadata");
 
       // TODO drop? if no metadata
 
       String url = (String) tuple.getValueByField("url");
-      byte[] content = (byte[]) tuple.getValueByField("content");
+      byte[] content = ((String) tuple.getValueByField("content")).getBytes();
+      logger.info("Tuple: {}, {}, {}", content, url, metadata);
 
       try {
          String contentString = responseStringReader.responseText(content, url, metadata);
@@ -82,13 +84,13 @@ public class ScrapeRequestSortBolt extends BaseRichBolt {
                   + " WHERE id = " + reqId);
          }
          catch (SQLException e) {
-            logger.warn("Cannot update the status of a new scrape request "+reqId, e);
+            logger.warn("Cannot update the status of a new scrape request "+reqId+" ({})", e);
             return;
          }
          outputCollector.ack(tuple);
       }
       catch (IOException e) {
-         logger.error(e);
+         logger.error("IOException {}", e);
          outputCollector.fail(tuple);
       }
    }

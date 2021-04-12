@@ -55,3 +55,9 @@ certs/dev/*.p12
 *.ear
 # The whole "target" directory
 java/generalcrawl/target/
+
+# Java IDEs
+.idea
+.classpath
+.project
+*.iml

@@ -1,3 +1,7 @@
+/*
+SPDX-License-Identifier: AGPL-3.0-or-later
+Copyright (c) 2021 Szymon Rutkowski.
+ */
 package com.actualscan.crawling;
 
 import java.io.FileNotFoundException;
@@ -15,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import javax.net.ssl.SSLContext;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.http.Consts;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
@@ -28,8 +34,6 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.task.OutputCollector;
@@ -55,7 +59,7 @@ public class SearchPageRequestsBolt extends BaseRichBolt {
 
    private int maxNormalSearchDepth;
 
-   private static final Logger logger = LogManager.getLogger(SearchPageRequestsBolt.class);
+   private static final Logger logger = LoggerFactory.getLogger(SearchPageRequestsBolt.class);
 
 
    @Override

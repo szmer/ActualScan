@@ -1,15 +1,10 @@
+/*
+SPDX-License-Identifier: AGPL-3.0-or-later
+Copyright (c) 2021 Szymon Rutkowski.
+ */
 package com.actualscan.crawling;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.security.GeneralSecurityException;
 import java.sql.*;
-import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -19,22 +14,18 @@ import java.util.ArrayList;
 import java.util.Map;
 import javax.net.ssl.SSLContext;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.http.Consts;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.NameValuePair;
-import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -60,7 +51,7 @@ public class Omnivore2SubmitBolt extends BaseRichBolt {
    private String speechtractorURIString;
    private String omnivore2URIString;
 
-   private static final Logger logger = LogManager.getLogger(Omnivore2SubmitBolt.class);
+   private static final Logger logger = LoggerFactory.getLogger(Omnivore2SubmitBolt.class);
 
    @Override
    public void declareOutputFields(OutputFieldsDeclarer declarer) {

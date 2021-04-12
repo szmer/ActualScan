@@ -1,3 +1,7 @@
+/*
+SPDX-License-Identifier: AGPL-3.0-or-later
+Copyright (c) 2021 Szymon Rutkowski.
+ */
 package com.actualscan.crawling;
 
 import java.sql.*;
@@ -16,10 +20,30 @@ public class DBQueryHandler {
 
    public DBQueryHandler(String host, String port, String username, String password) {
       //System.exit(0);
-      this.dbHost = host;
-      this.dbPort = port;
-      this.dbUsername = username;
-      this.dbPassword = password;
+      if (host != null) {
+         this.dbHost = host;
+      }
+      else {
+         this.dbHost = "localhost";
+      }
+      if (port != null) {
+         this.dbPort = port;
+      }
+      else {
+         this.dbPort = "5432";
+      }
+      if (username != null) {
+         this.dbUsername = username;
+      }
+      else {
+         this.dbUsername = "";
+      }
+      if (password != null) {
+         this.dbPassword = password;
+      }
+      else {
+         this.dbPassword = "";
+      }
    }
 
    public void executeUpdate(String query) throws SQLException {
