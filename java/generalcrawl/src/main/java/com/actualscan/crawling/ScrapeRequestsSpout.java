@@ -1,7 +1,7 @@
 /*
 SPDX-License-Identifier: AGPL-3.0-or-later
 Copyright (c) 2021 Szymon Rutkowski.
- */qq
+ */
 package com.actualscan.crawling;
 
 import java.sql.*;

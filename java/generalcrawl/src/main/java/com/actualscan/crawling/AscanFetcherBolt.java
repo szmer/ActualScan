@@ -1,6 +1,12 @@
+/*
+SPDX-License-Identifier: AGPL-3.0-or-later
+Copyright (c) 2021 Szymon Rutkowski.
+ */
 package com.actualscan.crawling;
 
 /**
+ * Edited for ActualScan by Szymon Rutkowski; original license:
+ *
  * Licensed to DigitalPebble Ltd under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -16,7 +22,6 @@ package com.actualscan.crawling;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// Edited for ActualScan - Szymon Rutkowski
 
 import java.io.File;
 import java.net.InetAddress;

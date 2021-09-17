@@ -16,7 +16,7 @@ public class DBQueryHandler {
    protected String dbUsername;
    protected String dbPassword;
 
-   private static final Logger logger = LogManager.getLogger(ScrapeRequestsSpout.class);
+   private static final Logger logger = LogManager.getLogger(DBQueryHandler.class);
 
    public DBQueryHandler(String host, String port, String username, String password) {
       //System.exit(0);
