@@ -1,4 +1,5 @@
 # Table of contents
+0. NOTE
 1. Introduction
 2. Technical overview:
   - architecture
@@ -7,6 +8,14 @@
   - debugging
 3. How to use your install!
 4. Contributing and communications
+
+# NOTE
+As of September 2021 the work on the project is suspended. I came to the conclusion that
+other people's projects for alternative search may have better chances to hopefully succeed,
+and my own time is (at least for now) better spent elsewhere. That being said, I learned a lot
+working on this and it was very satisfying.
+
+Do contact me if you have questions about running the whole thing or its internal workings!
 
 # Introduction
 ActualScan is a smart (analytic) Web search engine with infinitely sortable results. It focuses on informative and niche
@@ -20,7 +29,6 @@ as you also make the source available to users.
 Currently indexing should work decently on many Wordpress sites, some media and forums sites, and Reddit
 (optional: you have to use your own [Reddit API key](https://www.reddit.com/wiki/api)).
 
-The project is still in a *very early* stage! Stay tuned for a public alpha server.
 You can follow the [blog](https://tech.actualscan.com/) with the email newsletter or RSS.
 Also see the **contributing** info at the end.
 
@@ -194,11 +202,5 @@ to your ActualScan installation. You can also edit, copy, paste and share the ru
 button, such as `sl,*,*,2;wl,9,*,5;awtf,*,0.4,2;neg,*,0.35,0;pos,*,0.45,0`.
 
 # Contributing and communications
-- Please do not submit patches/pull requests without talking about it first.
 - Main needs and plans for the project are communicated with GitHub issues.
-- Your opinions and suggestions are very kindly welcome! (Agreement not guaranteed though 🙃)
-- Currently the main channel **for suggestions** is email (see below) or GitHub issues. We will think of opening a mailing list
-and/or a IRC/Matrix room *(or something different but open and reasonable)* if there's a need for it.
-- Get in touch especially if you use, or seriously want to use, the software: **write an email** to contact@actualscan.com.
-Do communicate your needs, so they can be taken into account in new features and you can get info on important changes.
-(Note that this is *only* good will and best effort, as ActualScan is currently developed completely for free.)
+- Currently the main channel for suggestions is email (szymon atsign szymonrutkowski.pl) or GitHub issues.
